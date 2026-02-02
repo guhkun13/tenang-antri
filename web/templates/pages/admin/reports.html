@@ -1,237 +1,567 @@
-{{ template "layouts/_header.html" }}
+{{template "layouts/_header.html"}}
+
 <div class="flex h-screen bg-gray-100">
-  <!-- Sidebar -->
-  <aside class="bg-gray-800 text-white w-64 flex-shrink-0 hidden md:block">
-    <div class="p-4 border-b border-gray-700">
-      <h1 class="text-xl font-bold">
-        <i class="fas fa-ticket-alt mr-2"></i>QMS Admin
-      </h1>
+    <!-- Sidebar -->
+    <aside class="bg-gray-800 text-white w-64 flex-shrink-0 hidden md:block">
+        <div class="p-4 border-b border-gray-700">
+            <h1 class="text-xl font-bold"><i class="fas fa-ticket-alt mr-2"></i>QMS Admin</h1>
+        </div>
+        <nav class="p-4 space-y-2">
+            <a href="/admin/dashboard" class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+            </a>
+            <a href="/admin/tickets" class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-ticket-alt mr-2"></i>Tickets
+            </a>
+            <a href="/admin/categories" class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-tags mr-2"></i>Categories
+            </a>
+            <a href="/admin/counters" class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-desktop mr-2"></i>Counters
+            </a>
+            <a href="/admin/users" class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-users mr-2"></i>Staff
+            </a>
+            <a href="/admin/reports" class="block px-4 py-2 bg-blue-600 rounded-lg">
+                <i class="fas fa-chart-bar mr-2"></i>Reports
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800">Reports & Analytics</h2>
+                    <p class="text-sm text-gray-600 mt-1">Generate detailed reports and analytics</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="window.print()" class="text-gray-600 hover:text-gray-800">
+                        <i class="fas fa-print mr-2"></i>Print
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="flex-1 overflow-y-auto p-6">
+            <!-- Date Range Filter -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Date Range Selection</h3>
+                
+                <form id="reportForm" class="flex flex-wrap gap-4 items-end" method="GET" action="/admin/reports">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                        <input type="date" name="date_from" id="dateFrom" 
+                               class="border rounded-lg px-3 py-2" value="{{.DateFrom}}">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                        <input type="date" name="date_to" id="dateTo" 
+                               class="border rounded-lg px-3 py-2" value="{{.DateTo}}">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Quick Select</label>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="setReportDateRange('today')" 
+                                    class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">
+                                Today
+                            </button>
+                            <button type="button" onclick="setReportDateRange('yesterday')" 
+                                    class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">
+                                Yesterday
+                            </button>
+                            <button type="button" onclick="setReportDateRange('week')" 
+                                    class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">
+                                This Week
+                            </button>
+                            <button type="button" onclick="setReportDateRange('month')" 
+                                    class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">
+                                This Month
+                            </button>
+                            <button type="button" onclick="setReportDateRange('quarter')" 
+                                    class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">
+                                This Quarter
+                            </button>
+                            <button type="button" onclick="setReportDateRange('year')" 
+                                    class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">
+                                This Year
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Report Type</label>
+                        <select name="report_type" id="reportType" 
+                                class="border rounded-lg px-3 py-2">
+                            <option value="summary">Summary Report</option>
+                            <option value="detailed">Detailed Report</option>
+                            <option value="performance">Performance Analysis</option>
+                            <option value="categories">By Categories</option>
+                            <option value="counters">By Counters</option>
+                            <option value="hourly">Hourly Breakdown</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-chart-bar mr-2"></i>Generate Report
+                        </button>
+                        <button type="button" onclick="exportCSV()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-download mr-2"></i>Export CSV
+                        </button>
+                        <button type="button" onclick="exportPDF()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-file-pdf mr-2"></i>Export PDF
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Report Content -->
+            <div id="reportContent" class="space-y-6">
+                <!-- Summary Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-ticket-alt text-blue-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Total Tickets</p>
+                                <p class="text-3xl font-bold text-gray-800" id="totalTickets">--</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-check text-green-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Completed</p>
+                                <p class="text-3xl font-bold text-gray-800" id="completedTickets">--</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">No Shows</p>
+                                <p class="text-3xl font-bold text-gray-800" id="noShowTickets">--</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-times text-red-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Cancelled</p>
+                                <p class="text-3xl font-bold text-gray-800" id="cancelledTickets">--</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Metrics -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                            <i class="fas fa-chart-line mr-2 text-blue-600"></i>Performance Metrics
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="text-center">
+                                <h4 class="text-sm font-medium text-gray-600 mb-2">Average Wait Time</h4>
+                                <p class="text-3xl font-bold text-blue-600" id="avgWaitTime">--</p>
+                                <p class="text-sm text-gray-500">minutes</p>
+                            </div>
+                            <div class="text-center">
+                                <h4 class="text-sm font-medium text-gray-600 mb-2">Average Service Time</h4>
+                                <p class="text-3xl font-bold text-green-600" id="avgServiceTime">--</p>
+                                <p class="text-sm text-gray-500">minutes</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <div class="text-center">
+                                <h4 class="text-sm font-medium text-gray-600 mb-2">Peak Hour</h4>
+                                <p class="text-3xl font-bold text-orange-600" id="peakHour">--</p>
+                                <p class="text-sm text-gray-500">tickets</p>
+                            </div>
+                            <div class="text-center">
+                                <h4 class="text-sm font-medium text-gray-600 mb-2">Service Rate</h4>
+                                <p class="text-3xl font-bold text-purple-600" id="serviceRate">--</p>
+                                <p class="text-sm text-gray-500">tickets/hour</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Hourly Distribution Chart -->
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="p-6 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-800">
+                                <i class="fas fa-chart-bar mr-2 text-blue-600"></i>Hourly Distribution
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <div class="h-64 flex items-end space-x-2" id="hourlyChart">
+                                <!-- Chart bars will be generated dynamically -->
+                            </div>
+                            <div class="flex justify-between mt-2 text-xs text-gray-600">
+                                <span>8:00</span>
+                                <span>12:00</span>
+                                <span>16:00</span>
+                                <span>20:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category Distribution Chart -->
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="p-6 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-800">
+                                <i class="fas fa-chart-pie mr-2 text-green-600"></i>Tickets by Category
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <div id="categoryChart" class="space-y-3">
+                                <!-- Category distribution will be generated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Tables -->
+                <div class="bg-white rounded-lg shadow mt-6">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-800">
+                            <i class="fas fa-table mr-2 text-purple-600"></i>Detailed Breakdown
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <!-- Tabs for different views -->
+                        <div class="border-b border-gray-200">
+                            <nav class="-mb-px flex space-x-8">
+                                <button onclick="showTab('tickets')" id="ticketsTab" 
+                                        class="tab-btn py-2 px-1 border-b-2 border-transparent text-gray-600 hover:text-gray-800 font-medium">
+                                    Tickets
+                                </button>
+                                <button onclick="showTab('performance')" id="performanceTab"
+                                        class="tab-btn py-2 px-1 border-b-2 border-transparent text-gray-600 hover:text-gray-800 font-medium">
+                                    Performance
+                                </button>
+                                <button onclick="showTab('trends')" id="trendsTab"
+                                        class="tab-btn py-2 px-1 border-b-2 border-transparent text-gray-600 hover:text-gray-800 font-medium">
+                                    Trends
+                                </button>
+                            </nav>
+                        </div>
+                        
+                        <!-- Tab Content -->
+                        <div id="ticketsTabContent" class="tab-content mt-4">
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Date</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Ticket #</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Category</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Wait Time</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Service Time</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ticketsTableBody">
+                                        <!-- Table rows will be generated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div id="performanceTabContent" class="tab-content mt-4 hidden">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Performance metrics -->
+                                <div class="space-y-4">
+                                    <!-- Content will be generated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="trendsTabContent" class="tab-content mt-4 hidden">
+                            <div class="space-y-6">
+                                <!-- Trends analysis -->
+                                <!-- Content will be generated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="hidden text-center py-12">
+                <div class="inline-flex items-center">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <div class="ml-4 text-gray-600">Loading report data...</div>
+                </div>
+            </div>
+
+            <!-- No Data State -->
+            <div id="noDataState" class="hidden text-center py-12">
+                <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-600">No Data Available</h3>
+                <p class="text-gray-500">Try adjusting the date range or check if tickets exist for the selected period.</p>
+            </div>
+            </div>
+        </main>
     </div>
-    <nav class="p-4 space-y-2">
-      <a
-        href="/admin/dashboard"
-        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-      >
-        <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
-      </a>
-      <a
-        href="/admin/tickets"
-        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-      >
-        <i class="fas fa-ticket-alt mr-2"></i>Tickets
-      </a>
-      <a
-        href="/admin/categories"
-        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-      >
-        <i class="fas fa-tags mr-2"></i>Categories
-      </a>
-      <a
-        href="/admin/counters"
-        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-      >
-        <i class="fas fa-desktop mr-2"></i>Counters
-      </a>
-      <a
-        href="/admin/users"
-        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-      >
-        <i class="fas fa-users mr-2"></i>Staff
-      </a>
-      <a href="/admin/reports" class="block px-4 py-2 bg-blue-600 rounded-lg">
-        <i class="fas fa-chart-bar mr-2"></i>Reports
-      </a>
-    </nav>
-  </aside>
-
-  <!-- Main Content -->
-  <div class="flex-1 flex flex-col overflow-hidden">
-    <!-- Header -->
-    <header class="bg-white shadow-sm border-b px-6 py-4">
-      <h2 class="text-xl font-semibold text-gray-800">Reports & Analytics</h2>
-    </header>
-
-    <!-- Content -->
-    <main class="flex-1 overflow-y-auto p-6">
-      <!-- Date Range Filter -->
-      <div class="bg-white rounded-lg shadow p-4 mb-6">
-        <form
-          class="flex flex-wrap gap-4 items-end"
-          method="GET"
-          action="/admin/reports"
-        >
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >Date From</label
-            >
-            <input
-              type="date"
-              name="date_from"
-              value="{{.DateFrom}}"
-              class="border rounded-lg px-3 py-2"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >Date To</label
-            >
-            <input
-              type="date"
-              name="date_to"
-              value="{{.DateTo}}"
-              class="border rounded-lg px-3 py-2"
-            />
-          </div>
-          <button
-            type="submit"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-          >
-            <i class="fas fa-filter mr-2"></i>Generate Report
-          </button>
-          <button
-            type="button"
-            onclick="exportData()"
-            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
-          >
-            <i class="fas fa-download mr-2"></i>Export CSV
-          </button>
-        </form>
-      </div>
-
-      <!-- Stats Overview -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-500">Total Tickets</p>
-              <p class="text-3xl font-bold text-blue-600">--</p>
-            </div>
-            <div
-              class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center"
-            >
-              <i class="fas fa-ticket-alt text-blue-600 text-xl"></i>
-            </div>
-          </div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-500">Completed</p>
-              <p class="text-3xl font-bold text-green-600">--</p>
-            </div>
-            <div
-              class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center"
-            >
-              <i class="fas fa-check text-green-600 text-xl"></i>
-            </div>
-          </div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-500">No Shows</p>
-              <p class="text-3xl font-bold text-orange-600">--</p>
-            </div>
-            <div
-              class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center"
-            >
-              <i class="fas fa-user-slash text-orange-600 text-xl"></i>
-            </div>
-          </div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-500">Avg Wait Time</p>
-              <p class="text-3xl font-bold text-purple-600">--</p>
-            </div>
-            <div
-              class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center"
-            >
-              <i class="fas fa-clock text-purple-600 text-xl"></i>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Charts Placeholder -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-chart-line mr-2 text-blue-600"></i>Hourly
-            Distribution
-          </h3>
-          <div
-            class="h-64 flex items-center justify-center bg-gray-50 rounded-lg"
-          >
-            <p class="text-gray-500">Chart visualization - Coming Soon</p>
-          </div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-chart-pie mr-2 text-green-600"></i>Tickets by
-            Category
-          </h3>
-          <div
-            class="h-64 flex items-center justify-center bg-gray-50 rounded-lg"
-          >
-            <p class="text-gray-500">Chart visualization - Coming Soon</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Counter Performance -->
-      <div class="bg-white rounded-lg shadow mt-6">
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="text-lg font-semibold text-gray-800">
-            <i class="fas fa-desktop mr-2 text-purple-600"></i>Counter
-            Performance
-          </h3>
-        </div>
-        <div class="p-6">
-          <table class="w-full">
-            <thead class="bg-gray-50">
-              <tr>
-                <th
-                  class="px-4 py-2 text-left text-sm font-medium text-gray-500"
-                >
-                  Counter
-                </th>
-                <th
-                  class="px-4 py-2 text-left text-sm font-medium text-gray-500"
-                >
-                  Tickets Served
-                </th>
-                <th
-                  class="px-4 py-2 text-left text-sm font-medium text-gray-500"
-                >
-                  Avg Service Time
-                </th>
-                <th
-                  class="px-4 py-2 text-left text-sm font-medium text-gray-500"
-                >
-                  Efficiency
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colspan="4" class="px-4 py-8 text-center text-gray-500">
-                  Performance data - Coming Soon
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </main>
-  </div>
 </div>
 
 <script>
-  function exportData() {
-    alert("Export functionality - Coming Soon");
-  }
+// Date functions
+function setReportDateRange(range) {
+    const dateFrom = document.getElementById('dateFrom');
+    const dateTo = document.getElementById('dateTo');
+    const today = new Date();
+    
+    switch(range) {
+        case 'today':
+            dateFrom.value = today.toISOString().split('T')[0];
+            dateTo.value = today.toISOString().split('T')[0];
+            break;
+        case 'yesterday':
+            const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+            dateFrom.value = yesterday.toISOString().split('T')[0];
+            dateTo.value = yesterday.toISOString().split('T')[0];
+            break;
+        case 'week':
+            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            dateFrom.value = weekAgo.toISOString().split('T')[0];
+            dateTo.value = today.toISOString().split('T')[0];
+            break;
+        case 'month':
+            const monthAgo = new Date(today.getFullYear(), today.getMonth(), 1);
+            dateFrom.value = monthAgo.toISOString().split('T')[0];
+            dateTo.value = today.toISOString().split('T')[0];
+            break;
+        case 'quarter':
+            const quarterAgo = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1);
+            dateFrom.value = quarterAgo.toISOString().split('T')[0];
+            dateTo.value = today.toISOString().split('T')[0];
+            break;
+        case 'year':
+            const yearAgo = new Date(today.getFullYear() - 1, 0, 1);
+            dateFrom.value = yearAgo.toISOString().split('T')[0];
+            dateTo.value = today.toISOString().split('T')[0];
+            break;
+    }
+    
+    // Auto-submit form
+    document.getElementById('reportForm').submit();
+}
+
+// Tab switching
+function showTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('border-blue-500', 'text-blue-600');
+        btn.classList.add('border-transparent', 'text-gray-600');
+    });
+    
+    // Show selected tab
+    const tabContent = document.getElementById(tabName + 'TabContent');
+    const tabBtn = document.getElementById(tabName + 'Tab');
+    if (tabContent) tabContent.classList.remove('hidden');
+    if (tabBtn) {
+        tabBtn.classList.remove('border-transparent', 'text-gray-600');
+        tabBtn.classList.add('border-blue-500', 'text-blue-600');
+    }
+}
+
+// Export functions
+function exportCSV() {
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTo = document.getElementById('dateTo').value;
+    const reportType = document.getElementById('reportType').value;
+    
+    window.open(`/admin/api/export/tickets?date_from=${dateFrom}&date_to=${dateTo}&type=${reportType}`, '_blank');
+}
+
+function exportPDF() {
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTo = document.getElementById('dateTo').value;
+    const reportType = document.getElementById('reportType').value;
+    
+    window.open(`/admin/api/export/tickets/pdf?date_from=${dateFrom}&date_to=${dateTo}&type=${reportType}`, '_blank');
+}
+
+// Load report data
+function loadReportData() {
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTo = document.getElementById('dateTo').value;
+    const reportType = document.getElementById('reportType').value;
+    
+    if (!dateFrom || !dateTo) {
+        document.getElementById('noDataState').classList.remove('hidden');
+        document.getElementById('reportContent').classList.add('hidden');
+        return;
+    }
+    
+    document.getElementById('noDataState').classList.add('hidden');
+    document.getElementById('reportContent').classList.remove('hidden');
+    document.getElementById('loadingState').classList.remove('hidden');
+    
+    fetch(`/admin/api/reports/data?date_from=${dateFrom}&date_to=${dateTo}&type=${reportType}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('loadingState').classList.add('hidden');
+            
+            if (data.error) {
+                document.getElementById('noDataState').classList.remove('hidden');
+                document.getElementById('reportContent').classList.add('hidden');
+                return;
+            }
+            
+            // Update stats
+            updateReportStats(data.summary);
+            
+            // Update charts
+            updateCharts(data.summary);
+            
+            // Update tables
+            updateTables(data.details);
+        })
+        .catch(error => {
+            console.error('Failed to load report data:', error);
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('noDataState').classList.remove('hidden');
+            document.getElementById('reportContent').classList.add('hidden');
+        });
+}
+
+function updateReportStats(summary) {
+    document.getElementById('totalTickets').textContent = summary.total_tickets || 0;
+    document.getElementById('completedTickets').textContent = summary.completed_tickets || 0;
+    document.getElementById('noShowTickets').textContent = summary.no_show_tickets || 0;
+    document.getElementById('cancelledTickets').textContent = summary.cancelled_tickets || 0;
+    document.getElementById('avgWaitTime').textContent = summary.avg_wait_time || 0;
+    document.getElementById('avgServiceTime').textContent = summary.avg_service_time || 0;
+    document.getElementById('peakHour').textContent = summary.peak_hour || '--';
+    document.getElementById('serviceRate').textContent = summary.service_rate || 0;
+}
+
+function updateCharts(summary) {
+    // Update hourly chart
+    updateHourlyChart(summary.hourly_distribution);
+    
+    // Update category chart
+    updateCategoryChart(summary.category_distribution);
+}
+
+function updateHourlyChart(hourlyData) {
+    const chartContainer = document.getElementById('hourlyChart');
+    if (!hourlyData || !chartContainer) return;
+    
+    const maxTickets = Math.max(...Object.values(hourlyData));
+    const hours = Array.from({length: 17}, (_, i) => i + 8); // 8:00 to 24:00
+    
+    chartContainer.innerHTML = hours.map(hour => {
+        const ticketCount = hourlyData[hour] || 0;
+        const height = maxTickets > 0 ? (ticketCount / maxTickets) * 100 : 0;
+        
+        return `
+            <div class="flex-1 flex items-end">
+                <div class="w-full bg-gray-200 rounded-t-lg relative" style="height: ${height}%">
+                    <div class="absolute bottom-0 left-0 right-0 bg-blue-500 text-center text-xs text-white py-1">
+                        ${ticketCount}
+                    </div>
+                </div>
+                <span class="w-12 text-xs text-gray-600 text-right">${hour.toString().padStart(2, '0')}:00</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function updateCategoryChart(categoryData) {
+    const chartContainer = document.getElementById('categoryChart');
+    if (!categoryData || !chartContainer) return;
+    
+    chartContainer.innerHTML = Object.entries(categoryData).map(([category, data]) => `
+        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div class="flex items-center">
+                <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${data.color_code}"></div>
+                <div>
+                    <p class="font-medium">${category}</p>
+                    <p class="text-sm text-gray-500">${data.prefix}</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-2xl font-bold" style="color: ${data.color_code}">${data.count}</div>
+                <p class="text-sm text-gray-500">tickets</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateTables(details) {
+    const tableBody = document.getElementById('ticketsTableBody');
+    if (!details || !tableBody) return;
+    
+    tableBody.innerHTML = details.map(ticket => `
+        <tr class="hover:bg-gray-50">
+            <td class="px-4 py-2">${new Date(ticket.created_at).toLocaleDateString()}</td>
+            <td class="px-4 py-2 font-medium">${ticket.ticket_number}</td>
+            <td class="px-4 py-2">
+                <span class="px-2 py-1 rounded text-xs text-white" style="background-color: ${ticket.category_color_code}">
+                    ${ticket.category_prefix}
+                </span>
+            </td>
+            <td class="px-4 py-2">
+                <span class="px-2 py-1 rounded-full text-xs font-medium
+                      ${ticket.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        ticket.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                        ticket.status === 'no_show' ? 'bg-orange-100 text-orange-800' :
+                        'bg-blue-100 text-blue-800'}">
+                    ${ticket.status}
+                </span>
+            </td>
+            <td class="px-4 py-2">${ticket.wait_time ? Math.floor(ticket.wait_time / 60) + 'm ' + (ticket.wait_time % 60) + 's' : '-'}</td>
+            <td class="px-4 py-2">${ticket.service_time ? Math.floor(ticket.service_time / 60) + 'm ' + (ticket.service_time % 60) + 's' : '-'}</td>
+        </tr>
+    `).join('');
+}
+
+// Auto-load data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadReportData();
+});
+
+// Handle form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('reportForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            loadReportData();
+        });
+    }
+});
 </script>
 
-{{ template "layouts/_footer.html" }}
+{{template "layouts/_footer.html"}}

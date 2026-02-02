@@ -33,7 +33,10 @@
         <!-- Header -->
         <header class="bg-white shadow-sm border-b px-6 py-4">
             <div class="flex justify-between items-center">
-                <h2 class="text-xl font-semibold text-gray-800">Ticket Management</h2>
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800">Ticket Management</h2>
+                    <p class="text-sm text-gray-600 mt-1">View and manage all queue tickets</p>
+                </div>
                 <button onclick="openModal('addTicketModal')" 
                         class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
                     <i class="fas fa-plus mr-2"></i>Create Ticket
@@ -43,44 +46,161 @@
 
         <!-- Filters -->
         <div class="bg-white border-b px-6 py-4">
-            <form class="flex flex-wrap gap-4 items-end" method="GET" action="/admin/tickets">
+            <form id="filterForm" class="flex flex-wrap gap-4 items-end" method="GET" action="/admin/tickets">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                    <div class="relative">
+                        <input type="text" name="search" id="searchInput" 
+                               class="border rounded-lg px-3 py-2 pl-10" 
+                               placeholder="Search tickets..." value="{{.Filters.search}}">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                </div>
+                
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select name="status" class="border rounded-lg px-3 py-2">
-                        <option value="">All</option>
-                        <option value="waiting">Waiting</option>
-                        <option value="serving">Serving</option>
-                        <option value="completed">Completed</option>
-                        <option value="no_show">No Show</option>
-                        <option value="cancelled">Cancelled</option>
+                        <option value="">All Status</option>
+                        <option value="waiting" {{if eq .Filters.status "waiting"}}selected{{end}}>Waiting</option>
+                        <option value="serving" {{if eq .Filters.status "serving"}}selected{{end}}>Serving</option>
+                        <option value="completed" {{if eq .Filters.status "completed"}}selected{{end}}>Completed</option>
+                        <option value="no_show" {{if eq .Filters.status "no_show"}}selected{{end}}>No Show</option>
+                        <option value="cancelled" {{if eq .Filters.status "cancelled"}}selected{{end}}>Cancelled</option>
                     </select>
                 </div>
+                
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
                     <select name="category_id" class="border rounded-lg px-3 py-2">
-                        <option value="">All</option>
+                        <option value="">All Categories</option>
                         {{range .Categories}}
-                        <option value="{{.ID}}">{{.Name}}</option>
+                        <option value="{{.ID}}" {{if eq .Filters.category_id .ID}}selected{{end}}>{{.Name}}</option>
                         {{end}}
                     </select>
                 </div>
+                
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date From</label>
-                    <input type="date" name="date_from" class="border rounded-lg px-3 py-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Counter</label>
+                    <select name="counter_id" class="border rounded-lg px-3 py-2">
+                        <option value="">All Counters</option>
+                        {{range .Counters}}
+                        <option value="{{.ID}}" {{if eq .Filters.counter_id .ID}}selected{{end}}>{{.Name}}</option>
+                        {{end}}
+                    </select>
                 </div>
+                
+                <div class="flex gap-2">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date From</label>
+                        <input type="date" name="date_from" 
+                               class="border rounded-lg px-3 py-2" value="{{.Filters.date_from}}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Date To</label>
+                        <input type="date" name="date_to" 
+                               class="border rounded-lg px-3 py-2" value="{{.Filters.date_to}}">
+                    </div>
+                </div>
+                
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date To</label>
-                    <input type="date" name="date_to" class="border rounded-lg px-3 py-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">&nbsp;</label>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="setQuickDateRange('today')" 
+                                class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">
+                            Today
+                        </button>
+                        <button type="button" onclick="setQuickDateRange('week')" 
+                                class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">
+                            This Week
+                        </button>
+                        <button type="button" onclick="setQuickDateRange('month')" 
+                                class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">
+                            This Month
+                        </button>
+                        <button type="button" onclick="clearFilters()" 
+                                class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">
+                            Clear
+                        </button>
+                    </div>
                 </div>
+                
                 <button type="submit" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
-                    <i class="fas fa-filter mr-2"></i>Filter
+                    <i class="fas fa-filter mr-2"></i>Apply Filters
                 </button>
             </form>
         </div>
 
         <!-- Content -->
         <main class="flex-1 overflow-y-auto p-6">
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-ticket-alt text-blue-600"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-500">Total Tickets</p>
+                            <p class="text-xl font-bold text-gray-800">{{len .Tickets}}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-clock text-yellow-600"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-500">Waiting</p>
+                            <p class="text-xl font-bold text-gray-800">
+                                {{range .Tickets}}{{if eq .Status "waiting"}}{{add . 1}}{{end}}{{end}}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-play text-green-600"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-500">Serving</p>
+                            <p class="text-xl font-bold text-gray-800">
+                                {{range .Tickets}}{{if eq .Status "serving"}}{{add . 1}}{{end}}{{end}}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-check text-purple-600"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-500">Completed Today</p>
+                            <p class="text-xl font-bold text-gray-800">
+                                {{range .Tickets}}{{if and (eq .Status "completed") (eq .CreatedAt.Format "2006-01-02" (now.Format "2006-01-02"))}}{{add . 1}}{{end}}{{end}}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tickets Table -->
             <div class="bg-white rounded-lg shadow">
+                <div class="p-4 border-b">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-800">Tickets</h3>
+                        <div class="flex items-center space-x-4">
+                            <span class="text-sm text-gray-500">
+                                Showing {{len .Tickets}} tickets
+                                {{if .Filters.status}}
+                                (filtered by: {{.Filters.status}})
+                                {{end}}
+                            </span>
+                        </div>
+                    </div>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead class="bg-gray-50 border-b">
@@ -89,8 +209,10 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Counter</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Wait Time</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service Time</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                             </tr>
                         </thead>
@@ -99,43 +221,76 @@
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 font-medium text-gray-900">{{.TicketNumber}}</td>
                                 <td class="px-6 py-4">
-                                    {{range $.Categories}}
-                                        {{if eq .ID $.CategoryID}}
-                                        <span class="px-2 py-1 rounded text-xs text-white" style="background-color: '{{.ColorCode}}';">
-                                            {{.Name}}
+                                    <div class="flex items-center">
+                                        <span class="px-2 py-1 rounded text-xs text-white font-medium"
+                                              style="background-color: '{{.Category.ColorCode}}';">
+                                            {{.Category.Prefix}}
                                         </span>
-                                        {{end}}
-                                    {{end}}
+                                        <span class="ml-2">{{.Category.Name}}</span>
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 text-gray-900">
-                                    {{if .CounterID}}
-                                        {{range $.Counters}}
-                                            {{if eq .ID $.CounterID}}{{.Name}}{{end}}
-                                        {{end}}
-                                    {{else}}-{{end}}
+                                    {{if .Counter}}
+                                        {{.Counter.Number}} - {{.Counter.Name}}
+                                    {{else}}
+                                        <span class="text-gray-400">-</span>
+                                    {{end}}
                                 </td>
                                 <td class="px-6 py-4">
                                     <span class="px-2 py-1 rounded-full text-xs font-medium
-                                        {{if eq .Status "waiting"}} bg-yellow-100 text-yellow-800
-                                        {{else if eq .Status "serving"}} bg-blue-100 text-blue-800
-                                        {{else if eq .Status "completed"}} bg-green-100 text-green-800
-                                        {{else if eq .Status "no_show"}} bg-orange-100 text-orange-800
-                                        {{else}} bg-red-100 text-red-800{{end}}">
+                                          {{if eq .Status "waiting"}}bg-yellow-100 text-yellow-800
+                                          {{else if eq .Status "serving"}}bg-blue-100 text-blue-800
+                                          {{else if eq .Status "completed"}}bg-green-100 text-green-800
+                                          {{else if eq .Status "no_show"}}bg-orange-100 text-orange-800
+                                          {{else}}bg-red-100 text-red-800{{end}}">
                                         {{.Status}}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                                        {{if eq .Priority 0}}Normal
+                                        {{else if eq .Priority 1}}High
+                                        {{else if eq .Priority 2}}Urgent
+                                        {{else}}{{.Priority}}{{end}}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-gray-500">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
                                 <td class="px-6 py-4 text-gray-500">
-                                    {{if .WaitTime}}{{.WaitTime}}s{{else}}-{{end}}
+                                    {{if .WaitTime}}
+                                        {{div .WaitTime 60}}m {{mod .WaitTime 60}}s
+                                    {{else}}
+                                        -
+                                    {{end}}
+                                </td>
+                                <td class="px-6 py-4 text-gray-500">
+                                    {{if .ServiceTime}}
+                                        {{div .ServiceTime 60}}m {{mod .ServiceTime 60}}s
+                                    {{else}}
+                                        -
+                                    {{end}}
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex space-x-2">
+                                        <button onclick="viewTicketDetails({{.ID}})" 
+                                                class="text-blue-600 hover:text-blue-800" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
                                         {{if eq .Status "waiting"}}
-                                        <button onclick="cancelTicket('{{.ID}}')" class="text-red-600 hover:text-red-800" title="Cancel">
+                                        <button onclick="cancelTicket({{.ID}})" 
+                                                class="text-red-600 hover:text-red-800" title="Cancel">
                                             <i class="fas fa-times"></i>
                                         </button>
                                         {{end}}
                                     </div>
+                                </td>
+                            </tr>
+                            {{end}}
+                            {{if not .Tickets}}
+                            <tr>
+                                <td colspan="9" class="px-6 py-8 text-center text-gray-500">
+                                    <i class="fas fa-inbox text-4xl mb-2"></i>
+                                    <p class="text-lg">No tickets found</p>
+                                    <p class="text-sm">Try adjusting your filters</p>
                                 </td>
                             </tr>
                             {{end}}
@@ -159,10 +314,11 @@
         <form id="addTicketForm" onsubmit="return addTicket(event)">
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Category *</label>
                     <select name="category_id" required class="w-full border rounded-lg px-3 py-2">
+                        <option value="">Select a category</option>
                         {{range .Categories}}
-                        <option value="{{.ID}}">{{.Name}}</option>
+                        <option value="{{.ID}}">{{.Name}} ({{.Prefix}})</option>
                         {{end}}
                     </select>
                 </div>
@@ -176,10 +332,12 @@
                 </div>
             </div>
             <div class="mt-6 flex justify-end space-x-3">
-                <button type="button" onclick="closeModal('addTicketModal')" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                <button type="button" onclick="closeModal('addTicketModal')" 
+                        class="px-4 py-2 text-gray-600 hover:text-gray-800">
                     Cancel
                 </button>
-                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+                <button type="submit" 
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
                     Create Ticket
                 </button>
             </div>
@@ -187,7 +345,23 @@
     </div>
 </div>
 
+<!-- Ticket Details Modal -->
+<div id="ticketDetailsModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold">Ticket Details</h3>
+            <button onclick="closeModal('ticketDetailsModal')" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="ticketDetails">
+            <!-- Ticket details will be loaded here -->
+        </div>
+    </div>
+</div>
+
 <script>
+// Modal functions
 function openModal(id) {
     document.getElementById(id).classList.remove('hidden');
     document.getElementById(id).classList.add('flex');
@@ -198,6 +372,37 @@ function closeModal(id) {
     document.getElementById(id).classList.remove('flex');
 }
 
+// Date helper functions
+function setQuickDateRange(range) {
+    const dateFrom = document.querySelector('input[name="date_from"]');
+    const dateTo = document.querySelector('input[name="date_to"]');
+    const today = new Date();
+    
+    switch(range) {
+        case 'today':
+            dateFrom.value = today.toISOString().split('T')[0];
+            dateTo.value = today.toISOString().split('T')[0];
+            break;
+        case 'week':
+            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            dateFrom.value = weekAgo.toISOString().split('T')[0];
+            dateTo.value = today.toISOString().split('T')[0];
+            break;
+        case 'month':
+            const monthAgo = new Date(today.getFullYear(), today.getMonth(), 1);
+            dateFrom.value = monthAgo.toISOString().split('T')[0];
+            dateTo.value = today.toISOString().split('T')[0];
+            break;
+    }
+}
+
+function clearFilters() {
+    document.getElementById('filterForm').reset();
+    // Clear the form and submit
+    document.getElementById('filterForm').submit();
+}
+
+// Ticket management functions
 async function addTicket(event) {
     event.preventDefault();
     const form = event.target;
@@ -213,6 +418,9 @@ async function addTicket(event) {
         });
         
         if (response.ok) {
+            const result = await response.json();
+            alert(`Ticket created successfully!\\n\\nTicket Number: ${result.ticket_number}\\nQueue Position: ${result.queue_position}\\nEstimated Wait: ${result.estimated_wait_time} minutes`);
+            closeModal('addTicketModal');
             window.location.reload();
         } else {
             const error = await response.json();
@@ -228,7 +436,9 @@ async function cancelTicket(id) {
     if (!confirm('Are you sure you want to cancel this ticket?')) return;
     
     try {
-        const response = await fetch(`/admin/api/tickets/${id}/cancel`, { method: 'POST' });
+        const response = await fetch(`/admin/api/tickets/${id}/cancel`, {
+            method: 'POST'
+        });
         if (response.ok) {
             window.location.reload();
         } else {
@@ -238,6 +448,72 @@ async function cancelTicket(id) {
         alert('Network error');
     }
 }
+
+async function viewTicketDetails(id) {
+    try {
+        const response = await fetch(`/admin/api/tickets/${id}`);
+        if (response.ok) {
+            const ticket = await response.json();
+            
+            const detailsHTML = `
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold mb-2">Ticket Information</h4>
+                        <div class="space-y-2">
+                            <div><strong>Ticket #:</strong> ${ticket.ticket_number}</div>
+                            <div><strong>Status:</strong> <span class="px-2 py-1 rounded text-xs text-white" style="background-color: ${ticket.category.color_code}">${ticket.status}</span></div>
+                            <div><strong>Priority:</strong> ${ticket.priority === 0 ? 'Normal' : ticket.priority === 1 ? 'High' : 'Urgent'}</div>
+                            <div><strong>Created:</strong> ${new Date(ticket.created_at).toLocaleString()}</div>
+                            ${ticket.wait_time ? `<div><strong>Wait Time:</strong> ${Math.floor(ticket.wait_time / 60)}m ${ticket.wait_time % 60}s</div>` : ''}
+                            ${ticket.service_time ? `<div><strong>Service Time:</strong> ${Math.floor(ticket.service_time / 60)}m ${ticket.service_time % 60}s</div>` : ''}
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold mb-2">Service Details</h4>
+                        <div class="space-y-2">
+                            <div><strong>Category:</strong> ${ticket.category.name} (${ticket.category.prefix})</div>
+                            ${ticket.counter ? `<div><strong>Counter:</strong> ${ticket.counter.number} - ${ticket.counter.name}</div>` : '<div><strong>Counter:</strong> Not assigned</div>'}
+                            ${ticket.called_at ? `<div><strong>Called:</strong> ${new Date(ticket.called_at).toLocaleString()}</div>` : ''}
+                            ${ticket.completed_at ? `<div><strong>Completed:</strong> ${new Date(ticket.completed_at).toLocaleString()}</div>` : ''}
+                        </div>
+                    </div>
+                </div>
+                ${ticket.notes ? `<div class="mt-4"><h4 class="font-semibold mb-2">Notes</h4><p>${ticket.notes}</p></div>` : ''}
+            `;
+            
+            document.getElementById('ticketDetails').innerHTML = detailsHTML;
+            openModal('ticketDetailsModal');
+        } else {
+            alert('Failed to load ticket details');
+        }
+    } catch (error) {
+        alert('Network error');
+    }
+}
+
+// Search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                document.getElementById('filterForm').submit();
+            }, 500);
+        });
+    }
+});
+
+// Auto-submit filters on change
+document.addEventListener('DOMContentLoaded', function() {
+    const selects = document.querySelectorAll('#filterForm select');
+    selects.forEach(select => {
+        select.addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+    });
+});
 </script>
 
 {{ template "layouts/_footer.html" }}
