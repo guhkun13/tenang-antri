@@ -1,0 +1,81 @@
+<div
+  class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 text-center"
+>
+  <div class="mb-6">
+    <div
+      class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
+      style="background-color: '{{.Ticket.Category.ColorCode}}';"
+    >
+      <i class="fas fa-ticket-alt text-4xl text-white"></i>
+    </div>
+    <h2 class="text-2xl font-bold text-gray-800">Your Ticket</h2>
+    <p class="text-gray-500">Please save this number</p>
+  </div>
+
+  <div class="bg-gray-100 rounded-xl p-6 mb-6">
+    <p class="text-sm text-gray-500 mb-2">Ticket Number</p>
+    <h1
+      class="text-6xl font-bold mb-2"
+      style="color: '{{.Ticket.Category.ColorCode}}';"
+    >
+      {{.Ticket.TicketNumber}}
+    </h1>
+    <span
+      class="inline-block px-4 py-1 rounded-full text-white text-sm"
+      style="background-color: '{{.Ticket.Category.ColorCode}}';"
+    >
+      {{.Ticket.Category.Name}}
+    </span>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4 mb-6">
+    <div class="bg-blue-50 rounded-lg p-4">
+      <p class="text-sm text-gray-500">Queue Position</p>
+      <p class="text-2xl font-bold text-blue-600">#{{.QueuePosition}}</p>
+    </div>
+    <div class="bg-green-50 rounded-lg p-4">
+      <p class="text-sm text-gray-500">Est. Wait Time</p>
+      <p class="text-2xl font-bold text-green-600">
+        ~{{.EstimatedWaitTime}} min
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+    <p class="text-sm text-yellow-800">
+      <i class="fas fa-info-circle mr-1"></i>
+      Please wait for your number to be called. Watch the display board for
+      updates.
+    </p>
+  </div>
+
+  <div class="flex space-x-3">
+    <button
+      onclick="window.print()"
+      class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition"
+    >
+      <i class="fas fa-print mr-2"></i>Print
+    </button>
+    <button
+      onclick="closeModal()"
+      class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition"
+    >
+      <i class="fas fa-check mr-2"></i>Done
+    </button>
+  </div>
+
+  <p class="text-xs text-gray-400 mt-4">
+    Issued at {{.Ticket.CreatedAt.Format "15:04:05"}}
+  </p>
+</div>
+
+<script>
+  function closeModal() {
+    document.getElementById("ticket-modal").classList.add("hidden");
+  }
+
+  // Auto print after short delay
+  setTimeout(function () {
+    window.print();
+  }, 500);
+</script>

@@ -1,0 +1,363 @@
+{{ template "layouts/_header.html" }}
+<div class="flex h-screen bg-gray-100">
+    <!-- Sidebar -->
+    <aside class="bg-gray-800 text-white w-64 flex-shrink-0 hidden md:block">
+        <div class="p-4 border-b border-gray-700">
+            <h1 class="text-xl font-bold"><i class="fas fa-ticket-alt mr-2"></i>QMS Admin</h1>
+        </div>
+        <nav class="p-4 space-y-2">
+            <a href="/admin/dashboard" class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+            </a>
+            <a href="/admin/tickets" class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-ticket-alt mr-2"></i>Tickets
+            </a>
+            <a href="/admin/categories" class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-tags mr-2"></i>Categories
+            </a>
+            <a href="/admin/counters" class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-desktop mr-2"></i>Counters
+            </a>
+            <a href="/admin/users" class="block px-4 py-2 bg-blue-600 rounded-lg">
+                <i class="fas fa-users mr-2"></i>Staff
+            </a>
+            <a href="/admin/reports" class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-chart-bar mr-2"></i>Reports
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
+            <h2 class="text-xl font-semibold text-gray-800">Staff Management</h2>
+            <button onclick="openModal('addUserModal')" 
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                <i class="fas fa-plus mr-2"></i>Add Staff
+            </button>
+        </header>
+
+        <!-- Content -->
+        <main class="flex-1 overflow-y-auto p-6">
+            <div class="bg-white rounded-lg shadow">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Counter</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Login</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {{range .Users}}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                                            <i class="fas fa-user text-blue-600"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-900">{{.FullName.String}}</p>
+                                            <p class="text-sm text-gray-500">{{.Email.String}}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-gray-900">{{.Username}}</td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 rounded-full text-xs font-medium
+                                        {{if eq .Role "admin"}} bg-purple-100 text-purple-800
+                                        {{else}} bg-blue-100 text-blue-800{{end}}">
+                                        {{.Role}}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-900">
+                                    {{if .CounterID}}
+                                        {{range $.Counters}}
+                                            {{if eq .ID $.CounterID}}{{.Name}}{{end}}
+                                        {{end}}
+                                    {{else}}
+                                        <span class="text-gray-400">-</span>
+                                    {{end}}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 rounded-full text-xs font-medium
+                                        {{if .IsActive}} bg-green-100 text-green-800
+                                        {{else}} bg-red-100 text-red-800{{end}}">
+                                        {{if .IsActive}}Active{{else}}Inactive{{end}}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-500">
+                                    {{if .LastLogin}}{{.LastLogin.Format "2006-01-02 15:04"}}{{else}}Never{{end}}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex space-x-2">
+                                        <button onclick="editUser({{.ID}})" 
+                                                class="text-blue-600 hover:text-blue-800" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button onclick="resetPassword({{.ID}})" 
+                                                class="text-yellow-600 hover:text-yellow-800" title="Reset Password">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                        {{if ne .ID 1}}
+                                        <button onclick="deleteUser({{.ID}})" 
+                                                class="text-red-600 hover:text-red-800" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {{end}}
+                                    </div>
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div id="addUserModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold">Add New Staff</h3>
+            <button onclick="closeModal('addUserModal')" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="addUserForm" onsubmit="return addUser(event)">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <input type="text" name="full_name" required class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input type="text" name="username" required class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" name="email" class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input type="tel" name="phone" class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <select name="role" required class="w-full border rounded-lg px-3 py-2">
+                        <option value="staff">Staff</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Assigned Counter</label>
+                    <select name="counter_id" class="w-full border rounded-lg px-3 py-2">
+                        <option value="">None</option>
+                        {{range .Counters}}
+                        <option value="{{.ID}}">{{.Name}}</option>
+                        {{end}}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" name="password" required minlength="6" class="w-full border rounded-lg px-3 py-2">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button type="button" onclick="closeModal('addUserModal')" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+                    Add Staff
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div id="editUserModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold">Edit Staff</h3>
+            <button onclick="closeModal('editUserModal')" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="editUserForm" onsubmit="return updateUser(event)">
+            <input type="hidden" name="id" id="editUserId">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <input type="text" name="full_name" id="editFullName" required class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input type="text" name="username" id="editUsername" required class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" name="email" id="editEmail" class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input type="tel" name="phone" id="editPhone" class="w-full border rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <select name="role" id="editRole" required class="w-full border rounded-lg px-3 py-2">
+                        <option value="staff">Staff</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Assigned Counter</label>
+                    <select name="counter_id" id="editCounterId" class="w-full border rounded-lg px-3 py-2">
+                        <option value="">None</option>
+                        {{range .Counters}}
+                        <option value="{{.ID}}">{{.Name}}</option>
+                        {{end}}
+                    </select>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button type="button" onclick="closeModal('editUserModal')" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                    Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+                    Update Staff
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openModal(id) {
+    document.getElementById(id).classList.remove('hidden');
+    document.getElementById(id).classList.add('flex');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
+    document.getElementById(id).classList.remove('flex');
+}
+
+async function addUser(event) {
+    event.preventDefault();
+    const form = event.target;
+    const data = Object.fromEntries(new FormData(form));
+    
+    try {
+        const response = await fetch('/admin/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const error = await response.json();
+            alert(error.error || 'Failed to add user');
+        }
+    } catch (error) {
+        alert('Network error');
+    }
+    return false;
+}
+
+async function loadUserForEdit(id) {
+    try {
+        const response = await fetch(`/admin/api/users/${id}`);
+        if (response.ok) {
+            const user = await response.json();
+            
+            document.getElementById('editUserId').value = user.id.Int64;
+            document.getElementById('editFullName').value = user.full_name.String || '';
+            document.getElementById('editUsername').value = user.username || '';
+            document.getElementById('editEmail').value = user.email.String || '';
+            document.getElementById('editPhone').value = user.phone.String || '';
+            document.getElementById('editRole').value = user.role || 'staff';
+            document.getElementById('editCounterId').value = user.counter_id.Int64 || '';
+            
+            openModal('editUserModal');
+        } else {
+            alert('Failed to load user data');
+        }
+    } catch (error) {
+        alert('Network error');
+    }
+}
+
+async function updateUser(event) {
+    event.preventDefault();
+    const form = event.target;
+    const id = form.id.value;
+    const data = Object.fromEntries(new FormData(form));
+    delete data.id; // Remove the ID field from the request body
+    
+    try {
+        const response = await fetch(`/admin/api/users/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            const error = await response.json();
+            alert(error.error || 'Failed to update user');
+        }
+    } catch (error) {
+        alert('Network error');
+    }
+    return false;
+}
+
+async function deleteUser(id) {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    
+    try {
+        const response = await fetch(`/admin/api/users/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            alert('Failed to delete user');
+        }
+    } catch (error) {
+        alert('Network error');
+    }
+}
+
+async function resetPassword(id) {
+    if (!confirm('Reset password to "password123"?')) return;
+    
+    try {
+        const response = await fetch(`/admin/api/users/${id}/reset-password`, { method: 'POST' });
+        if (response.ok) {
+            const data = await response.json();
+            alert(`Password reset. New password: ${data.password}`);
+        } else {
+            alert('Failed to reset password');
+        }
+    } catch (error) {
+        alert('Network error');
+    }
+}
+
+function editUser(id) {
+    loadUserForEdit(id);
+}
+</script>
+
+{{ template "layouts/_footer.html" }}

@@ -1,0 +1,237 @@
+{{ template "layouts/_header.html" }}
+<div class="flex h-screen bg-gray-100">
+  <!-- Sidebar -->
+  <aside class="bg-gray-800 text-white w-64 flex-shrink-0 hidden md:block">
+    <div class="p-4 border-b border-gray-700">
+      <h1 class="text-xl font-bold">
+        <i class="fas fa-ticket-alt mr-2"></i>QMS Admin
+      </h1>
+    </div>
+    <nav class="p-4 space-y-2">
+      <a
+        href="/admin/dashboard"
+        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
+      >
+        <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+      </a>
+      <a
+        href="/admin/tickets"
+        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
+      >
+        <i class="fas fa-ticket-alt mr-2"></i>Tickets
+      </a>
+      <a
+        href="/admin/categories"
+        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
+      >
+        <i class="fas fa-tags mr-2"></i>Categories
+      </a>
+      <a
+        href="/admin/counters"
+        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
+      >
+        <i class="fas fa-desktop mr-2"></i>Counters
+      </a>
+      <a
+        href="/admin/users"
+        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
+      >
+        <i class="fas fa-users mr-2"></i>Staff
+      </a>
+      <a href="/admin/reports" class="block px-4 py-2 bg-blue-600 rounded-lg">
+        <i class="fas fa-chart-bar mr-2"></i>Reports
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b px-6 py-4">
+      <h2 class="text-xl font-semibold text-gray-800">Reports & Analytics</h2>
+    </header>
+
+    <!-- Content -->
+    <main class="flex-1 overflow-y-auto p-6">
+      <!-- Date Range Filter -->
+      <div class="bg-white rounded-lg shadow p-4 mb-6">
+        <form
+          class="flex flex-wrap gap-4 items-end"
+          method="GET"
+          action="/admin/reports"
+        >
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Date From</label
+            >
+            <input
+              type="date"
+              name="date_from"
+              value="{{.DateFrom}}"
+              class="border rounded-lg px-3 py-2"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Date To</label
+            >
+            <input
+              type="date"
+              name="date_to"
+              value="{{.DateTo}}"
+              class="border rounded-lg px-3 py-2"
+            />
+          </div>
+          <button
+            type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+          >
+            <i class="fas fa-filter mr-2"></i>Generate Report
+          </button>
+          <button
+            type="button"
+            onclick="exportData()"
+            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+          >
+            <i class="fas fa-download mr-2"></i>Export CSV
+          </button>
+        </form>
+      </div>
+
+      <!-- Stats Overview -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500">Total Tickets</p>
+              <p class="text-3xl font-bold text-blue-600">--</p>
+            </div>
+            <div
+              class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center"
+            >
+              <i class="fas fa-ticket-alt text-blue-600 text-xl"></i>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500">Completed</p>
+              <p class="text-3xl font-bold text-green-600">--</p>
+            </div>
+            <div
+              class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center"
+            >
+              <i class="fas fa-check text-green-600 text-xl"></i>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500">No Shows</p>
+              <p class="text-3xl font-bold text-orange-600">--</p>
+            </div>
+            <div
+              class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center"
+            >
+              <i class="fas fa-user-slash text-orange-600 text-xl"></i>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500">Avg Wait Time</p>
+              <p class="text-3xl font-bold text-purple-600">--</p>
+            </div>
+            <div
+              class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center"
+            >
+              <i class="fas fa-clock text-purple-600 text-xl"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Placeholder -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-lg shadow p-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-chart-line mr-2 text-blue-600"></i>Hourly
+            Distribution
+          </h3>
+          <div
+            class="h-64 flex items-center justify-center bg-gray-50 rounded-lg"
+          >
+            <p class="text-gray-500">Chart visualization - Coming Soon</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-chart-pie mr-2 text-green-600"></i>Tickets by
+            Category
+          </h3>
+          <div
+            class="h-64 flex items-center justify-center bg-gray-50 rounded-lg"
+          >
+            <p class="text-gray-500">Chart visualization - Coming Soon</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Counter Performance -->
+      <div class="bg-white rounded-lg shadow mt-6">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-800">
+            <i class="fas fa-desktop mr-2 text-purple-600"></i>Counter
+            Performance
+          </h3>
+        </div>
+        <div class="p-6">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  class="px-4 py-2 text-left text-sm font-medium text-gray-500"
+                >
+                  Counter
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-sm font-medium text-gray-500"
+                >
+                  Tickets Served
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-sm font-medium text-gray-500"
+                >
+                  Avg Service Time
+                </th>
+                <th
+                  class="px-4 py-2 text-left text-sm font-medium text-gray-500"
+                >
+                  Efficiency
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="4" class="px-4 py-8 text-center text-gray-500">
+                  Performance data - Coming Soon
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  function exportData() {
+    alert("Export functionality - Coming Soon");
+  }
+</script>
+
+{{ template "layouts/_footer.html" }}
