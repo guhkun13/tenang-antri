@@ -3,11 +3,13 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
+	"fmt"
 	"queue-system/internal/model"
 	"queue-system/internal/service"
 	"queue-system/internal/websocket"
@@ -178,11 +180,29 @@ func (h *AdminHandler) ListCategories(c *gin.Context) {
 	})
 }
 
+// GetCategory gets a category by ID
+func (h *AdminHandler) GetCategory(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid category ID"})
+		return
+	}
+
+	category, err := h.adminService.GetCategory(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Category not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, category)
+}
+
 // CreateCategory creates a new category
 func (h *AdminHandler) CreateCategory(c *gin.Context) {
 	var req model.CreateCategoryRequest
 	if err := c.ShouldBind(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Error().Err(err).Str("layer", "handler").Str("func", "CreateCategory").Msg("Failed to bind category request")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
 		return
 	}
 
@@ -206,13 +226,39 @@ func (h *AdminHandler) UpdateCategory(c *gin.Context) {
 
 	var req model.CreateCategoryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		log.Error().Err(err).Str("layer", "handler").Str("func", "UpdateCategory").Msg("Failed to bind category update request")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
 		return
 	}
 
 	category, err := h.adminService.UpdateCategory(c.Request.Context(), id, &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update category"})
+		return
+	}
+
+	h.hub.Broadcast("category_updated", category)
+	c.JSON(http.StatusOK, category)
+}
+
+// UpdateCategoryStatus updates only the status of a category
+func (h *AdminHandler) UpdateCategoryStatus(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid category ID"})
+		return
+	}
+
+	var req model.UpdateCategoryStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Error().Err(err).Str("layer", "handler").Str("func", "UpdateCategoryStatus").Msg("Failed to bind category status request")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
+		return
+	}
+
+	category, err := h.adminService.UpdateCategoryStatus(c.Request.Context(), id, req.IsActive)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update category status"})
 		return
 	}
 
@@ -511,6 +557,248 @@ func (h *AdminHandler) Reports(c *gin.Context) {
 
 // ExportTickets exports tickets to CSV/Excel
 func (h *AdminHandler) ExportTickets(c *gin.Context) {
-	// Implementation for exporting tickets to CSV/Excel
-	c.JSON(http.StatusOK, gin.H{"message": "Export functionality - TODO"})
+	filename := "tickets_" + time.Now().Format("2006-01-02") + ".csv"
+
+	// Set headers for CSV download
+	c.Header("Content-Type", "text/csv")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+
+	// Get filtered tickets
+	tickets, err := h.adminService.ListTickets(c.Request.Context(), map[string]interface{}{
+		"date_from":   c.Query("date_from"),
+		"date_to":     c.Query("date_to"),
+		"status":      c.Query("status"),
+		"category_id": c.Query("category_id"),
+		"counter_id":  c.Query("counter_id"),
+		"search":      c.Query("search"),
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to export tickets"})
+		return
+	}
+
+	// Generate CSV content
+	var csvContent strings.Builder
+	csvContent.WriteString("Ticket Number,Category,Status,Created At,Priority,Wait Time,Service Time,Notes\n")
+
+	for _, ticket := range tickets {
+		waitTime := "0m 0s"
+		if ticket.WaitTime != nil {
+			minutes := *ticket.WaitTime / 60
+			seconds := *ticket.WaitTime % 60
+			waitTime = fmt.Sprintf("%dm %ds", minutes, seconds)
+		}
+
+		serviceTime := "0m"
+		if ticket.ServiceTime != nil {
+			minutes := *ticket.ServiceTime / 60
+			serviceTime = fmt.Sprintf("%dm", minutes)
+		}
+
+		csvContent.WriteString(fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s\n",
+			ticket.TicketNumber,
+			ticket.Category.Name,
+			ticket.Status,
+			ticket.CreatedAt.Format("2006-01-02 15:04:05"),
+			ticket.Priority,
+			waitTime,
+			serviceTime,
+			ticket.Notes,
+		))
+	}
+
+	// Send CSV response
+	c.String(http.StatusOK, csvContent.String())
+}
+
+// ExportPDF exports tickets to PDF
+func (h *AdminHandler) ExportPDF(c *gin.Context) {
+	filename := "tickets_" + time.Now().Format("2006-01-02") + ".pdf"
+
+	// For now, just return a placeholder
+	c.Header("Content-Type", "application/pdf")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	c.JSON(http.StatusOK, gin.H{"message": "PDF export functionality - TODO"})
+}
+
+// GetReportData gets data for reports page
+func (h *AdminHandler) GetReportData(c *gin.Context) {
+	// Get date parameters from query
+	dateFrom := c.Query("date_from")
+	dateTo := c.Query("date_to")
+	reportType := c.Query("type")
+
+	// Get tickets within date range
+	filters := map[string]interface{}{
+		"date_from": dateFrom,
+		"date_to":   dateTo,
+	}
+
+	tickets, err := h.adminService.ListTickets(c.Request.Context(), filters)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get report data"})
+		return
+	}
+
+	// Process data based on report type
+	switch reportType {
+	case "summary":
+		response := gin.H{
+			"total_tickets": len(tickets),
+			"pending":       countTicketsByStatus(tickets, "pending"),
+			"serving":       countTicketsByStatus(tickets, "serving"),
+			"completed":     countTicketsByStatus(tickets, "completed"),
+			"cancelled":     countTicketsByStatus(tickets, "cancelled"),
+			"no_show":       countTicketsByStatus(tickets, "no_show"),
+		}
+		c.JSON(http.StatusOK, response)
+	case "detailed":
+		c.JSON(http.StatusOK, tickets)
+	case "performance":
+		response := gin.H{
+			"avg_wait_time":    calculateAverageWaitTime(tickets),
+			"avg_service_time": calculateAverageServiceTime(tickets),
+			"completion_rate":  calculateCompletionRate(tickets),
+		}
+		c.JSON(http.StatusOK, response)
+	case "categories":
+		response := gin.H{
+			"categories": getCategoryBreakdown(tickets),
+		}
+		c.JSON(http.StatusOK, response)
+	case "counters":
+		response := gin.H{
+			"counters": getCounterBreakdown(tickets),
+		}
+		c.JSON(http.StatusOK, response)
+	case "hourly":
+		response := gin.H{
+			"hourly_stats": getHourlyBreakdown(tickets),
+		}
+		c.JSON(http.StatusOK, response)
+	default:
+		// Return all data by default
+		c.JSON(http.StatusOK, tickets)
+	}
+}
+
+// Helper functions for report data processing
+func countTicketsByStatus(tickets []model.Ticket, status string) int {
+	count := 0
+	for _, ticket := range tickets {
+		if ticket.Status == status {
+			count++
+		}
+	}
+	return count
+}
+
+func calculateAverageWaitTime(tickets []model.Ticket) float64 {
+	if len(tickets) == 0 {
+		return 0
+	}
+
+	total := 0
+	count := 0
+	for _, ticket := range tickets {
+		if ticket.WaitTime != nil {
+			total += *ticket.WaitTime
+			count++
+		}
+	}
+
+	if count == 0 {
+		return 0
+	}
+	return float64(total) / float64(count)
+}
+
+func calculateAverageServiceTime(tickets []model.Ticket) float64 {
+	if len(tickets) == 0 {
+		return 0
+	}
+
+	total := 0
+	count := 0
+	for _, ticket := range tickets {
+		if ticket.ServiceTime != nil {
+			total += *ticket.ServiceTime
+			count++
+		}
+	}
+
+	if count == 0 {
+		return 0
+	}
+	return float64(total) / float64(count)
+}
+
+func calculateCompletionRate(tickets []model.Ticket) float64 {
+	if len(tickets) == 0 {
+		return 0
+	}
+
+	completed := countTicketsByStatus(tickets, "completed")
+	return float64(completed) / float64(len(tickets)) * 100
+}
+
+func getCategoryBreakdown(tickets []model.Ticket) []gin.H {
+	categoryMap := make(map[string]int)
+
+	for _, ticket := range tickets {
+		categoryName := ticket.Category.Name
+		categoryMap[categoryName]++
+	}
+
+	var result []gin.H
+	for category, count := range categoryMap {
+		result = append(result, gin.H{
+			"category": category,
+			"count":    count,
+		})
+	}
+
+	return result
+}
+
+func getCounterBreakdown(tickets []model.Ticket) []gin.H {
+	counterMap := make(map[string]int)
+
+	for _, ticket := range tickets {
+		if ticket.Counter != nil {
+			counterName := ticket.Counter.Name
+			counterMap[counterName]++
+		}
+	}
+
+	var result []gin.H
+	for counter, count := range counterMap {
+		result = append(result, gin.H{
+			"counter": counter,
+			"count":   count,
+		})
+	}
+
+	return result
+}
+
+func getHourlyBreakdown(tickets []model.Ticket) []gin.H {
+	hourMap := make(map[int]int)
+
+	for _, ticket := range tickets {
+		hour := ticket.CreatedAt.Hour()
+		hourMap[hour]++
+	}
+
+	var result []gin.H
+	for hour := 0; hour < 24; hour++ {
+		count := hourMap[hour]
+		result = append(result, gin.H{
+			"hour":  hour,
+			"count": count,
+		})
+	}
+
+	return result
 }

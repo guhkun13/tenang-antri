@@ -1,5 +1,10 @@
 package model
 
+import (
+	"encoding/json"
+	"strconv"
+)
+
 // LoginRequest represents login credentials
 type LoginRequest struct {
 	Username string `json:"username" form:"username" validate:"required"`
@@ -37,6 +42,56 @@ type CreateCategoryRequest struct {
 	ColorCode   string `json:"color_code" form:"color_code"`
 	Description string `json:"description" form:"description"`
 	Icon        string `json:"icon" form:"icon"`
+}
+
+// UnmarshalJSON for CreateCategoryRequest to handle string priority
+func (r *CreateCategoryRequest) UnmarshalJSON(data []byte) error {
+	type Alias CreateCategoryRequest
+	aux := &struct {
+		Name        string      `json:"name"`
+		Prefix      string      `json:"prefix"`
+		Priority    interface{} `json:"priority"`
+		ColorCode   string      `json:"color_code"`
+		Description string      `json:"description"`
+		Icon        string      `json:"icon"`
+	}{}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	r.Name = aux.Name
+	r.Prefix = aux.Prefix
+	r.ColorCode = aux.ColorCode
+	r.Description = aux.Description
+	r.Icon = aux.Icon
+
+	// Handle priority conversion
+	switch v := aux.Priority.(type) {
+	case int:
+		r.Priority = v
+	case float64:
+		r.Priority = int(v)
+	case string:
+		if v == "" {
+			r.Priority = 0
+		} else {
+			if parsed, err := strconv.Atoi(v); err == nil {
+				r.Priority = parsed
+			} else {
+				r.Priority = 0
+			}
+		}
+	default:
+		r.Priority = 0
+	}
+
+	return nil
+}
+
+// UpdateCategoryStatusRequest represents category status update request
+type UpdateCategoryStatusRequest struct {
+	IsActive bool `json:"is_active"`
 }
 
 // CreateCounterRequest represents counter creation request

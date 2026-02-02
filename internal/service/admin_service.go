@@ -161,9 +161,25 @@ func (s *AdminService) UpdateCategory(ctx context.Context, id int, req *model.Cr
 	return s.categoryRepo.Update(ctx, category)
 }
 
+// UpdateCategoryStatus updates only the status of a category
+func (s *AdminService) UpdateCategoryStatus(ctx context.Context, id int, isActive bool) (*model.Category, error) {
+	category, err := s.categoryRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	category.IsActive = isActive
+	return s.categoryRepo.Update(ctx, category)
+}
+
 // DeleteCategory deletes a category
 func (s *AdminService) DeleteCategory(ctx context.Context, id int) error {
 	return s.categoryRepo.Delete(ctx, id)
+}
+
+// GetCategory gets a category by ID
+func (s *AdminService) GetCategory(ctx context.Context, id int) (*model.Category, error) {
+	return s.categoryRepo.GetByID(ctx, id)
 }
 
 // ListCategories lists categories with optional active filter

@@ -106,9 +106,7 @@
             <div class="ml-3">
               <p class="text-sm text-gray-500">Active</p>
               <p class="text-xl font-bold text-gray-800">
-                {{range $index, $category := .Categories}} {{if
-                $category.IsActive}} {{add $index 1}} {{$category.Name}} {{end}}
-                {{end}}
+                {{countActive .Categories}}
               </p>
             </div>
           </div>
@@ -123,8 +121,7 @@
             <div class="ml-3">
               <p class="text-sm text-gray-500">Inactive</p>
               <p class="text-xl font-bold text-gray-800">
-                {{range .Categories}}{{if not .IsActive}}{{add .
-                1}}{{end}}{{end}}
+                {{countInactive .Categories}}
               </p>
             </div>
           </div>
@@ -139,8 +136,8 @@
             <div class="ml-3">
               <p class="text-sm text-gray-500">Avg Priority</p>
               <p class="text-xl font-bold text-gray-800">
-                {{if len .Categories}}{{div (add (index (slice .Categories 0)
-                "Priority" 0)) (len .Categories)}}{{else}}0{{end}}
+                {{if len .Categories}}{{div (sum .Categories "Priority") (len
+                .Categories)}}{{else}}0{{end}}
               </p>
             </div>
           </div>
@@ -180,7 +177,7 @@
               <div class="flex items-start justify-between mb-4">
                 <div
                   class="w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl shadow-md"
-                  style="background-color: '{{.ColorCode}}';"
+                  style="background-color: {{.ColorCode}}"
                 >
                   <i class="fas fa-{{.Icon}}"></i>
                 </div>
@@ -193,7 +190,7 @@
                     <i class="fas fa-edit"></i>
                   </button>
                   <button
-                    onclick="toggleCategoryStatus('{{.ID}}', '{{.IsActive}}')"
+                    onclick="toggleCategoryStatus('{{.ID}}', '{{if .IsActive}}active{{else}}inactive{{end}}')"
                     class="text-{{if .IsActive}}yellow-600 hover:text-yellow-800{{else}}green-600 hover:text-green-800{{end}} p-2 rounded-full hover:bg-gray-50"
                     title="{{if .IsActive}}Deactivate{{else}}Activate{{end}}"
                   >
@@ -216,7 +213,7 @@
                 <div class="flex items-center space-x-4">
                   <span
                     class="px-3 py-1 rounded-full font-bold text-white text-xs"
-                    style="background-color: '{{.ColorCode}}';"
+                    style="background-color: {{.ColorCode}};"
                   >
                     {{.Prefix}}
                   </span>
@@ -304,21 +301,12 @@
             <label class="block text-sm font-medium text-gray-700 mb-1"
               >Color</label
             >
-            <div class="flex items-center space-x-2">
-              <input
-                type="color"
-                name="color_code"
-                value="#3B82F6"
-                class="w-16 h-10 border rounded-lg"
-              />
-              <input
-                type="text"
-                name="color_text"
-                value="#3B82F6"
-                class="flex-1 border rounded-lg px-3 py-2"
-                placeholder="#000000"
-              />
-            </div>
+            <input
+              type="color"
+              name="color_code"
+              value="#3B82F6"
+              class="w-full h-10 border rounded-lg"
+            />
           </div>
         </div>
         <div>
@@ -436,8 +424,13 @@
               name="name"
               id="editName"
               required
+              minlength="2"
+              maxlength="100"
               class="w-full border rounded-lg px-3 py-2"
+              oninput="validateName(this)"
+              onblur="validateName(this)"
             />
+            <span class="text-xs text-red-600 hidden" id="editNameError"></span>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1"
@@ -448,9 +441,16 @@
               name="prefix"
               id="editPrefix"
               required
-              maxlength="5"
+              maxlength="10"
+              pattern="[A-Za-z0-9]+"
               class="w-full border rounded-lg px-3 py-2"
+              oninput="validatePrefix(this)"
+              onblur="validatePrefix(this)"
             />
+            <span
+              class="text-xs text-red-600 hidden"
+              id="editPrefixError"
+            ></span>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
@@ -466,26 +466,24 @@
               min="0"
               max="100"
               class="w-full border rounded-lg px-3 py-2"
+              oninput="validatePriority(this)"
+              onblur="validatePriority(this)"
             />
+            <span
+              class="text-xs text-red-600 hidden"
+              id="editPriorityError"
+            ></span>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1"
               >Color</label
             >
-            <div class="flex items-center space-x-2">
-              <input
-                type="color"
-                name="color_code"
-                id="editColorCode"
-                class="w-16 h-10 border rounded-lg"
-              />
-              <input
-                type="text"
-                name="color_text"
-                id="editColorText"
-                class="flex-1 border rounded-lg px-3 py-2"
-              />
-            </div>
+            <input
+              type="color"
+              name="color_code"
+              id="editColorCode"
+              class="w-full h-10 border rounded-lg"
+            />
           </div>
         </div>
         <div>
@@ -580,240 +578,6 @@
   </div>
 </div>
 
-<script>
-  let selectedIcon = "users";
-  let editSelectedIcon = "users";
-
-  // Modal functions
-  function openModal(id) {
-    document.getElementById(id).classList.remove("hidden");
-    document.getElementById(id).classList.add("flex");
-  }
-
-  function closeModal(id) {
-    document.getElementById(id).classList.add("hidden");
-    document.getElementById(id).classList.remove("flex");
-  }
-
-  // Icon selection functions
-  function selectIcon(icon) {
-    selectedIcon = icon;
-    document.getElementById("selectedIcon").value = icon;
-
-    // Update UI to show selected icon
-    document.querySelectorAll(".icon-option").forEach((btn) => {
-      btn.classList.remove("bg-blue-100", "border-blue-500");
-    });
-    document
-      .querySelector(`[data-icon="${icon}"]`)
-      .classList.add("bg-blue-100", "border-blue-500");
-  }
-
-  function selectEditIcon(icon) {
-    editSelectedIcon = icon;
-    document.getElementById("editSelectedIcon").value = icon;
-
-    // Update UI to show selected icon
-    document.querySelectorAll(".edit-icon-option").forEach((btn) => {
-      btn.classList.remove("bg-blue-100", "border-blue-500");
-    });
-    document
-      .querySelector(`[edit-data-icon="${icon}"]`)
-      .classList.add("bg-blue-100", "border-blue-500");
-  }
-
-  // Color sync functions
-  document.addEventListener("DOMContentLoaded", function () {
-    // Sync color picker with text input
-    const colorCodeInput = document.querySelector('input[name="color_code"]');
-    const colorTextInput = document.querySelector('input[name="color_text"]');
-
-    if (colorCodeInput && colorTextInput) {
-      colorCodeInput.addEventListener("input", function () {
-        colorTextInput.value = this.value;
-      });
-
-      colorTextInput.addEventListener("input", function () {
-        if (/^#[0-9A-F]{6}$/i.test(this.value)) {
-          colorCodeInput.value = this.value;
-        }
-      });
-    }
-
-    // Edit modal color sync
-    const editColorCodeInput = document.getElementById("editColorCode");
-    const editColorTextInput = document.getElementById("editColorText");
-
-    if (editColorCodeInput && editColorTextInput) {
-      editColorCodeInput.addEventListener("input", function () {
-        editColorTextInput.value = this.value;
-      });
-
-      editColorTextInput.addEventListener("input", function () {
-        if (/^#[0-9A-F]{6}$/i.test(this.value)) {
-          editColorCodeInput.value = this.value;
-        }
-      });
-    }
-  });
-
-  // Category management functions
-  async function addCategory(event) {
-    event.preventDefault();
-    const form = event.target;
-    const data = Object.fromEntries(new FormData(form));
-
-    try {
-      const response = await fetch("/admin/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        alert(error.error || "Failed to add category");
-      }
-    } catch (error) {
-      alert("Network error");
-    }
-    return false;
-  }
-
-  async function loadCategoryForEdit(id) {
-    try {
-      const response = await fetch(`/admin/api/categories/${id}`);
-      if (response.ok) {
-        const category = await response.json();
-
-        // Populate edit form
-        document.getElementById("editCategoryId").value = category.id;
-        document.getElementById("editName").value = category.name || "";
-        document.getElementById("editPrefix").value = category.prefix || "";
-        document.getElementById("editPriority").value = category.priority || 0;
-        document.getElementById("editColorCode").value =
-          category.color_code || "#3B82F6";
-        document.getElementById("editColorText").value =
-          category.color_code || "#3B82F6";
-        document.getElementById("editDescription").value =
-          category.description || "";
-
-        // Select icon
-        selectEditIcon(category.icon || "users");
-
-        openModal("editCategoryModal");
-      } else {
-        alert("Failed to load category data");
-      }
-    } catch (error) {
-      alert("Network error");
-    }
-  }
-
-  async function updateCategory(event) {
-    event.preventDefault();
-    const form = event.target;
-    const id = form.id.value;
-    const data = Object.fromEntries(new FormData(form));
-    delete data.id; // Remove ID field from request body
-
-    try {
-      const response = await fetch(`/admin/api/categories/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        alert(error.error || "Failed to update category");
-      }
-    } catch (error) {
-      alert("Network error");
-    }
-    return false;
-  }
-
-  async function toggleCategoryStatus(id, currentStatus) {
-    const action = currentStatus === "active" ? "deactivate" : "activate";
-    if (!confirm(`Are you sure you want to ${action} this category?`)) return;
-
-    try {
-      const newStatus = currentStatus === "active" ? false : true;
-      const response = await fetch(`/admin/api/categories/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_active: newStatus }),
-      });
-
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        alert(error.error || `Failed to ${action} category`);
-      }
-    } catch (error) {
-      alert("Network error");
-    }
-  }
-
-  async function deleteCategory(id) {
-    if (
-      !confirm(
-        "Are you sure you want to delete this category? This action cannot be undone.",
-      )
-    )
-      return;
-
-    try {
-      const response = await fetch(`/admin/api/categories/${id}`, {
-        method: "DELETE",
-      });
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        alert("Failed to delete category");
-      }
-    } catch (error) {
-      alert("Network error");
-    }
-  }
-
-  function editCategory(id) {
-    loadCategoryForEdit(id);
-  }
-
-  // Filter and search functions
-  function filterCategories() {
-    const searchTerm = document
-      .getElementById("categorySearch")
-      .value.toLowerCase();
-    const statusFilter = document.getElementById("filterStatus").value;
-    const cards = document.querySelectorAll(".category-card");
-
-    cards.forEach((card) => {
-      const name = card.dataset.name.toLowerCase();
-      const status = card.dataset.status;
-      const matchesSearch = name.includes(searchTerm);
-      const matchesStatus = !statusFilter || status === statusFilter;
-
-      if (matchesSearch && matchesStatus) {
-        card.style.display = "";
-      } else {
-        card.style.display = "none";
-      }
-    });
-  }
-
-  // Initialize selected icons
-  document.addEventListener("DOMContentLoaded", function () {
-    selectIcon("users");
-    selectEditIcon("users");
-  });
-</script>
+<script src="/static/js/categories.js"></script>
 
 {{ template "layouts/_footer.html" }}
