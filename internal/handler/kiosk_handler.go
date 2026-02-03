@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
+	"queue-system/internal/dto"
 	"queue-system/internal/model"
 	"queue-system/internal/service"
 	"queue-system/internal/websocket"
@@ -41,7 +42,7 @@ func (h *KioskHandler) ShowKiosk(c *gin.Context) {
 
 // GenerateTicket generates a new ticket from kiosk
 func (h *KioskHandler) GenerateTicket(c *gin.Context) {
-	var req model.CreateTicketRequest
+	var req dto.CreateTicketRequest
 	if err := c.ShouldBind(&req); err != nil {
 		if c.GetHeader("HX-Request") != "" {
 			c.HTML(http.StatusBadRequest, "pages/kiosk/ticket_error.html", gin.H{

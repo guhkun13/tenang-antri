@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"queue-system/internal/config"
+	"queue-system/internal/dto"
 	"queue-system/internal/middleware"
 	"queue-system/internal/model"
 	"queue-system/internal/service"
@@ -27,7 +28,7 @@ func NewAuthHandler(userService *service.UserService, cfg *config.JWTConfig) *Au
 
 // Login handles user login
 func (h *AuthHandler) Login(c *gin.Context) {
-	var req model.LoginRequest
+	var req dto.LoginRequest
 	err := c.ShouldBind(&req)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to bind login request")
@@ -109,7 +110,7 @@ func (h *AuthHandler) GetProfile(c *gin.Context) {
 func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 	userID := middleware.GetCurrentUserID(c)
 
-	var req model.UpdateProfileRequest
+	var req dto.UpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -128,7 +129,7 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	userID := middleware.GetCurrentUserID(c)
 
-	var req model.ChangePasswordRequest
+	var req dto.ChangePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

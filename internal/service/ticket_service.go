@@ -5,6 +5,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"queue-system/internal/dto"
 	"queue-system/internal/model"
 	"queue-system/internal/repository"
 )
@@ -25,7 +26,7 @@ func NewTicketService(ticketRepo *repository.TicketRepository, categoryRepo *rep
 }
 
 // CreateTicket creates a new ticket
-func (s *TicketService) CreateTicket(ctx context.Context, req *model.CreateTicketRequest) (*model.Ticket, error) {
+func (s *TicketService) CreateTicket(ctx context.Context, req *dto.CreateTicketRequest) (*model.Ticket, error) {
 	// Get category to validate and get prefix
 	category, err := s.categoryRepo.GetByID(ctx, req.CategoryID)
 	if err != nil {
@@ -60,7 +61,7 @@ func (s *TicketService) GetTicket(ctx context.Context, id int) (*model.Ticket, e
 }
 
 // UpdateTicketStatus updates the status of a ticket
-func (s *TicketService) UpdateTicketStatus(ctx context.Context, id int, req *model.UpdateTicketStatusRequest) (*model.Ticket, error) {
+func (s *TicketService) UpdateTicketStatus(ctx context.Context, id int, req *dto.UpdateTicketStatusRequest) (*model.Ticket, error) {
 	err := s.ticketRepo.UpdateStatus(ctx, id, req.Status)
 	if err != nil {
 		return nil, err

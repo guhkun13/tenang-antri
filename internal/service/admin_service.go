@@ -3,12 +3,34 @@ package service
 import (
 	"context"
 	"database/sql"
+	"strconv"
 
 	"github.com/rs/zerolog/log"
 
+	"queue-system/internal/dto"
 	"queue-system/internal/model"
 	"queue-system/internal/repository"
 )
+
+// getPriorityFromInterface converts priority interface{} to int
+func getPriorityFromInterface(priority interface{}) int {
+	switch v := priority.(type) {
+	case int:
+		return v
+	case float64:
+		return int(v)
+	case string:
+		if v == "" {
+			return 0
+		}
+		if parsed, err := strconv.Atoi(v); err == nil {
+			return parsed
+		}
+		return 0
+	default:
+		return 0
+	}
+}
 
 // AdminService handles admin-specific business logic
 type AdminService struct {
@@ -37,6 +59,8 @@ func (s *AdminService) GetDashboardData(ctx context.Context) (*model.DashboardSt
 		stats = &model.DashboardStats{TicketsByStatus: make(map[string]int)}
 	}
 
+	log.Info().Interface("stats", stats).Msg("Dashboard stats")
+
 	counters, err := s.counterRepo.List(ctx)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to get counters")
@@ -60,7 +84,7 @@ func (s *AdminService) GetStats(ctx context.Context) (*model.DashboardStats, err
 // User Management methods
 
 // CreateUser creates a new user
-func (s *AdminService) CreateUser(ctx context.Context, req *model.CreateUserRequest) (*model.User, error) {
+func (s *AdminService) CreateUser(ctx context.Context, req *dto.CreateUserRequest) (*model.User, error) {
 	user := &model.User{
 		Username:  req.Username,
 		Password:  req.Password,
@@ -80,7 +104,7 @@ func (s *AdminService) GetUser(ctx context.Context, id int) (*model.User, error)
 }
 
 // UpdateUserProfile updates user profile (without password)
-func (s *AdminService) UpdateUserProfile(ctx context.Context, id int, req *model.UpdateUserRequest) (*model.User, error) {
+func (s *AdminService) UpdateUserProfile(ctx context.Context, id int, req *dto.UpdateUserRequest) (*model.User, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -96,7 +120,7 @@ func (s *AdminService) UpdateUserProfile(ctx context.Context, id int, req *model
 }
 
 // UpdateUser updates a user
-func (s *AdminService) UpdateUser(ctx context.Context, id int, req *model.CreateUserRequest) (*model.User, error) {
+func (s *AdminService) UpdateUser(ctx context.Context, id int, req *dto.UpdateUserRequest) (*model.User, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -130,11 +154,11 @@ func (s *AdminService) ListUsers(ctx context.Context, role string) ([]model.User
 // Category Management methods
 
 // CreateCategory creates a new category
-func (s *AdminService) CreateCategory(ctx context.Context, req *model.CreateCategoryRequest) (*model.Category, error) {
+func (s *AdminService) CreateCategory(ctx context.Context, req *dto.CreateCategoryRequest) (*model.Category, error) {
 	category := &model.Category{
 		Name:        req.Name,
 		Prefix:      req.Prefix,
-		Priority:    req.Priority,
+		Priority:    getPriorityFromInterface(req.Priority),
 		ColorCode:   req.ColorCode,
 		Description: req.Description,
 		Icon:        req.Icon,
@@ -145,7 +169,7 @@ func (s *AdminService) CreateCategory(ctx context.Context, req *model.CreateCate
 }
 
 // UpdateCategory updates a category
-func (s *AdminService) UpdateCategory(ctx context.Context, id int, req *model.CreateCategoryRequest) (*model.Category, error) {
+func (s *AdminService) UpdateCategory(ctx context.Context, id int, req *dto.CreateCategoryRequest) (*model.Category, error) {
 	category, err := s.categoryRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -153,7 +177,7 @@ func (s *AdminService) UpdateCategory(ctx context.Context, id int, req *model.Cr
 
 	category.Name = req.Name
 	category.Prefix = req.Prefix
-	category.Priority = req.Priority
+	category.Priority = getPriorityFromInterface(req.Priority)
 	category.ColorCode = req.ColorCode
 	category.Description = req.Description
 	category.Icon = req.Icon
@@ -295,7 +319,7 @@ func (s *AdminService) GetTicket(ctx context.Context, id int) (*model.Ticket, er
 }
 
 // CreateTicket creates a new ticket
-func (s *AdminService) CreateTicket(ctx context.Context, req *model.CreateTicketRequest) (*model.Ticket, error) {
+func (s *AdminService) CreateTicket(ctx context.Context, req *dto.CreateTicketRequest) (*model.Ticket, error) {
 	return s.ticketRepo.Create(ctx, &model.Ticket{
 		CategoryID: req.CategoryID,
 		Status:     "waiting",
@@ -304,7 +328,7 @@ func (s *AdminService) CreateTicket(ctx context.Context, req *model.CreateTicket
 }
 
 // UpdateTicketStatus updates ticket status
-func (s *AdminService) UpdateTicketStatus(ctx context.Context, id int, req *model.UpdateTicketStatusRequest) (*model.Ticket, error) {
+func (s *AdminService) UpdateTicketStatus(ctx context.Context, id int, req *dto.UpdateTicketStatusRequest) (*model.Ticket, error) {
 	err := s.ticketRepo.UpdateStatus(ctx, id, req.Status)
 	if err != nil {
 		return nil, err

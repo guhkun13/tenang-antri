@@ -5,6 +5,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"queue-system/internal/dto"
 	"queue-system/internal/model"
 	"queue-system/internal/repository"
 )
@@ -33,42 +34,42 @@ func NewStaffService(userRepo *repository.UserRepository,
 }
 
 // GetDashboardData gets staff dashboard data
-func (s *StaffService) GetDashboardData(ctx context.Context, userID int) (*model.User, *model.Counter, *model.Ticket, []model.Ticket, []model.CategoryQueueStats, []model.Ticket, []int, error) {
+func (s *StaffService) GetDashboardData(ctx context.Context, userID int) (*dto.StaffDashboardResponse, error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load user")
-		return nil, nil, nil, nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	if user.CounterID.Int64 == 0 {
-		return nil, nil, nil, nil, nil, nil, nil, nil
+		return nil, nil
 	}
 
 	counter, err := s.counterRepo.GetByID(ctx, int(user.CounterID.Int64))
 	if err != nil {
 		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load counter")
-		return nil, nil, nil, nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	// Load counter categories
 	counter.Categories, err = s.counterRepo.GetCategories(ctx, counter.ID)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load counter categories")
-		return nil, nil, nil, nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	// Get current serving ticket
 	currentTicket, err := s.ticketRepo.GetCurrentForCounter(ctx, counter.ID)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load current ticket")
-		return nil, nil, nil, nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	if currentTicket != nil && currentTicket.CategoryID != 0 {
 		currentCategory, err := s.categoryRepo.GetByID(ctx, currentTicket.CategoryID)
 		if err != nil {
 			log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load current ticket category")
-			return nil, nil, nil, nil, nil, nil, nil, err
+			return nil, err
 		}
 		currentTicket.Category = currentCategory
 	}
@@ -84,7 +85,7 @@ func (s *StaffService) GetDashboardData(ctx context.Context, userID int) (*model
 	waitingTickets, err := s.ticketRepo.GetWaitingPreviewByCategories(ctx, categoryIDs, 5)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load waiting tickets preview")
-		return nil, nil, nil, nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	log.Info().Interface("waitingTickets", waitingTickets).Msg("Waiting tickets preview")
@@ -93,17 +94,27 @@ func (s *StaffService) GetDashboardData(ctx context.Context, userID int) (*model
 	queueStats, err := s.statsRepo.GetQueueLengthByCategories(ctx, categoryIDs)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load queue stats")
-		return nil, nil, nil, nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	// Get today's completed tickets
 	completedTickets, err := s.ticketRepo.GetTodayCompletedByCategories(ctx, categoryIDs)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load completed tickets")
-		return nil, nil, nil, nil, nil, nil, nil, err
+		return nil, err
 	}
 
-	return user, counter, currentTicket, waitingTickets, queueStats, completedTickets, categoryIDs, nil
+	response := &dto.StaffDashboardResponse{
+		User:             user,
+		Counter:          counter,
+		CurrentTicket:    currentTicket,
+		WaitingTickets:   waitingTickets,
+		QueueStats:       queueStats,
+		CompletedTickets: completedTickets,
+		CategoryIDs:      categoryIDs,
+	}
+
+	return response, nil
 }
 
 // CallNext calls the next ticket for a staff member
@@ -244,40 +255,47 @@ func (s *StaffService) ResumeCounter(ctx context.Context, userID int) error {
 }
 
 // GetQueueStatus gets queue status for staff
-func (s *StaffService) GetQueueStatus(ctx context.Context, userID int) (*model.Counter, *model.Ticket, []model.Ticket, []model.CategoryQueueStats, error) {
+func (s *StaffService) GetQueueStatus(ctx context.Context, userID int) (*dto.StaffQueueStatusResponse, error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	if user.CounterID.Int64 == 0 {
-		return nil, nil, nil, nil, nil // No counter assigned
+		return nil, nil
 	}
 
 	counter, err := s.counterRepo.GetByID(ctx, int(user.CounterID.Int64))
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	// Get waiting tickets
 	waitingTickets, err := s.ticketRepo.GetWaitingPreview(ctx, 10)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	// Get current ticket
 	currentTicket, err := s.ticketRepo.GetCurrentForCounter(ctx, counter.ID)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
 	// Get queue stats
 	queueStats, err := s.statsRepo.GetQueueLengthByCategory(ctx)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, err
 	}
 
-	return counter, currentTicket, waitingTickets, queueStats, nil
+	response := &dto.StaffQueueStatusResponse{
+		Counter:        counter,
+		CurrentTicket:  currentTicket,
+		WaitingTickets: waitingTickets,
+		QueueStats:     queueStats,
+	}
+
+	return response, nil
 }
 
 // GetCurrentTicket gets the current ticket for staff

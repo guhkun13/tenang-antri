@@ -28,25 +28,25 @@ func NewStaffHandler(staffService *service.StaffService, hub *websocket.Hub) *St
 func (h *StaffHandler) Dashboard(c *gin.Context) {
 	userID := middleware.GetCurrentUserID(c)
 
-	user, counter, currentTicket, waitingTickets, queueStats, completedTickets, categoryIDs, err := h.staffService.GetDashboardData(c.Request.Context(), userID)
+	data, err := h.staffService.GetDashboardData(c.Request.Context(), userID)
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"Error": "Failed to load dashboard data"})
 		return
 	}
 
-	if user == nil || counter == nil {
+	if data == nil || data.User == nil || data.Counter == nil {
 		c.HTML(http.StatusBadRequest, "error.html", gin.H{"Error": "No counter assigned"})
 		return
 	}
 
 	c.HTML(http.StatusOK, "pages/staff/dashboard.html", gin.H{
-		"User":             user,
-		"Counter":          counter,
-		"CurrentTicket":    currentTicket,
-		"WaitingTickets":   waitingTickets,
-		"QueueStats":       queueStats,
-		"CompletedTickets": completedTickets,
-		"CategoryIDs":      categoryIDs,
+		"User":             data.User,
+		"Counter":          data.Counter,
+		"CurrentTicket":    data.CurrentTicket,
+		"WaitingTickets":   data.WaitingTickets,
+		"QueueStats":       data.QueueStats,
+		"CompletedTickets": data.CompletedTickets,
+		"CategoryIDs":      data.CategoryIDs,
 	})
 }
 
@@ -134,22 +134,22 @@ func (h *StaffHandler) ResumeCounter(c *gin.Context) {
 func (h *StaffHandler) GetQueueStatus(c *gin.Context) {
 	userID := middleware.GetCurrentUserID(c)
 
-	counter, currentTicket, waitingTickets, queueStats, err := h.staffService.GetQueueStatus(c.Request.Context(), userID)
+	data, err := h.staffService.GetQueueStatus(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get queue status"})
 		return
 	}
 
-	if counter == nil {
+	if data == nil || data.Counter == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No counter assigned"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"counter":         counter,
-		"current_ticket":  currentTicket,
-		"waiting_tickets": waitingTickets,
-		"queue_stats":     queueStats,
+		"counter":         data.Counter,
+		"current_ticket":  data.CurrentTicket,
+		"waiting_tickets": data.WaitingTickets,
+		"queue_stats":     data.QueueStats,
 	})
 }
 

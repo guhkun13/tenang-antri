@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"fmt"
+	"queue-system/internal/dto"
 	"queue-system/internal/model"
 	"queue-system/internal/service"
 	"queue-system/internal/websocket"
@@ -76,7 +77,7 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 
 // CreateUser creates a new user
 func (h *AdminHandler) CreateUser(c *gin.Context) {
-	var req model.CreateUserRequest
+	var req dto.CreateUserRequest
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -116,7 +117,7 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	var req model.UpdateUserRequest
+	var req dto.UpdateUserRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -199,7 +200,7 @@ func (h *AdminHandler) GetCategory(c *gin.Context) {
 
 // CreateCategory creates a new category
 func (h *AdminHandler) CreateCategory(c *gin.Context) {
-	var req model.CreateCategoryRequest
+	var req dto.CreateCategoryRequest
 	if err := c.ShouldBind(&req); err != nil {
 		log.Error().Err(err).Str("layer", "handler").Str("func", "CreateCategory").Msg("Failed to bind category request")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
@@ -224,7 +225,7 @@ func (h *AdminHandler) UpdateCategory(c *gin.Context) {
 		return
 	}
 
-	var req model.CreateCategoryRequest
+	var req dto.CreateCategoryRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Error().Err(err).Str("layer", "handler").Str("func", "UpdateCategory").Msg("Failed to bind category update request")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
@@ -249,7 +250,7 @@ func (h *AdminHandler) UpdateCategoryStatus(c *gin.Context) {
 		return
 	}
 
-	var req model.UpdateCategoryStatusRequest
+	var req dto.UpdateCategoryStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		log.Error().Err(err).Str("layer", "handler").Str("func", "UpdateCategoryStatus").Msg("Failed to bind category status request")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
@@ -472,7 +473,7 @@ func (h *AdminHandler) GetTicket(c *gin.Context) {
 
 // CreateTicket creates a new ticket
 func (h *AdminHandler) CreateTicket(c *gin.Context) {
-	var req model.CreateTicketRequest
+	var req dto.CreateTicketRequest
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -500,7 +501,7 @@ func (h *AdminHandler) UpdateTicketStatus(c *gin.Context) {
 		return
 	}
 
-	var req model.UpdateTicketStatusRequest
+	var req dto.UpdateTicketStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

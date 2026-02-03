@@ -1,0 +1,465 @@
+{{template "layouts/_header.html"}}
+
+<div class="flex h-screen bg-gray-100">
+    <!-- Sidebar -->
+    <aside class="bg-gray-800 text-white w-64 flex-shrink-0 hidden md:block">
+        <div class="p-4 border-b border-gray-700">
+            <h1 class="text-xl font-bold"><i class="fas fa-ticket-alt mr-2"></i>QMS Admin</h1>
+        </div>
+        <nav class="p-4 space-y-2">
+            <a href="/admin/dashboard" class="block px-4 py-2 bg-blue-600 rounded-lg">
+                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+            </a>
+            <a href="/admin/tickets" class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-ticket-alt mr-2"></i>Tickets
+            </a>
+            <a href="/admin/categories" class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-tags mr-2"></i>Categories
+            </a>
+            <a href="/admin/counters" class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-desktop mr-2"></i>Counters
+            </a>
+            <a href="/admin/users" class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-users mr-2"></i>Staff
+            </a>
+            <a href="/admin/reports" class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition">
+                <i class="fas fa-chart-bar mr-2"></i>Reports
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800">Dashboard</h2>
+                    <p class="text-sm text-gray-600 mt-1">Real-time queue management overview</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="refreshStats()" class="text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center space-x-2 text-gray-700 hover:text-gray-900">
+                            <i class="fas fa-user-circle text-2xl"></i>
+                            <span>Admin</span>
+                            <i class="fas fa-chevron-down text-sm"></i>
+                        </button>
+                        <div x-show="open" @click.away="open = false"
+                             class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
+                            <a href="/profile" class="block px-4 py-2 hover:bg-gray-100">
+                                <i class="fas fa-user mr-2"></i>Profile
+                            </a>
+                            <a href="/logout" class="block px-4 py-2 hover:bg-gray-100 text-red-600">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/kiosk" target="_blank" class="text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-desktop mr-1"></i>Kiosk
+                    </a>
+                    <a href="/display" target="_blank" class="text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-tv mr-1"></i>Display
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <main class="flex-1 overflow-y-auto p-6">
+            <!-- Today's Performance Section -->
+            <section class="mb-8">
+                <div class="flex items-center mb-4">
+                    <div class="w-1 h-6 bg-blue-600 mr-3"></div>
+                    <h3 class="text-xl font-bold text-gray-800">Today's Performance</h3>
+                    <span class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                        {{now.Format "2006-01-02"}}
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Today's Tickets -->
+                    <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-blue-100 text-sm">Total Tickets</p>
+                                <p class="text-3xl font-bold">{{.Stats.TotalTicketsToday}}</p>
+                            </div>
+                            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                <i class="fas fa-ticket-alt text-2xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 space-y-2">
+                            {{range $key, $value := .Stats.TicketsByStatus}}
+                            <div class="flex justify-between text-sm">
+                                <span class="text-blue-100">{{$key}}:</span>
+                                <span class="font-bold">{{$value}}</span>
+                            </div>
+                            {{end}}
+                        </div>
+                    </div>
+
+                    <!-- Currently Serving -->
+                    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-green-100 text-sm">Currently Serving</p>
+                                <p class="text-3xl font-bold">{{.Stats.CurrentlyServing}}</p>
+                            </div>
+                            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                <i class="fas fa-headset text-2xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="text-center">
+                                    <p class="text-green-100 text-xs">Wait Time</p>
+                                    <p class="text-lg font-bold">
+                                        {{if gt .Stats.AvgWaitTime 0}}
+                                            {{div .Stats.AvgWaitTime 60}}m
+                                        {{else}}
+                                            --
+                                        {{end}}
+                                    </p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-green-100 text-xs">Service Time</p>
+                                    <p class="text-lg font-bold">
+                                        {{if gt .Stats.AvgServiceTime 0}}
+                                            {{div .Stats.AvgServiceTime 60}}m
+                                        {{else}}
+                                            --
+                                        {{end}}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Counters -->
+                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-purple-100 text-sm">Active Counters</p>
+                                <p class="text-3xl font-bold">{{.Stats.ActiveCounters}}</p>
+                            </div>
+                            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                <i class="fas fa-desktop text-2xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="text-center">
+                                    <p class="text-purple-100 text-xs">Paused</p>
+                                    <p class="text-lg font-bold">{{.Stats.PausedCounters}}</p>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-purple-100 text-xs">Total</p>
+                                    <p class="text-lg font-bold">{{add .Stats.ActiveCounters .Stats.PausedCounters}}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Waiting Queue -->
+                    <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-orange-100 text-sm">Waiting Queue</p>
+                                <p class="text-3xl font-bold">{{.Stats.WaitingTickets}}</p>
+                            </div>
+                            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                <i class="fas fa-clock text-2xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="bg-white bg-opacity-20 rounded-lg p-3">
+                                <p class="text-xs">Average wait time today: <strong>
+                                    {{if gt .Stats.AvgWaitTime 0}}
+                                        {{div .Stats.AvgWaitTime 60}}m {{mod .Stats.AvgWaitTime 60}}s
+                                    {{else}}
+                                        No wait time yet
+                                    {{end}}
+                                </strong></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Overall Statistics Section -->
+            <section>
+                <div class="flex items-center mb-4">
+                    <div class="w-1 h-6 bg-gray-600 mr-3"></div>
+                    <h3 class="text-xl font-bold text-gray-800">Overall Statistics</h3>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Queue by Category -->
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="p-6 border-b border-gray-200">
+                            <h4 class="text-lg font-semibold text-gray-800">Queue by Category</h4>
+                            <a href="/admin/categories" class="text-blue-600 hover:text-blue-800 text-sm">Manage Categories →</a>
+                        </div>
+                        <div class="p-6">
+                            {{if .Stats.QueueLengthByCategory}}
+                                <div class="space-y-3">
+                                    {{range .Stats.QueueLengthByCategory}}
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div class="flex items-center">
+                                            <span class="w-3 h-3 rounded-full mr-3"
+                                                  style="background-color: '{{.ColorCode}}';"></span>
+                                            <div>
+                                            <span class="w-3 h-3 rounded-full mr-3"
+                                                  style="background-color: '{{.ColorCode}}';"></span>
+                                            <div>
+                                                <p class="font-medium">{{.CategoryName}}</p>
+                                                <p class="text-sm text-gray-500">{{.Prefix}}</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-2xl font-bold" style="color: '{{.ColorCode}}';">{{.WaitingCount}}</p>
+                                            <p class="text-sm text-gray-500">waiting</p>
+                                        </div>
+                                                <p class="text-sm text-gray-500">{{.Prefix}}</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-2xl font-bold" style="color: '{{.ColorCode}}';">{{.WaitingCount}}</p>
+                                            <p class="text-sm text-gray-500">waiting</p>
+                                        </div>
+                                    </div>
+                                    {{end}}
+                                </div>
+                            {{else}}
+                                <p class="text-center text-gray-500 py-8">No active categories found</p>
+                            {{end}}
+                        </div>
+                    </div>
+
+                    <!-- Hourly Distribution -->
+                    <div class="bg-white rounded-lg shadow">
+                        <div class="p-6 border-b border-gray-200">
+                            <h4 class="text-lg font-semibold text-gray-800">Today's Distribution</h4>
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="fas fa-clock mr-2"></i>
+                                Last updated: {{now.Format "15:04:05"}}
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            {{if .Stats.HourlyDistribution}}
+                                    <div class="flex items-center">
+                                        <span class="w-16 text-sm text-gray-600">{{.Hour}}:00</span>
+                                        <div class="flex-1 ml-2">
+                                            <div class="bg-gray-200 rounded-full h-6 relative">
+                                                <div class="bg-blue-500 rounded-full h-6 transition-all duration-300"></div>
+                                            </div>
+                                        </div>
+                                        <span class="ml-2 text-sm font-medium w-12 text-right">{{.Value}} tickets</span>
+                                    </div>
+                                            <div class="bg-gray-200 rounded-full h-6 relative">
+                                                <div class="bg-blue-500 rounded-full h-6 transition-all duration-300"></div>
+                                            </div>
+                                        </div>
+                                        <span class="ml-2 text-sm font-medium w-12 text-right">{{.Value}} tickets</span>
+                                    </div>
+                                    </div>
+                                    {{end}}
+                                </div>
+                            {{else}}
+                                <p class="text-center text-gray-500 py-8">No ticket activity today</p>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="mt-8">
+                <div class="flex items-center mb-4">
+                    <div class="w-1 h-6 bg-blue-600 mr-3"></div>
+                    <h3 class="text-xl font-bold text-gray-800">Quick Actions</h3>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <a href="/admin/tickets?status=waiting"
+                       class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800">View Waiting</p>
+                                <p class="text-sm text-gray-500">Manage queue</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="/admin/tickets?status=serving"
+                       class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-headset text-blue-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800">View Serving</p>
+                                <p class="text-sm text-gray-500">Active tickets</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="/admin/counters"
+                       class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-desktop text-purple-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800">Counters</p>
+                                <p class="text-sm text-gray-500">Manage service points</p>
+                            </div>
+                        </div>
+                    </a>
+
+                    <a href="/admin/reports"
+                       class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                                <i class="fas fa-chart-line text-green-600 text-xl"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800">Reports</p>
+                                <p class="text-sm text-gray-500">Analytics</p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<script>
+// WebSocket for real-time updates
+const ws = new WebSocket('ws://' + window.location.host + '/ws');
+
+ws.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+
+    if (data.type === 'stats_update') {
+        // Update stats dynamically without full page reload
+        updateStatsDisplay(data.payload);
+    } else if (data.type === 'ticket_update') {
+        // Show notification for ticket updates
+        showNotification('Ticket ' + data.payload.ticket_number + ' - ' + data.payload.status);
+    } else if (data.type === 'counter_update') {
+        showNotification('Counter ' + data.payload.name + ' - ' + data.payload.status);
+    }
+};
+
+function updateStatsDisplay(stats) {
+    // Update today's performance cards
+    updateTodayStats(stats);
+
+    // Update overall statistics
+    updateOverallStats(stats);
+}
+
+function updateTodayStats(stats) {
+    const elements = {
+        totalTickets: document.querySelector('[data-total-tickets]'),
+        currentlyServing: document.querySelector('[data-currently-serving]'),
+        waitingTickets: document.querySelector('[data-waiting-tickets]'),
+        activeCounters: document.querySelector('[data-active-counters]'),
+        avgWaitTime: document.querySelector('[data-avg-wait-time]'),
+        avgServiceTime: document.querySelector('[data-avg-service-time]')
+    };
+
+    // Update values with animation
+    animateValue(elements.totalTickets, stats.TotalTicketsToday);
+    animateValue(elements.currentlyServing, stats.CurrentlyServing);
+    animateValue(elements.waitingTickets, stats.WaitingTickets);
+    animateValue(elements.activeCounters, stats.ActiveCounters);
+}
+
+function updateOverallStats(stats) {
+    // Update queue by category and hourly distribution
+    // This would update the overall stats section
+    updateQueueByCategory(stats.QueueLengthByCategory);
+    updateHourlyDistribution(stats.HourlyDistribution);
+}
+
+function updateQueueByCategory(queueData) {
+    // Update category queue display
+    // Implementation would refresh the category queue section
+}
+
+function updateHourlyDistribution(hourlyData) {
+    // Update hourly chart
+    // Implementation would refresh the hourly distribution chart
+}
+
+function animateValue(element, newValue) {
+    if (!element) return;
+
+    const startValue = parseInt(element.textContent) || 0;
+    const duration = 1000;
+    const startTime = performance.now();
+
+    function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const currentValue = Math.floor(startValue + (newValue - startValue) * progress);
+        element.textContent = currentValue;
+
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        }
+    }
+
+    requestAnimationFrame(update);
+}
+
+function showNotification(message) {
+    // Create a simple toast notification
+    const toast = document.createElement('div');
+    toast.className = 'fixed bottom-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-pulse';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+function refreshStats() {
+    // Manual refresh button
+    fetch('/admin/api/stats')
+        .then(response => response.json())
+        .then(data => updateStatsDisplay(data))
+        .catch(error => console.error('Failed to refresh stats:', error));
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Add data attributes to elements for easier selection
+    const elements = document.querySelectorAll('[class*="text-3xl"]');
+    elements.forEach(el => {
+        if (el.textContent.includes('Total Tickets Today')) {
+            el.setAttribute('data-total-tickets', 'true');
+        } else if (el.textContent.includes('Currently Serving')) {
+            el.setAttribute('data-currently-serving', 'true');
+        } else if (el.textContent.includes('Waiting Tickets')) {
+            el.setAttribute('data-waiting-tickets', 'true');
+        } else if (el.textContent.includes('Active Counters')) {
+            el.setAttribute('data-active-counters', 'true');
+        }
+    });
+});
+</script>
+
+{{template "layouts/_footer.html"}}

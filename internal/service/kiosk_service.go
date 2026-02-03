@@ -5,6 +5,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"queue-system/internal/dto"
 	"queue-system/internal/model"
 	"queue-system/internal/repository"
 )
@@ -36,7 +37,7 @@ func (s *KioskService) GetCategories(ctx context.Context) ([]model.Category, err
 }
 
 // GenerateTicket generates a new ticket from kiosk
-func (s *KioskService) GenerateTicket(ctx context.Context, req *model.CreateTicketRequest) (*model.Ticket, int, int, error) {
+func (s *KioskService) GenerateTicket(ctx context.Context, req *dto.CreateTicketRequest) (*model.Ticket, int, int, error) {
 	// Get category to validate and get prefix
 	category, err := s.categoryRepo.GetByID(ctx, req.CategoryID)
 	if err != nil {

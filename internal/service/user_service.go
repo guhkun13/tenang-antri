@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
+	"queue-system/internal/dto"
 	"queue-system/internal/model"
 	"queue-system/internal/repository"
 )
@@ -31,7 +32,7 @@ func (s *UserService) GetUserByID(ctx context.Context, id int) (*model.User, err
 }
 
 // CreateUser creates a new user with hashed password
-func (s *UserService) CreateUser(ctx context.Context, req *model.CreateUserRequest) (*model.User, error) {
+func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserRequest) (*model.User, error) {
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -53,7 +54,7 @@ func (s *UserService) CreateUser(ctx context.Context, req *model.CreateUserReque
 }
 
 // UpdateUser updates user information
-func (s *UserService) UpdateUser(ctx context.Context, id int, req *model.CreateUserRequest) (*model.User, error) {
+func (s *UserService) UpdateUser(ctx context.Context, id int, req *dto.UpdateUserRequest) (*model.User, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -90,7 +91,7 @@ func (s *UserService) ResetUserPassword(ctx context.Context, id int) (string, er
 	return newPassword, err
 }
 
-// UpdateLastLogin updates the last login timestamp
+// UpdateLastLogin updates last login timestamp
 func (s *UserService) UpdateLastLogin(ctx context.Context, id int) error {
 	return s.userRepo.UpdateLastLogin(ctx, id)
 }
@@ -115,7 +116,7 @@ func (s *UserService) ValidatePassword(user *model.User, password string) error 
 }
 
 // UpdateProfile updates user profile information
-func (s *UserService) UpdateProfile(ctx context.Context, userID int, req *model.UpdateProfileRequest) (*model.User, error) {
+func (s *UserService) UpdateProfile(ctx context.Context, userID int, req *dto.UpdateProfileRequest) (*model.User, error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -129,7 +130,7 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID int, req *model.
 }
 
 // ChangePassword changes a user's password
-func (s *UserService) ChangePassword(ctx context.Context, userID int, req *model.ChangePasswordRequest) error {
+func (s *UserService) ChangePassword(ctx context.Context, userID int, req *dto.ChangePasswordRequest) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return err
