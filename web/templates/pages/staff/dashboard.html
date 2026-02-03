@@ -1,9 +1,9 @@
 {{ template "layouts/_header.html" }}
-<!-- html for saving the value to be used the javascript -->
+ <!-- html for saving the value to be used the javascript -->
 <div
   id="staff-data"
   data-has-ticket="{{if .CurrentTicket}}true{{else}}false{{end}}"
-  data-counter-status="{{.Counter.Status}}"
+  data-counter-status="{{if not .Counter.IsActive}}disabled{{else}}{{.Counter.Status}}{{end}}"
 ></div>
 
 <script>
@@ -106,8 +106,12 @@
           });
       },
 
-      toggleCounterStatus: function () {
+       toggleCounterStatus: function () {
         var self = this;
+        if (self.counterStatus === "disabled") {
+          self.showToast("Counter is disabled by admin", "error");
+          return;
+        }
         var action = self.counterStatus === "active" ? "pause" : "resume";
         fetch("/staff/" + action, { method: "POST" })
           .then(function (response) {
@@ -146,11 +150,11 @@
         <div class="flex items-center space-x-2">
           <span
             class="w-3 h-3 rounded-full"
-            :class="counterStatus === 'active' ? 'bg-green-500 animate-pulse' : 'bg-orange-500'"
+            :class="counterStatus === 'active' ? 'bg-green-500 animate-pulse' : (counterStatus === 'paused' ? 'bg-orange-500' : 'bg-red-500')"
           ></span>
           <span
             class="text-sm font-medium"
-            x-text="counterStatus === 'active' ? 'Active' : 'Paused'"
+            x-text="counterStatus === 'active' ? 'Active' : (counterStatus === 'paused' ? 'Paused' : 'Disabled')"
           ></span>
         </div>
         <div class="relative" x-data="{ open: false }">
@@ -249,15 +253,16 @@
       <div class="flex justify-center mb-8">
         <button
           @click="toggleCounterStatus()"
-          :class="counterStatus === 'active' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-500 hover:bg-green-600'"
+          :disabled="counterStatus === 'disabled'"
+          :class="counterStatus === 'disabled' ? 'bg-gray-400 cursor-not-allowed' : (counterStatus === 'active' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-500 hover:bg-green-600')"
           class="text-white font-semibold py-3 px-8 rounded-lg shadow transition duration-200"
         >
           <i
             class="fas mr-2"
-            :class="counterStatus === 'active' ? 'fa-pause' : 'fa-play'"
+            :class="counterStatus === 'disabled' ? 'fa-ban' : (counterStatus === 'active' ? 'fa-pause' : 'fa-play')"
           ></i>
           <span
-            x-text="counterStatus === 'active' ? 'Pause Counter' : 'Resume Counter'"
+            x-text="counterStatus === 'disabled' ? 'Counter Disabled' : (counterStatus === 'active' ? 'Pause Counter' : 'Resume Counter')"
           ></span>
         </button>
       </div>

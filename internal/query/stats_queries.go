@@ -106,7 +106,7 @@ func (q *StatsQueries) GetWaitingTicketsCount(ctx context.Context) pgx.Row {
 
 // GetActiveCountersCount retrieves count of active counters
 func (q *StatsQueries) GetActiveCountersCount(ctx context.Context) pgx.Row {
-	query := `SELECT COUNT(*) FROM counters WHERE status = 'active' AND is_active = true`
+	query := `SELECT COUNT(*) FROM counters WHERE is_active = true`
 	return q.pool.QueryRow(ctx, query)
 }
 

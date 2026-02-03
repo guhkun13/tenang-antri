@@ -7,9 +7,9 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"queue-system/internal/dto"
-	"queue-system/internal/model"
-	"queue-system/internal/repository"
+	"tenangantri/internal/dto"
+	"tenangantri/internal/model"
+	"tenangantri/internal/repository"
 )
 
 // UserService handles user-related business logic

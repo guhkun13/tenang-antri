@@ -6,8 +6,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"queue-system/internal/model"
-	"queue-system/internal/query"
+	"tenangantri/internal/model"
+	"tenangantri/internal/query"
 )
 
 // CategoryRepository handles category data operations

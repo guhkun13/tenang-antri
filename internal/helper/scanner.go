@@ -5,7 +5,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"queue-system/internal/model"
+	"tenangantri/internal/model"
 )
 
 // ScanUser scans a row into a User struct

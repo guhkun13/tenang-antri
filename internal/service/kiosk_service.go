@@ -5,9 +5,9 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"queue-system/internal/dto"
-	"queue-system/internal/model"
-	"queue-system/internal/repository"
+	"tenangantri/internal/dto"
+	"tenangantri/internal/model"
+	"tenangantri/internal/repository"
 )
 
 // KioskService handles kiosk-related business logic

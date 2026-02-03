@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
-	"queue-system/internal/model"
-	"queue-system/internal/service"
+	"tenangantri/internal/model"
+	"tenangantri/internal/service"
 )
 
 // DisplayHandler handles display-related requests

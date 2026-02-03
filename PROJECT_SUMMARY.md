@@ -1,4 +1,4 @@
-# Queue Management System - Project Summary
+# TenangAntri - Project Summary
 
 ## Overview
 
@@ -7,7 +7,7 @@ A comprehensive web-based Queue Management System built with Go, Gin framework, 
 ## Project Structure
 
 ```
-queue-system/
+tenangantri/
 ├── cmd/server/              # Application entry point
 │   └── main.go             # Main server setup and routing
 ├── internal/
@@ -185,9 +185,9 @@ docker-compose up -d
 go mod download
 
 # Setup database
-psql -U postgres -c "CREATE DATABASE queue_system;"
-psql -d queue_system -f migrations/001_initial_schema.up.sql
-psql -d queue_system -f migrations/002_seed_data.up.sql
+psql -U postgres -c "CREATE DATABASE tenangantri;"
+psql -d tenangantri -f migrations/001_initial_schema.up.sql
+psql -d tenangantri -f migrations/002_seed_data.up.sql
 
 # Run server
 go run cmd/server/main.go
@@ -201,7 +201,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=postgres
-DB_NAME=queue_system
+DB_NAME=tenangantri
 JWT_SECRET=your-secret-key
 JWT_ACCESS_TOKEN_EXPIRY=24h
 ```

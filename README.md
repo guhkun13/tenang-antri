@@ -1,4 +1,4 @@
-# Queue Management System
+# TenangAntri
 
 A comprehensive web-based queue management system built with Go, Gin, HTMX, and PostgreSQL.
 
@@ -56,9 +56,9 @@ A comprehensive web-based queue management system built with Go, Gin, HTMX, and 
 ### Manual Setup
 
 1. Install Go 1.21+ and PostgreSQL 15+
-2. Create database: `createdb queue_system`
-3. Run migrations: `psql -d queue_system -f migrations/001_initial_schema.up.sql`
-4. Run seed data: `psql -d queue_system -f migrations/002_seed_data.up.sql`
+2. Create database: `createdb tenangantri`
+3. Run migrations: `psql -d tenangantri -f migrations/001_initial_schema.up.sql`
+4. Run seed data: `psql -d tenangantri -f migrations/002_seed_data.up.sql`
 5. Install dependencies: `go mod download`
 6. Run server: `go run cmd/server/main.go`
 7. Access at http://localhost:8080
@@ -71,7 +71,7 @@ A comprehensive web-based queue management system built with Go, Gin, HTMX, and 
 ## Project Structure
 
 ```
-queue-system/
+tenangantri/
 ├── cmd/server/          # Application entry point
 ├── internal/
 │   ├── config/          # Configuration
@@ -134,7 +134,7 @@ queue-system/
 | DB_PORT | Database port | 5432 |
 | DB_USER | Database user | postgres |
 | DB_PASSWORD | Database password | postgres |
-| DB_NAME | Database name | queue_system |
+| DB_NAME | Database name | tenangantri |
 | JWT_SECRET | JWT secret key | your-secret-key |
 | JWT_ACCESS_TOKEN_EXPIRY | Token expiry | 24h |
 

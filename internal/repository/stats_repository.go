@@ -6,8 +6,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 
-	"queue-system/internal/model"
-	"queue-system/internal/query"
+	"tenangantri/internal/model"
+	"tenangantri/internal/query"
 )
 
 // StatsRepository handles statistics data operations

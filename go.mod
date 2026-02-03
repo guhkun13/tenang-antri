@@ -1,4 +1,4 @@
-module queue-system
+module tenangantri
 
 go 1.21
 

@@ -6,9 +6,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"queue-system/internal/middleware"
-	"queue-system/internal/service"
-	"queue-system/internal/websocket"
+	"tenangantri/internal/middleware"
+	"tenangantri/internal/service"
+	"tenangantri/internal/websocket"
 )
 
 // StaffHandler handles staff-related requests

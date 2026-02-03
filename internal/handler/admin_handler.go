@@ -10,10 +10,10 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"fmt"
-	"queue-system/internal/dto"
-	"queue-system/internal/model"
-	"queue-system/internal/service"
-	"queue-system/internal/websocket"
+	"tenangantri/internal/dto"
+	"tenangantri/internal/model"
+	"tenangantri/internal/service"
+	"tenangantri/internal/websocket"
 )
 
 // AdminHandler handles admin-related requests
@@ -380,6 +380,31 @@ func (h *AdminHandler) GetCounter(c *gin.Context) {
 		return
 	}
 
+	c.JSON(http.StatusOK, counter)
+}
+
+// UpdateCounterStatus updates only the is_active status of a counter
+func (h *AdminHandler) UpdateCounterStatus(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid counter ID"})
+		return
+	}
+
+	var req dto.UpdateCounterStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Error().Err(err).Str("layer", "handler").Str("func", "UpdateCounterStatus").Msg("Failed to bind counter status request")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format: " + err.Error()})
+		return
+	}
+
+	counter, err := h.adminService.UpdateCounterStatus(c.Request.Context(), id, req.IsActive)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update counter status"})
+		return
+	}
+
+	h.hub.Broadcast("counter_updated", counter)
 	c.JSON(http.StatusOK, counter)
 }
 

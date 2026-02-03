@@ -5,8 +5,8 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"queue-system/internal/model"
-	"queue-system/internal/repository"
+	"tenangantri/internal/model"
+	"tenangantri/internal/repository"
 )
 
 // DisplayService handles display-related business logic

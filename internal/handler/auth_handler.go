@@ -6,11 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
-	"queue-system/internal/config"
-	"queue-system/internal/dto"
-	"queue-system/internal/middleware"
-	"queue-system/internal/model"
-	"queue-system/internal/service"
+	"tenangantri/internal/config"
+	"tenangantri/internal/dto"
+	"tenangantri/internal/middleware"
+	"tenangantri/internal/model"
+	"tenangantri/internal/service"
 )
 
 // AuthHandler handles authentication requests

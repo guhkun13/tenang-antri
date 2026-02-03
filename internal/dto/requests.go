@@ -101,6 +101,11 @@ type CreateCounterRequest struct {
 	CategoryIDs []int  `json:"category_ids" form:"category_ids"`
 }
 
+// UpdateCounterStatusRequest represents counter status update request
+type UpdateCounterStatusRequest struct {
+	IsActive bool `json:"is_active"`
+}
+
 // CreateUserRequest represents user creation request
 type CreateUserRequest struct {
 	Username  string `json:"username" form:"username" validate:"required"`

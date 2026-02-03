@@ -29,14 +29,14 @@ docker-logs:
 
 # Database migrations
 migrate-up:
-	psql -h localhost -U postgres -d queue_system -f migrations/001_initial_schema.up.sql
+	psql -h localhost -U postgres -d tenangantri -f migrations/001_initial_schema.up.sql
 
 migrate-down:
-	psql -h localhost -U postgres -d queue_system -f migrations/001_initial_schema.down.sql
+	psql -h localhost -U postgres -d tenangantri -f migrations/001_initial_schema.down.sql
 
 # Seed data
 seed:
-	psql -h localhost -U postgres -d queue_system -f migrations/002_seed_data.up.sql
+	psql -h localhost -U postgres -d tenangantri -f migrations/002_seed_data.up.sql
 
 # Development setup
 dev-setup:

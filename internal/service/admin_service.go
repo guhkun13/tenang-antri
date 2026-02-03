@@ -7,9 +7,9 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"queue-system/internal/dto"
-	"queue-system/internal/model"
-	"queue-system/internal/repository"
+	"tenangantri/internal/dto"
+	"tenangantri/internal/model"
+	"tenangantri/internal/repository"
 )
 
 // getPriorityFromInterface converts priority interface{} to int
@@ -290,6 +290,17 @@ func (s *AdminService) ListCounters(ctx context.Context) ([]model.Counter, error
 		Msg("Counters loaded successfully")
 
 	return counters, nil
+}
+
+// UpdateCounterStatus updates only the is_active status of a counter
+func (s *AdminService) UpdateCounterStatus(ctx context.Context, id int, isActive bool) (*model.Counter, error) {
+	counter, err := s.counterRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	counter.IsActive = isActive
+	return s.counterRepo.Update(ctx, counter)
 }
 
 // GetCounter gets a counter by ID

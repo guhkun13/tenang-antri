@@ -7,10 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
-	"queue-system/internal/dto"
-	"queue-system/internal/model"
-	"queue-system/internal/service"
-	"queue-system/internal/websocket"
+	"tenangantri/internal/dto"
+	"tenangantri/internal/model"
+	"tenangantri/internal/service"
+	"tenangantri/internal/websocket"
 )
 
 // KioskHandler handles kiosk-related requests

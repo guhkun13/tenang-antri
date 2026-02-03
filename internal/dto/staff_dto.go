@@ -1,6 +1,6 @@
 package dto
 
-import "queue-system/internal/model"
+import "tenangantri/internal/model"
 
 // StaffDashboardResponse represents the staff dashboard data
 type StaffDashboardResponse struct {
