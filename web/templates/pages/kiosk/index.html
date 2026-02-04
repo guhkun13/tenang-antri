@@ -8,15 +8,15 @@
       <div class="flex items-center">
         <i class="fas fa-ticket-alt text-3xl text-white mr-3"></i>
         <div>
-          <h1 class="text-2xl font-bold text-white">Customer Kiosk</h1>
+          <h1 class="text-2xl font-bold text-white">Kiosk Pelanggan</h1>
           <p class="text-blue-200 text-sm">
-            Select a service to get your ticket
+            Pilih layanan untuk mendapatkan tiket
           </p>
         </div>
       </div>
       <div class="text-right text-white">
         <p class="text-3xl font-bold" id="clock">--:--</p>
-        <p class="text-blue-200 text-sm" id="date">Loading...</p>
+        <p class="text-blue-200 text-sm" id="date">Memuat...</p>
       </div>
     </div>
   </header>
@@ -28,28 +28,28 @@
         class="bg-white/10 backdrop-blur-md rounded-xl p-4 text-center text-white border border-white/20"
       >
         <i class="fas fa-clock text-3xl mb-2 text-yellow-300"></i>
-        <p class="text-sm text-blue-200">Average Wait Time</p>
-        <p class="text-2xl font-bold">~5 min</p>
+        <p class="text-sm text-blue-200">Rata-rata Waktu Tunggu</p>
+        <p class="text-2xl font-bold">~5 menit</p>
       </div>
       <div
         class="bg-white/10 backdrop-blur-md rounded-xl p-4 text-center text-white border border-white/20"
       >
         <i class="fas fa-users text-3xl mb-2 text-green-300"></i>
-        <p class="text-sm text-blue-200">People in Queue</p>
+        <p class="text-sm text-blue-200">Orang dalam Antrian</p>
         <p class="text-2xl font-bold" id="waiting-count">--</p>
       </div>
       <div
         class="bg-white/10 backdrop-blur-md rounded-xl p-4 text-center text-white border border-white/20"
       >
         <i class="fas fa-headset text-3xl mb-2 text-purple-300"></i>
-        <p class="text-sm text-blue-200">Active Counters</p>
+        <p class="text-sm text-blue-200">Loket Aktif</p>
         <p class="text-2xl font-bold" id="active-counters">--</p>
       </div>
     </div>
 
     <!-- Category Selection -->
     <h2 class="text-xl font-semibold text-white mb-4">
-      <i class="fas fa-hand-pointer mr-2"></i>Select a Service
+      <i class="fas fa-hand-pointer mr-2"></i>Pilih Layanan
     </h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -78,7 +78,7 @@
           class="mt-4 flex items-center text-sm"
           style="color: '{{.ColorCode}}';"
         >
-          <span class="font-medium">Tap to get ticket</span>
+          <span class="font-medium">Ketuk untuk mendapatkan tiket</span>
           <i
             class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"
           ></i>
@@ -90,7 +90,7 @@
     <!-- Footer -->
     <div class="mt-12 text-center text-blue-200">
       <p class="text-sm">
-        Thank you for your patience. We will serve you shortly.
+        Terima kasih atas kesabaran Anda. Kami akan melayani Anda segera.
       </p>
     </div>
   </main>
@@ -109,14 +109,14 @@
   function updateClock() {
     const now = new Date();
     document.getElementById("clock").textContent = now.toLocaleTimeString(
-      "en-US",
+      "id-ID",
       {
         hour: "2-digit",
         minute: "2-digit",
       },
     );
     document.getElementById("date").textContent = now.toLocaleDateString(
-      "en-US",
+      "id-ID",
       {
         weekday: "long",
         year: "numeric",
@@ -138,7 +138,7 @@
       document.getElementById("active-counters").textContent =
         data.active_counters || 0;
     } catch (error) {
-      console.error("Failed to fetch stats:", error);
+      console.error("Gagal mengambil statistik:", error);
     }
   }
   fetchStats();

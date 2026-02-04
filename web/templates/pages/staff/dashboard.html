@@ -138,13 +138,13 @@
   <header class="bg-white shadow-sm border-b px-6 py-4">
     <div class="flex justify-between items-center">
       <div class="flex items-center space-x-4">
-        <h1 class="text-xl font-bold text-gray-800">
-          <i class="fas fa-headset mr-2 text-blue-600"></i>Staff Portal
-        </h1>
-        <span class="text-gray-300">|</span>
-        <span class="text-gray-600"
-          >{{.Counter.Name}} - {{.Counter.Location}}</span
-        >
+          <h1 class="text-xl font-bold text-gray-800">
+            <i class="fas fa-headset mr-2 text-blue-600"></i>Portal Staf
+          </h1>
+          <span class="text-gray-300">|</span>
+          <span class="text-gray-600"
+            >{{.Counter.Name}} - {{.Counter.Location}}</span
+          >
       </div>
       <div class="flex items-center space-x-4">
         <div class="flex items-center space-x-2">
@@ -154,7 +154,7 @@
           ></span>
           <span
             class="text-sm font-medium"
-            x-text="counterStatus === 'active' ? 'Active' : (counterStatus === 'paused' ? 'Paused' : 'Disabled')"
+            x-text="counterStatus === 'active' ? 'Aktif' : (counterStatus === 'paused' ? 'Dijeda' : 'Dinonaktifkan')"
           ></span>
         </div>
         <div class="relative" x-data="{ open: false }">
@@ -172,13 +172,13 @@
             x-cloak
             class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50"
           >
-            <a href="/profile" class="block px-4 py-2 hover:bg-gray-100"
-              ><i class="fas fa-user mr-2"></i>Profile</a
-            >
-            <a
-              href="/logout"
-              class="block px-4 py-2 hover:bg-gray-100 text-red-600"
-              ><i class="fas fa-sign-out-alt mr-2"></i>Logout</a
+              <a href="/profile" class="block px-4 py-2 hover:bg-gray-100"
+                ><i class="fas fa-user mr-2"></i>Profil</a
+              >
+              <a
+                href="/logout"
+                class="block px-4 py-2 hover:bg-gray-100 text-red-600"
+                ><i class="fas fa-sign-out-alt mr-2"></i>Keluar</a
             >
           </div>
         </div>
@@ -192,7 +192,7 @@
       <div class="bg-white rounded-xl shadow-lg p-8 mb-6 text-center">
         {{if .CurrentTicket}}
         <div class="fade-in">
-          <p class="text-gray-500 text-lg mb-2">NOW SERVING</p>
+          <p class="text-gray-500 text-lg mb-2">SEDANG MELAYANI</p>
           <h2 class="text-6xl font-bold mb-4 bg-blue-400 p-4 rounded-xl">
             {{.CurrentTicket.TicketNumber}}
           </h2>
@@ -202,7 +202,7 @@
             </span>
             <span class="text-gray-500">
               <i class="fas fa-clock mr-1"></i>
-              Started: {{.CurrentTicket.CalledAt.Format "15:04"}}
+              Dimulai: {{.CurrentTicket.CalledAt.Format "15:04"}}
             </span>
           </div>
         </div>
@@ -213,9 +213,9 @@
           >
             <i class="fas fa-pause text-4xl text-gray-400"></i>
           </div>
-          <p class="text-gray-500 text-lg">No ticket being served</p>
+          <p class="text-gray-500 text-lg">Tidak ada tiket yang dilayani</p>
           <p class="text-gray-400 text-sm mt-1">
-            Click "Call Next" to serve a customer
+            Klik "Panggil Berikutnya" untuk melayani pelanggan
           </p>
         </div>
         {{end}}
@@ -229,7 +229,7 @@
           class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-4 px-6 rounded-xl shadow-lg transform hover:scale-105 transition duration-200"
         >
           <i class="fas fa-bullhorn mr-2"></i>
-          <span x-text="loading ? 'Processing...' : 'Call Next'"></span>
+          <span x-text="loading ? 'Memproses...' : 'Panggil Berikutnya'"></span>
         </button>
 
         <button
@@ -245,7 +245,7 @@
           :disabled="!hasCurrentTicket || loading"
           class="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold py-4 px-6 rounded-xl shadow-lg transform hover:scale-105 transition duration-200"
         >
-          <i class="fas fa-user-slash mr-2"></i>No Show
+          <i class="fas fa-user-slash mr-2"></i>Tidak Hadir
         </button>
       </div>
 
@@ -262,7 +262,7 @@
             :class="counterStatus === 'disabled' ? 'fa-ban' : (counterStatus === 'active' ? 'fa-pause' : 'fa-play')"
           ></i>
           <span
-            x-text="counterStatus === 'disabled' ? 'Counter Disabled' : (counterStatus === 'active' ? 'Pause Counter' : 'Resume Counter')"
+            x-text="counterStatus === 'disabled' ? 'Loket Dinonaktifkan' : (counterStatus === 'active' ? 'Jeda Loket' : 'Lanjutkan Loket')"
           ></span>
         </button>
       </div>
@@ -272,7 +272,7 @@
         <div class="bg-white rounded-lg shadow">
           <div class="px-6 py-4 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-800">
-              <i class="fas fa-list-ol mr-2 text-blue-600"></i>Next in Queue
+              <i class="fas fa-list-ol mr-2 text-blue-600"></i>Berikutnya dalam Antrian
             </h3>
           </div>
           <div class="p-6">
@@ -290,14 +290,14 @@
                     {{.TicketNumber}}
                   </span>
                   <span class="text-gray-600"
-                    >Waiting since {{.CreatedAt.Format "15:04"}}</span
+                    >Menunggu sejak {{.CreatedAt.Format "15:04"}}</span
                   >
                 </div>
               </div>
               {{end}}
             </div>
             {{else}}
-            <p class="text-center text-gray-500 py-4">No tickets waiting</p>
+            <p class="text-center text-gray-500 py-4">Tidak ada tiket menunggu</p>
             {{end}}
           </div>
         </div>
@@ -306,8 +306,8 @@
         <div class="bg-white rounded-lg shadow">
           <div class="px-6 py-4 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-800">
-              <i class="fas fa-chart-bar mr-2 text-blue-600"></i>Queue
-              Statistics
+              <i class="fas fa-chart-bar mr-2 text-blue-600"></i>Statistik
+              Antrian
             </h3>
           </div>
           <div class="p-6">
@@ -329,8 +329,8 @@
       <div class="bg-white rounded-lg shadow mt-6">
         <div class="px-6 py-4 border-b border-gray-200">
           <h3 class="text-lg font-semibold text-gray-800">
-            <i class="fas fa-check-circle mr-2 text-green-600"></i>Today's
-            Completed Tickets
+            <i class="fas fa-check-circle mr-2 text-green-600"></i>Tiket
+            Selesai Hari Ini
           </h3>
         </div>
         <div class="p-6">
@@ -342,42 +342,42 @@
                   <th
                     class="text-left py-2 px-2 text-sm font-medium text-gray-700"
                   >
-                    Ticket
+                    Tiket
                   </th>
                   <th
                     class="text-left py-2 px-2 text-sm font-medium text-gray-700"
                   >
-                    Category
+                    Kategori
                   </th>
                   <th
                     class="text-left py-2 px-2 text-sm font-medium text-gray-700"
                   >
-                    Counter
+                    Loket
                   </th>
                   <th
                     class="text-left py-2 px-2 text-sm font-medium text-gray-700"
                   >
-                    Started
+                    Dimulai
                   </th>
                   <th
                     class="text-left py-2 px-2 text-sm font-medium text-gray-700"
                   >
-                    Called
+                    Dipanggil
                   </th>
                   <th
                     class="text-left py-2 px-2 text-sm font-medium text-gray-700"
                   >
-                    Completed
+                    Selesai
                   </th>
                   <th
                     class="text-left py-2 px-2 text-sm font-medium text-gray-700"
                   >
-                    Wait Time
+                    Waktu Tunggu
                   </th>
                   <th
                     class="text-left py-2 px-2 text-sm font-medium text-gray-700"
                   >
-                    Service Time
+                    Waktu Layanan
                   </th>
                 </tr>
               </thead>
@@ -434,7 +434,7 @@
           </div>
           {{else}}
           <p class="text-center text-gray-500 py-4">
-            No tickets completed today
+            Tidak ada tiket selesai hari ini
           </p>
           {{end}}
         </div>

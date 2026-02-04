@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,7 +33,7 @@
             <div class="flex items-center">
                 <i class="fas fa-tv text-3xl text-blue-400 mr-4"></i>
                 <div>
-                    <h1 class="text-2xl font-bold">Now Serving</h1>
+                    <h1 class="text-2xl font-bold">Sedang Melayani</h1>
                     <p class="text-gray-400 text-sm">TenangAntri</p>
                 </div>
             </div>
@@ -47,9 +47,9 @@
     <main class="max-w-7xl mx-auto px-6 py-8">
         <!-- Currently Serving -->
         <div class="mb-8">
-            <h2 class="text-xl font-semibold text-gray-300 mb-4">
-                <i class="fas fa-bullhorn mr-2 text-yellow-400"></i>Currently Serving
-            </h2>
+                <h2 class="text-xl font-semibold text-gray-300 mb-4">
+                    <i class="fas fa-bullhorn mr-2 text-yellow-400"></i>Sedang Melayani
+                </h2>
             
             {{if .Tickets}}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="tickets-grid">
@@ -57,11 +57,11 @@
                 <div class="ticket-card bg-gradient-to-br from-gray-800 to-gray-700 rounded-2xl p-6 border-2"
                      style="border-color: '{{.ColorCode}}';">
                     <div class="flex justify-between items-start mb-4">
-                        <span class="text-gray-400 text-sm">Counter {{.CounterNumber}}</span>
+                        <span class="text-gray-400 text-sm">Loket {{.CounterNumber}}</span>
                         <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                     </div>
                     <div class="text-center">
-                        <p class="text-gray-400 text-sm mb-1">Ticket Number</p>
+                        <p class="text-gray-400 text-sm mb-1">Nomor Tiket</p>
                         <h3 class="text-5xl font-bold" style="color: '{{.ColorCode}}';">{{.TicketNumber}}</h3>
                     </div>
                     <div class="mt-4 pt-4 border-t border-gray-600 flex justify-between items-center">
@@ -70,7 +70,7 @@
                             {{.CategoryPrefix}}
                         </span>
                         <span class="text-green-400 text-sm font-medium">
-                            <i class="fas fa-check-circle mr-1"></i>Serving
+                            <i class="fas fa-check-circle mr-1"></i>Melayani
                         </span>
                     </div>
                 </div>
@@ -81,8 +81,8 @@
                 <div class="w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-pause text-4xl text-gray-500"></i>
                 </div>
-                <h3 class="text-2xl font-bold text-gray-400">No tickets being served</h3>
-                <p class="text-gray-500 mt-2">Waiting for next customer...</p>
+                <h3 class="text-2xl font-bold text-gray-400">Tidak ada tiket yang dilayani</h3>
+                <p class="text-gray-500 mt-2">Menunggu pelanggan berikutnya...</p>
             </div>
             {{end}}
         </div>
@@ -92,18 +92,18 @@
             <!-- Waiting by Category -->
             <div class="bg-gray-800 rounded-xl p-6">
                 <h3 class="text-lg font-semibold mb-4">
-                    <i class="fas fa-list-ol mr-2 text-blue-400"></i>Waiting by Category
+                    <i class="fas fa-list-ol mr-2 text-blue-400"></i>Menunggu Berdasarkan Kategori
                 </h3>
                 <div id="category-stats" class="space-y-3">
                     <!-- Will be populated by WebSocket -->
-                    <p class="text-gray-500 text-center py-4">Loading...</p>
+                    <p class="text-gray-500 text-center py-4">Memuat...</p>
                 </div>
             </div>
 
                 <!-- Counter Status -->
             <div class="bg-gray-800 rounded-xl p-6">
                 <h3 class="text-lg font-semibold mb-4">
-                    <i class="fas fa-desktop mr-2 text-green-400"></i>Counter Status
+                    <i class="fas fa-desktop mr-2 text-green-400"></i>Status Loket
                 </h3>
                 <div id="counter-stats" class="space-y-3">
                     {{range .Counters}}
@@ -114,7 +114,7 @@
                             {{else if eq .Status "active"}} bg-green-500 text-white
                             {{else if eq .Status "paused"}} bg-orange-500 text-white
                             {{else}} bg-gray-500 text-white{{end}}">
-                            {{if not .IsActive}} Inactive
+                            {{if not .IsActive}} Nonaktif
                             {{else}}{{.Status}}{{end}}
                         </span>
                     </div>
@@ -125,7 +125,7 @@
             <!-- Today's Stats -->
             <div class="bg-gray-800 rounded-xl p-6">
                 <h3 class="text-lg font-semibold mb-4">
-                    <i class="fas fa-chart-bar mr-2 text-purple-400"></i>Today's Stats
+                    <i class="fas fa-chart-bar mr-2 text-purple-400"></i>Statistik Hari Ini
                 </h3>
                 <div id="today-stats" class="grid grid-cols-2 gap-4">
                     <div class="text-center p-3 bg-gray-700 rounded-lg">
@@ -142,7 +142,7 @@
                     </div>
                     <div class="text-center p-3 bg-gray-700 rounded-lg">
                         <p class="text-2xl font-bold text-purple-400" id="avg-wait">--</p>
-                        <p class="text-sm text-gray-400">Avg Wait</p>
+                        <p class="text-sm text-gray-400">Rata-rata Tunggu</p>
                     </div>
                 </div>
             </div>
@@ -154,10 +154,10 @@
         <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
             <p class="text-gray-400 text-sm">
                 <i class="fas fa-info-circle mr-1"></i>
-                Please proceed to the counter when your number is called
+                Silakan menuju ke loket saat nomor Anda dipanggil
             </p>
             <div class="flex items-center space-x-4 text-sm text-gray-400">
-                <span><i class="fas fa-wifi mr-1 text-green-400"></i>Live Updates</span>
+                <span><i class="fas fa-wifi mr-1 text-green-400"></i>Pembaruan Langsung</span>
             </div>
         </div>
     </footer>
@@ -166,8 +166,8 @@
         // Clock
         function updateClock() {
             const now = new Date();
-            document.getElementById('clock').textContent = now.toLocaleTimeString('en-US');
-            document.getElementById('date').textContent = now.toLocaleDateString('en-US', { 
+            document.getElementById('clock').textContent = now.toLocaleTimeString('id-ID');
+            document.getElementById('date').textContent = now.toLocaleDateString('id-ID', { 
                 weekday: 'long', 
                 year: 'numeric', 
                 month: 'long', 
@@ -188,7 +188,7 @@
                 document.getElementById('avg-wait').textContent = data.avg_wait_time ? 
                     Math.round(data.avg_wait_time / 60) + 'm' : '--';
             } catch (error) {
-                console.error('Failed to fetch stats:', error);
+                console.error('Gagal mengambil statistik:', error);
             }
         }
         fetchStats();
@@ -212,7 +212,7 @@
                     </div>
                 `).join('');
             } catch (error) {
-                console.error('Failed to fetch category stats:', error);
+                console.error('Gagal mengambil statistik kategori:', error);
             }
         }
         fetchCategoryStats();
@@ -235,11 +235,11 @@
         };
         
         ws.onerror = function(error) {
-            console.error('WebSocket error:', error);
+            console.error('Terjadi kesalahan WebSocket:', error);
         };
         
         ws.onclose = function() {
-            console.log('WebSocket disconnected, retrying in 5s...');
+            console.log('WebSocket terputus, mencoba ulang dalam 5s...');
             setTimeout(() => window.location.reload(), 5000);
         };
 

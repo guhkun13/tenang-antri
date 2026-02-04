@@ -10,7 +10,7 @@
         <i class="fas fa-ticket-alt text-4xl text-blue-600"></i>
       </div>
       <h1 class="text-2xl font-bold text-gray-800">TenangAntri</h1>
-      <p class="text-gray-500 mt-2">Sign in to your account</p>
+      <p class="text-gray-500 mt-2">Masuk ke akun Anda</p>
     </div>
 
     {{if .Error}}
@@ -24,7 +24,7 @@
     <form method="POST" action="/login" class="space-y-6">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2"
-          >Username</label
+          >Nama Pengguna</label
         >
         <div class="relative">
           <span
@@ -37,14 +37,14 @@
             name="username"
             required
             class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Enter your username"
+            placeholder="Masukkan nama pengguna"
           />
         </div>
       </div>
 
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2"
-          >Password</label
+          >Kata Sandi</label
         >
         <div class="relative">
           <span
@@ -57,7 +57,7 @@
             name="password"
             required
             class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Enter your password"
+            placeholder="Masukkan kata sandi"
           />
         </div>
       </div>
@@ -66,23 +66,23 @@
         type="submit"
         class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition duration-200"
       >
-        <i class="fas fa-sign-in-alt mr-2"></i>Sign In
+        <i class="fas fa-sign-in-alt mr-2"></i>Masuk
       </button>
     </form>
 
     <div class="mt-6 text-center text-sm text-gray-500">
-      <p>Default credentials:</p>
+      <p>Kredensial default:</p>
       <p class="mt-1">Admin: <span class="font-mono">admin / admin123</span></p>
       <p>Staff: <span class="font-mono">staff1 / staff123</span></p>
     </div>
 
     <div class="mt-6 pt-6 border-t border-gray-200 text-center">
       <a href="/kiosk" class="text-blue-600 hover:text-blue-800 text-sm">
-        <i class="fas fa-desktop mr-1"></i>Go to Customer Kiosk
+        <i class="fas fa-desktop mr-1"></i>Pergi ke Kiosk Pelanggan
       </a>
       <span class="mx-2 text-gray-300">|</span>
       <a href="/display" class="text-blue-600 hover:text-blue-800 text-sm">
-        <i class="fas fa-tv mr-1"></i>View Display Board
+        <i class="fas fa-tv mr-1"></i>Lihat Papan Tampilan
       </a>
     </div>
   </div>

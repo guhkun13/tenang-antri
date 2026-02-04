@@ -2,7 +2,7 @@
 <!-- Error State -->
 <div class="bg-white rounded-xl shadow-lg p-6 text-center">
   <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
-  <h3 class="text-xl font-bold text-gray-800 mb-2">Ticket Not Found</h3>
+  <h3 class="text-xl font-bold text-gray-800 mb-2">Tiket Tidak Ditemukan</h3>
   <p class="text-gray-600">{{.Error}}</p>
 </div>
 {{else if .TrackingInfo}}
@@ -15,7 +15,7 @@
   >
     <div class="flex items-center justify-between text-white">
       <div>
-        <p class="text-sm opacity-90 mb-1">Ticket Number</p>
+        <p class="text-sm opacity-90 mb-1">Nomor Tiket</p>
         <p class="text-4xl font-bold">{{.TrackingInfo.TicketNumber}}</p>
       </div>
       <div class="text-right">
@@ -32,7 +32,7 @@
       <span
         class="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full font-semibold flex items-center"
       >
-        <i class="fas fa-hourglass-half mr-2"></i>Waiting in Queue
+        <i class="fas fa-hourglass-half mr-2"></i>Menunggu dalam Antrian
       </span>
     </div>
     {{else if eq .TrackingInfo.Status "serving"}}
@@ -40,7 +40,7 @@
       <span
         class="px-4 py-2 bg-green-100 text-green-800 rounded-full font-semibold flex items-center animate-pulse"
       >
-        <i class="fas fa-bell mr-2"></i>Now Being Served
+        <i class="fas fa-bell mr-2"></i>Sedang Dilayani
       </span>
     </div>
     {{else if eq .TrackingInfo.Status "completed"}}
@@ -56,7 +56,7 @@
       <span
         class="px-4 py-2 bg-red-100 text-red-800 rounded-full font-semibold flex items-center"
       >
-        <i class="fas fa-times-circle mr-2"></i>Cancelled
+        <i class="fas fa-times-circle mr-2"></i>Dibatalkan
       </span>
     </div>
     {{else if eq .TrackingInfo.Status "no_show"}}
@@ -64,7 +64,7 @@
       <span
         class="px-4 py-2 bg-gray-100 text-gray-800 rounded-full font-semibold flex items-center"
       >
-        <i class="fas fa-user-times mr-2"></i>No Show
+        <i class="fas fa-user-times mr-2"></i>Tidak Hadir
       </span>
     </div>
     {{end}}
@@ -77,14 +77,14 @@
     <div class="grid grid-cols-2 gap-6 mb-6">
       <div class="text-center p-6 bg-purple-50 rounded-xl">
         <i class="fas fa-users text-3xl text-purple-600 mb-2"></i>
-        <p class="text-sm text-gray-600 mb-1">Remaining Queue</p>
+        <p class="text-sm text-gray-600 mb-1">Sisa Antrian</p>
         <p class="text-5xl font-bold text-purple-600">
           {{.TrackingInfo.QueuePosition}}
         </p>
       </div>
       <div class="text-center p-6 bg-orange-50 rounded-xl">
         <i class="fas fa-bullhorn text-3xl text-orange-600 mb-2"></i>
-        <p class="text-sm text-gray-600 mb-1">Last Called</p>
+        <p class="text-sm text-gray-600 mb-1">Terakhir Dipanggil</p>
         <p class="text-5xl font-bold text-orange-600">
           {{if .TrackingInfo.LastCalledTicketNumber}}{{.TrackingInfo.LastCalledTicketNumber}}{{else}}-{{end}}
         </p>
@@ -98,7 +98,7 @@
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center">
           <i class="fas fa-desktop text-gray-400 mr-2"></i>
-          <span class="text-sm font-medium text-gray-700">Counter {{.TrackingInfo.CounterNumber}}</span>
+          <span class="text-sm font-medium text-gray-700">Loket {{.TrackingInfo.CounterNumber}}</span>
         </div>
         <span class="px-2 py-1 text-xs font-semibold rounded-full {{if eq .TrackingInfo.CounterStatus "Open"}}bg-green-100 text-green-700{{else if eq .TrackingInfo.CounterStatus "Paused"}}bg-yellow-100 text-yellow-700{{else}}bg-gray-100 text-gray-600{{end}}">
           {{upper .TrackingInfo.CounterStatus}}
@@ -106,13 +106,13 @@
       </div>
       
       {{if .TrackingInfo.IsCounterServing}}
-      <div class="text-sm text-gray-600 flex items-center">
-        <span class="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></span>
-        Currently serving: <span class="font-bold ml-1 text-gray-800">{{.TrackingInfo.CounterCurrentServingTicket}}</span>
-      </div>
+        <div class="text-sm text-gray-600 flex items-center">
+          <span class="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></span>
+          Sedang melayani: <span class="font-bold ml-1 text-gray-800">{{.TrackingInfo.CounterCurrentServingTicket}}</span>
+        </div>
       {{else if eq .TrackingInfo.CounterStatus "Open"}}
       <div class="text-sm text-gray-500 italic">
-        Ready to serve next ticket
+        Siap melayani tiket berikutnya
       </div>
       {{end}}
     </div>
@@ -121,7 +121,7 @@
     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
       <p class="text-blue-800 text-sm">
         <i class="fas fa-info-circle mr-1"></i>
-        Please stay nearby. Your number is being called soon.
+        Mohon tunggu di dekatnya. Nomor Anda akan segera dipanggil.
       </p>
     </div>
     {{else if eq .TrackingInfo.Status "serving"}}
@@ -129,11 +129,11 @@
     <div class="text-center p-8 bg-green-50 rounded-xl mb-6">
       <i class="fas fa-bell text-6xl text-green-600 mb-4 animate-bounce"></i>
       <h3 class="text-2xl font-bold text-gray-800 mb-2">
-        Please Proceed to Counter
+        Silakan Menuju ke Loket
       </h3>
       {{if .TrackingInfo.CounterNumber}}
       <div class="mt-4">
-        <p class="text-gray-600 mb-2">Counter Number</p>
+        <p class="text-gray-600 mb-2">Nomor Loket</p>
         <p class="text-6xl font-bold text-green-600">
           {{.TrackingInfo.CounterNumber}}
         </p>
@@ -147,17 +147,17 @@
     <!-- Completed -->
     <div class="text-center p-8">
       <i class="fas fa-check-circle text-6xl text-blue-600 mb-4"></i>
-      <h3 class="text-2xl font-bold text-gray-800 mb-2">Service Completed</h3>
-      <p class="text-gray-600">Thank you for visiting us!</p>
+      <h3 class="text-2xl font-bold text-gray-800 mb-2">Layanan Selesai</h3>
+      <p class="text-gray-600">Terima kasih telah berkunjung!</p>
     </div>
     {{else}}
     <!-- Other statuses -->
     <div class="text-center p-8">
       <i class="fas fa-info-circle text-5xl text-gray-400 mb-4"></i>
-      <h3 class="text-xl font-bold text-gray-800 mb-2">
-        Ticket Status: {{.TrackingInfo.Status}}
-      </h3>
-      <p class="text-gray-600">This ticket is no longer active.</p>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">
+          Status Tiket: {{.TrackingInfo.Status}}
+        </h3>
+        <p class="text-gray-600">Tiket ini tidak lagi aktif.</p>
     </div>
     {{end}}
   </div>
@@ -175,7 +175,7 @@
       </div>
       <div>
         <i class="fas fa-sync-alt mr-1"></i>
-        Auto-updating every 10 seconds
+        Diperbarui otomatis setiap 10 detik
       </div>
     </div>
   </div>

@@ -8,12 +8,12 @@
     >
       <i class="fas fa-ticket-alt text-4xl text-white"></i>
     </div>
-    <h2 class="text-2xl font-bold text-gray-800">Your Ticket</h2>
-    <p class="text-gray-500">Please save this number</p>
+    <h2 class="text-2xl font-bold text-gray-800">Tiket Anda</h2>
+    <p class="text-gray-500">Mohon simpan nomor ini</p>
   </div>
 
   <div class="bg-gray-100 rounded-xl p-6 mb-6">
-    <p class="text-sm text-gray-500 mb-2">Ticket Number</p>
+    <p class="text-sm text-gray-500 mb-2">Nomor Tiket</p>
     <h1
       class="text-6xl font-bold mb-2"
       style="color: '{{.Ticket.Category.ColorCode}}';"
@@ -30,11 +30,11 @@
 
   <div class="grid grid-cols-2 gap-4 mb-6">
     <div class="bg-blue-50 rounded-lg p-4">
-      <p class="text-sm text-gray-500">Queue Position</p>
+      <p class="text-sm text-gray-500">Posisi Antrian</p>
       <p class="text-2xl font-bold text-blue-600">#{{.QueuePosition}}</p>
     </div>
     <div class="bg-green-50 rounded-lg p-4">
-      <p class="text-sm text-gray-500">Est. Wait Time</p>
+      <p class="text-sm text-gray-500">Estimasi Waktu Tunggu</p>
       <p class="text-2xl font-bold text-green-600">
         ~{{.EstimatedWaitTime}} min
       </p>
@@ -44,8 +44,8 @@
   <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
     <p class="text-sm text-yellow-800">
       <i class="fas fa-info-circle mr-1"></i>
-      Please wait for your number to be called. Watch the display board for
-      updates.
+      Mohon tunggu nomor Anda dipanggil. Perhatikan papan tampilan untuk
+      pembaruan.
     </p>
   </div>
 
@@ -60,7 +60,7 @@
       onclick="closeModal()"
       class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-6 rounded-lg transition"
     >
-      <i class="fas fa-check mr-2"></i>Done
+      <i class="fas fa-check mr-2"></i>Selesai
     </button>
   </div>
 

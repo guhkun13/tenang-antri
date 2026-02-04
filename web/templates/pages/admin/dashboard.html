@@ -10,37 +10,37 @@
     </div>
     <nav class="p-4 space-y-2">
       <a href="/admin/dashboard" class="block px-4 py-2 bg-blue-600 rounded-lg">
-        <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+        <i class="fas fa-tachometer-alt mr-2"></i>Dasbor
       </a>
       <a
         href="/admin/tickets"
         class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
       >
-        <i class="fas fa-ticket-alt mr-2"></i>Tickets
+        <i class="fas fa-ticket-alt mr-2"></i>Tiket
       </a>
       <a
         href="/admin/categories"
         class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
       >
-        <i class="fas fa-tags mr-2"></i>Categories
+        <i class="fas fa-tags mr-2"></i>Kategori
       </a>
       <a
         href="/admin/counters"
         class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
       >
-        <i class="fas fa-desktop mr-2"></i>Counters
+        <i class="fas fa-desktop mr-2"></i>Loket
       </a>
       <a
         href="/admin/users"
         class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
       >
-        <i class="fas fa-users mr-2"></i>Staff
+        <i class="fas fa-users mr-2"></i>Staf
       </a>
       <a
         href="/admin/reports"
         class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
       >
-        <i class="fas fa-chart-bar mr-2"></i>Reports
+        <i class="fas fa-chart-bar mr-2"></i>Laporan
       </a>
     </nav>
   </aside>
@@ -51,9 +51,9 @@
     <header class="bg-white shadow-sm border-b px-6 py-4">
       <div class="flex justify-between items-center">
         <div>
-          <h2 class="text-xl font-semibold text-gray-800">Dashboard</h2>
+          <h2 class="text-xl font-semibold text-gray-800">Dasbor</h2>
           <p class="text-sm text-gray-600 mt-1">
-            Real-time queue management overview
+            Tinjauan manajemen antrian waktu nyata
           </p>
         </div>
         <div class="flex items-center space-x-4">
@@ -61,7 +61,7 @@
             onclick="refreshStats()"
             class="text-blue-600 hover:text-blue-800"
           >
-            <i class="fas fa-sync-alt mr-2"></i>Refresh
+            <i class="fas fa-sync-alt mr-2"></i>Perbarui
           </button>
           <div class="relative" x-data="{ open: false }">
             <button
@@ -78,32 +78,32 @@
               class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50"
             >
               <a href="/profile" class="block px-4 py-2 hover:bg-gray-100">
-                <i class="fas fa-user mr-2"></i>Profile
+                <i class="fas fa-user mr-2"></i>Profil
               </a>
               <a
                 href="/logout"
                 class="block px-4 py-2 hover:bg-gray-100 text-red-600"
               >
-                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                <i class="fas fa-sign-out-alt mr-2"></i>Keluar
               </a>
             </div>
           </div>
         </div>
         <div class="flex items-center space-x-4">
-          <a
-            href="/kiosk"
-            target="_blank"
-            class="text-blue-600 hover:text-blue-800"
-          >
-            <i class="fas fa-desktop mr-1"></i>Kiosk
-          </a>
-          <a
-            href="/display"
-            target="_blank"
-            class="text-blue-600 hover:text-blue-800"
-          >
-            <i class="fas fa-tv mr-1"></i>Display
-          </a>
+            <a
+              href="/kiosk"
+              target="_blank"
+              class="text-blue-600 hover:text-blue-800"
+            >
+              <i class="fas fa-desktop mr-1"></i>Kiosk
+            </a>
+            <a
+              href="/display"
+              target="_blank"
+              class="text-blue-600 hover:text-blue-800"
+            >
+              <i class="fas fa-tv mr-1"></i>Papan Tampilan
+            </a>
         </div>
       </div>
     </header>
@@ -114,7 +114,7 @@
       <section class="mb-8">
         <div class="flex items-center mb-4">
           <div class="w-1 h-6 bg-blue-600 mr-3"></div>
-          <h3 class="text-xl font-bold text-gray-800">Today's Performance</h3>
+          <h3 class="text-xl font-bold text-gray-800">Performa Hari Ini</h3>
           <span
             class="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
           >
@@ -123,13 +123,13 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <!-- Today's Tickets -->
+          <!-- Tiket Hari Ini -->
           <div
             class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white"
           >
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-blue-100 text-sm">Total Tickets</p>
+                <p class="text-blue-100 text-sm">Total Tiket</p>
                 <p class="text-3xl font-bold">{{.Stats.TotalTicketsToday}}</p>
               </div>
               <div
@@ -154,7 +154,7 @@
           >
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-green-100 text-sm">Currently Serving</p>
+                <p class="text-green-100 text-sm">Sedang Melayani</p>
                 <p class="text-3xl font-bold">{{.Stats.CurrentlyServing}}</p>
               </div>
               <div
@@ -166,14 +166,14 @@
             <div class="mt-4">
               <div class="flex items-center space-x-4">
                 <div class="text-center">
-                  <p class="text-green-100 text-xs">Wait Time</p>
+                  <p class="text-green-100 text-xs">Waktu Tunggu</p>
                   <p class="text-lg font-bold">
                     {{if gt .Stats.AvgWaitTime 0}} {{div .Stats.AvgWaitTime
                     60}}m {{else}} -- {{end}}
                   </p>
                 </div>
                 <div class="text-center">
-                  <p class="text-green-100 text-xs">Service Time</p>
+                  <p class="text-green-100 text-xs">Waktu Layanan</p>
                   <p class="text-lg font-bold">
                     {{if gt .Stats.AvgServiceTime 0}} {{div
                     .Stats.AvgServiceTime 60}}m {{else}} -- {{end}}
@@ -189,7 +189,7 @@
           >
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-purple-100 text-sm">Active Counters</p>
+                <p class="text-purple-100 text-sm">Loket Aktif</p>
                 <p class="text-3xl font-bold">{{.Stats.ActiveCounters}}</p>
               </div>
               <div
@@ -201,7 +201,7 @@
             <div class="mt-4">
               <div class="flex items-center space-x-4">
                 <div class="text-center">
-                  <p class="text-purple-100 text-xs">Paused</p>
+                  <p class="text-purple-100 text-xs">Dijeda</p>
                   <p class="text-lg font-bold">{{.Stats.PausedCounters}}</p>
                 </div>
                 <div class="text-center">
@@ -220,7 +220,7 @@
           >
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-orange-100 text-sm">Waiting Queue</p>
+                <p class="text-orange-100 text-sm">Antrian Menunggu</p>
                 <p class="text-3xl font-bold">{{.Stats.WaitingTickets}}</p>
               </div>
               <div
@@ -232,12 +232,12 @@
             <div class="mt-4">
               <div class="bg-white bg-opacity-20 rounded-lg p-3">
                 <p class="text-xs">
-                  Average wait time today:
-                  <strong>
-                    {{if gt .Stats.AvgWaitTime 0}} {{div .Stats.AvgWaitTime
-                    60}}m {{mod .Stats.AvgWaitTime 60}}s {{else}} No wait time
-                    yet {{end}}
-                  </strong>
+                  Rata-rata waktu tunggu hari ini:
+                   <strong>
+                     {{if gt .Stats.AvgWaitTime 0}} {{div .Stats.AvgWaitTime
+                     60}}m {{mod .Stats.AvgWaitTime 60}}s {{else}} Belum ada waktu
+                     tunggu {{end}}
+                   </strong>
                 </p>
               </div>
             </div>
@@ -361,13 +361,13 @@
     // Add data attributes to elements for easier selection
     const elements = document.querySelectorAll('[class*="text-3xl"]');
     elements.forEach((el) => {
-      if (el.textContent.includes("Total Tickets Today")) {
+      if (el.textContent.includes("Total Tiket") || el.textContent.includes("Total Tickets")) {
         el.setAttribute("data-total-tickets", "true");
-      } else if (el.textContent.includes("Currently Serving")) {
+      } else if (el.textContent.includes("Sedang Melayani") || el.textContent.includes("Currently Serving")) {
         el.setAttribute("data-currently-serving", "true");
-      } else if (el.textContent.includes("Waiting Tickets")) {
+      } else if (el.textContent.includes("Antrian Menunggu") || el.textContent.includes("Waiting Tickets")) {
         el.setAttribute("data-waiting-tickets", "true");
-      } else if (el.textContent.includes("Active Counters")) {
+      } else if (el.textContent.includes("Loket Aktif") || el.textContent.includes("Active Counters")) {
         el.setAttribute("data-active-counters", "true");
       }
     });
