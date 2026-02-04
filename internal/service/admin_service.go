@@ -216,11 +216,12 @@ func (s *AdminService) ListCategories(ctx context.Context, activeOnly bool) ([]m
 // CreateCounter creates a new counter
 func (s *AdminService) CreateCounter(ctx context.Context, req *model.CreateCounterRequest) (*model.Counter, error) {
 	counter := &model.Counter{
-		Number:   req.Number,
-		Name:     req.Name,
-		Location: req.Location,
-		Status:   "inactive",
-		IsActive: true,
+		Number:     req.Number,
+		Name:       req.Name,
+		Location:   req.Location,
+		Status:     "inactive",
+		IsActive:   true,
+		CategoryID: req.CategoryID,
 	}
 
 	createdCounter, err := s.counterRepo.Create(ctx, counter)
@@ -228,13 +229,10 @@ func (s *AdminService) CreateCounter(ctx context.Context, req *model.CreateCount
 		return nil, err
 	}
 
-	// Assign categories
-	for _, catID := range req.CategoryIDs {
-		s.counterRepo.AssignCategory(ctx, createdCounter.ID, catID)
+	if createdCounter.CategoryID != nil {
+		category, _ := s.categoryRepo.GetByID(ctx, *createdCounter.CategoryID)
+		createdCounter.Category = category
 	}
-
-	// Load categories for the counter
-	createdCounter.Categories, _ = s.counterRepo.GetCategories(ctx, createdCounter.ID)
 
 	return createdCounter, nil
 }
@@ -249,20 +247,17 @@ func (s *AdminService) UpdateCounter(ctx context.Context, id int, req *model.Cre
 	counter.Number = req.Number
 	counter.Name = req.Name
 	counter.Location = req.Location
+	counter.CategoryID = req.CategoryID
 
 	updatedCounter, err := s.counterRepo.Update(ctx, counter)
 	if err != nil {
 		return nil, err
 	}
 
-	// Update categories
-	s.counterRepo.ClearCategories(ctx, counter.ID)
-	for _, catID := range req.CategoryIDs {
-		s.counterRepo.AssignCategory(ctx, counter.ID, catID)
+	if updatedCounter.CategoryID != nil {
+		category, _ := s.categoryRepo.GetByID(ctx, *updatedCounter.CategoryID)
+		updatedCounter.Category = category
 	}
-
-	// Load categories for the counter
-	updatedCounter.Categories, _ = s.counterRepo.GetCategories(ctx, counter.ID)
 
 	return updatedCounter, nil
 }
@@ -276,13 +271,18 @@ func (s *AdminService) DeleteCounter(ctx context.Context, id int) error {
 func (s *AdminService) ListCounters(ctx context.Context) ([]model.Counter, error) {
 	counters, err := s.counterRepo.List(ctx)
 	if err != nil {
+		log.Error().Err(err).Msg("Failed to load counters")
 		return nil, err
 	}
 
-	// Load categories for each counter
 	for i := range counters {
-		cats, _ := s.counterRepo.GetCategories(ctx, counters[i].ID)
-		counters[i].Categories = cats
+		if counters[i].CategoryID != nil {
+			category, err := s.categoryRepo.GetByID(ctx, *counters[i].CategoryID)
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to load counter category")
+			}
+			counters[i].Category = category
+		}
 	}
 
 	log.Info().
@@ -310,9 +310,10 @@ func (s *AdminService) GetCounter(ctx context.Context, id int) (*model.Counter, 
 		return nil, err
 	}
 
-	// Load categories for the counter
-	categories, _ := s.counterRepo.GetCategories(ctx, counter.ID)
-	counter.Categories = categories
+	if counter.CategoryID != nil {
+		category, _ := s.categoryRepo.GetByID(ctx, *counter.CategoryID)
+		counter.Category = category
+	}
 
 	return counter, nil
 }
@@ -343,7 +344,7 @@ func (s *AdminService) CreateTicket(ctx context.Context, req *dto.CreateTicketRe
 
 	ticket := &model.Ticket{
 		TicketNumber: ticketNumber,
-		CategoryID:   req.CategoryID,
+		Category:     &model.Category{ID: req.CategoryID},
 		Status:       "waiting",
 		Priority:     req.Priority,
 	}

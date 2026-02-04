@@ -73,8 +73,8 @@ func (r *CreateCategoryRequest) UnmarshalJSON(data []byte) error {
 
 // CreateCounterRequest represents counter creation request
 type CreateCounterRequest struct {
-	Number      string `json:"number" form:"number" validate:"required"`
-	Name        string `json:"name" form:"name" validate:"required"`
-	Location    string `json:"location" form:"location"`
-	CategoryIDs []int  `json:"category_ids" form:"category_ids"`
+	Number     string `json:"number" form:"number" validate:"required"`
+	Name       string `json:"name" form:"name" validate:"required"`
+	Location   string `json:"location" form:"location"`
+	CategoryID *int   `json:"category_id" form:"category_id"`
 }

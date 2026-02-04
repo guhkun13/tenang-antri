@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -12,24 +13,26 @@ import (
 	"tenangantri/internal/query"
 )
 
-// TicketRepository handles ticket data operations
 type TicketRepository struct {
-	ticketQueries *query.TicketQueries
+	pool      *pgxpool.Pool
+	ticketQry *query.TicketQueries
 }
 
 func NewTicketRepository(pool *pgxpool.Pool) *TicketRepository {
 	return &TicketRepository{
-		ticketQueries: query.NewTicketQueries(pool),
+		pool:      pool,
+		ticketQry: query.NewTicketQueries(),
 	}
 }
 
-// GetByID retrieves a ticket by ID
 func (r *TicketRepository) GetByID(ctx context.Context, id int) (*model.Ticket, error) {
-	row := r.ticketQueries.GetTicketByID(ctx, id)
+	sql := r.ticketQry.GetTicketByID(ctx)
+	row := r.pool.QueryRow(ctx, sql, id)
 
 	ticket := &model.Ticket{}
+	var catID int
 	err := row.Scan(
-		&ticket.ID, &ticket.TicketNumber, &ticket.CategoryID, &ticket.CounterID,
+		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
 		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
 	)
@@ -39,19 +42,18 @@ func (r *TicketRepository) GetByID(ctx context.Context, id int) (*model.Ticket, 
 	return ticket, nil
 }
 
-// GetWithDetails retrieves a ticket with full details
 func (r *TicketRepository) GetWithDetails(ctx context.Context, id int) (*model.Ticket, error) {
-	row := r.ticketQueries.GetTicketWithDetails(ctx, id)
+	sql := r.ticketQry.GetTicketWithDetails(ctx)
+	row := r.pool.QueryRow(ctx, sql, id)
 
 	ticket := &model.Ticket{Category: &model.Category{}, Counter: &model.Counter{}}
-
-	var catID *int
-	var catName, catPrefix, catColor *string
+	var catID int
+	var catName, catPrefix, catColor string
 	var coID *int
-	var coNumber, coName *string
+	var coNumber, coName string
 
 	err := row.Scan(
-		&ticket.ID, &ticket.TicketNumber, &ticket.CategoryID, &ticket.CounterID,
+		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
 		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
 		&catID, &catName, &catPrefix, &catColor,
@@ -61,34 +63,31 @@ func (r *TicketRepository) GetWithDetails(ctx context.Context, id int) (*model.T
 		return nil, err
 	}
 
-	if catID != nil {
-		ticket.Category.ID = *catID
-		ticket.Category.Name = *catName
-		ticket.Category.Prefix = *catPrefix
-		ticket.Category.ColorCode = *catColor
-	}
+	ticket.Category.ID = catID
+	ticket.Category.Name = catName
+	ticket.Category.Prefix = catPrefix
+	ticket.Category.ColorCode = catColor
 	if coID != nil {
 		ticket.Counter.ID = *coID
-		ticket.Counter.Number = *coNumber
-		ticket.Counter.Name = *coName
+		ticket.Counter.Number = coNumber
+		ticket.Counter.Name = coName
 	}
 
 	return ticket, nil
 }
 
-// GetByTicketNumber retrieves a ticket with full details by ticket number
 func (r *TicketRepository) GetByTicketNumber(ctx context.Context, ticketNumber string) (*model.Ticket, error) {
-	row := r.ticketQueries.GetTicketByNumber(ctx, ticketNumber)
+	sql := r.ticketQry.GetTicketByNumber(ctx)
+	row := r.pool.QueryRow(ctx, sql, ticketNumber)
 
 	ticket := &model.Ticket{Category: &model.Category{}, Counter: &model.Counter{}}
-
-	var catID *int
-	var catName, catPrefix, catColor *string
+	var catID int
+	var catName, catPrefix, catColor string
 	var coID *int
-	var coNumber, coName *string
+	var coNumber, coName string
 
 	err := row.Scan(
-		&ticket.ID, &ticket.TicketNumber, &ticket.CategoryID, &ticket.CounterID,
+		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
 		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
 		&catID, &catName, &catPrefix, &catColor,
@@ -98,31 +97,24 @@ func (r *TicketRepository) GetByTicketNumber(ctx context.Context, ticketNumber s
 		return nil, err
 	}
 
-	if catID != nil {
-		ticket.Category.ID = *catID
-		ticket.Category.Name = *catName
-		ticket.Category.Prefix = *catPrefix
-		ticket.Category.ColorCode = *catColor
-	}
+	ticket.Category.ID = catID
+	ticket.Category.Name = catName
+	ticket.Category.Prefix = catPrefix
+	ticket.Category.ColorCode = catColor
 	if coID != nil {
 		ticket.Counter.ID = *coID
-		ticket.Counter.Number = *coNumber
-		ticket.Counter.Name = *coName
+		ticket.Counter.Number = coNumber
+		ticket.Counter.Name = coName
 	}
 
 	return ticket, nil
 }
 
-// Create creates a new ticket
 func (r *TicketRepository) Create(ctx context.Context, ticket *model.Ticket) (*model.Ticket, error) {
-	id, createdAt, err := r.ticketQueries.CreateTicket(
-		ctx,
-		ticket.TicketNumber,
-		ticket.CategoryID,
-		ticket.Status,
-		ticket.Priority,
-		ticket.Notes,
-	)
+	sql := r.ticketQry.CreateTicket(ctx)
+	var id int
+	var createdAt time.Time
+	err := r.pool.QueryRow(ctx, sql, ticket.TicketNumber, ticket.Category.ID, ticket.Status, ticket.Priority, ticket.Notes).Scan(&id, &createdAt)
 	if err != nil {
 		return nil, err
 	}
@@ -132,27 +124,30 @@ func (r *TicketRepository) Create(ctx context.Context, ticket *model.Ticket) (*m
 	return ticket, nil
 }
 
-// UpdateStatus updates the status of a ticket
 func (r *TicketRepository) UpdateStatus(ctx context.Context, id int, status string) error {
-	return r.ticketQueries.UpdateTicketStatus(ctx, id, status)
+	sql := r.ticketQry.UpdateTicketStatus(ctx, status)
+	_, err := r.pool.Exec(ctx, sql, status, id)
+	return err
 }
 
-// AssignToCounter assigns a ticket to a counter
 func (r *TicketRepository) AssignToCounter(ctx context.Context, ticketID, counterID int) error {
-	return r.ticketQueries.AssignTicketToCounter(ctx, ticketID, counterID)
+	sql := r.ticketQry.AssignTicketToCounter(ctx)
+	_, err := r.pool.Exec(ctx, sql, counterID, ticketID)
+	return err
 }
 
-// GetNextTicket retrieves the next ticket in queue for given categories
 func (r *TicketRepository) GetNextTicket(ctx context.Context, categoryIDs []int) (*model.Ticket, error) {
 	if len(categoryIDs) == 0 {
 		return nil, fmt.Errorf("no categories provided")
 	}
 
-	row := r.ticketQueries.GetNextTicket(ctx, categoryIDs)
+	sql := r.ticketQry.GetNextTicket(ctx, categoryIDs)
+	row := r.pool.QueryRow(ctx, sql, categoryIDs)
 
 	ticket := &model.Ticket{}
+	var catID int
 	err := row.Scan(
-		&ticket.ID, &ticket.TicketNumber, &ticket.CategoryID,
+		&ticket.ID, &ticket.TicketNumber, &catID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.Notes,
 	)
 	if err != nil {
@@ -164,13 +159,14 @@ func (r *TicketRepository) GetNextTicket(ctx context.Context, categoryIDs []int)
 	return ticket, nil
 }
 
-// GetCurrentForCounter retrieves the current ticket being served at a counter
 func (r *TicketRepository) GetCurrentForCounter(ctx context.Context, counterID int) (*model.Ticket, error) {
-	row := r.ticketQueries.GetCurrentTicketForCounter(ctx, counterID)
+	sql := r.ticketQry.GetCurrentTicketForCounter(ctx)
+	row := r.pool.QueryRow(ctx, sql, counterID)
 
 	ticket := &model.Ticket{}
+	var catID int
 	err := row.Scan(
-		&ticket.ID, &ticket.TicketNumber, &ticket.CategoryID, &ticket.CounterID,
+		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
 		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
 	)
@@ -184,9 +180,9 @@ func (r *TicketRepository) GetCurrentForCounter(ctx context.Context, counterID i
 	return ticket, nil
 }
 
-// List retrieves tickets with optional filters
 func (r *TicketRepository) List(ctx context.Context, filters map[string]interface{}) ([]model.Ticket, error) {
-	rows, err := r.ticketQueries.ListTickets(ctx, filters)
+	sql := r.ticketQry.ListTickets(ctx, filters)
+	rows, err := r.pool.Query(ctx, sql)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "repository").Str("func", "List").Msg("Failed to query tickets")
 		return nil, err
@@ -199,11 +195,12 @@ func (r *TicketRepository) List(ctx context.Context, filters map[string]interfac
 		t.Category = &model.Category{}
 		t.Counter = &model.Counter{}
 
-		var catName, catPrefix, catColor *string
-		var coNumber, coName *string
+		var catID int
+		var catName, catPrefix, catColor string
+		var coNumber, coName string
 
 		err := rows.Scan(
-			&t.ID, &t.TicketNumber, &t.CategoryID, &t.CounterID, &t.Status, &t.Priority,
+			&t.ID, &t.TicketNumber, &catID, &t.CounterID, &t.Status, &t.Priority,
 			&t.CreatedAt, &t.CalledAt, &t.CompletedAt, &t.WaitTime, &t.ServiceTime, &t.Notes,
 			&catName, &catPrefix, &catColor,
 			&coNumber, &coName,
@@ -213,14 +210,13 @@ func (r *TicketRepository) List(ctx context.Context, filters map[string]interfac
 			return nil, err
 		}
 
-		if catName != nil {
-			t.Category.Name = *catName
-			t.Category.Prefix = *catPrefix
-			t.Category.ColorCode = *catColor
-		}
-		if coNumber != nil {
-			t.Counter.Number = *coNumber
-			t.Counter.Name = *coName
+		t.Category.ID = catID
+		t.Category.Name = catName
+		t.Category.Prefix = catPrefix
+		t.Category.ColorCode = catColor
+		if coNumber != "" {
+			t.Counter.Number = coNumber
+			t.Counter.Name = coName
 		} else {
 			t.Counter = nil
 		}
@@ -231,34 +227,33 @@ func (r *TicketRepository) List(ctx context.Context, filters map[string]interfac
 	return tickets, nil
 }
 
-// GetTodayCount retrieves today's ticket count
 func (r *TicketRepository) GetTodayCount(ctx context.Context) (int, error) {
+	sql := r.ticketQry.GetTodayTicketCount(ctx)
 	var count int
-	err := r.ticketQueries.GetTodayTicketCount(ctx).Scan(&count)
+	err := r.pool.QueryRow(ctx, sql).Scan(&count)
 	return count, err
 }
 
-// GetTodayCountByCategory retrieves today's ticket count for a specific category
 func (r *TicketRepository) GetTodayCountByCategory(ctx context.Context, categoryID int) (int, error) {
+	sql := r.ticketQry.GetTodayTicketCountByCategory(ctx)
 	var count int
-	err := r.ticketQueries.GetTodayTicketCountByCategory(ctx, categoryID).Scan(&count)
+	err := r.pool.QueryRow(ctx, sql, categoryID).Scan(&count)
 	return count, err
 }
 
-// GenerateNumber generates a unique ticket number for a given prefix
 func (r *TicketRepository) GenerateNumber(ctx context.Context, prefix string) (string, error) {
+	sql := r.ticketQry.GenerateTicketNumber(ctx)
 	var number int
-	err := r.ticketQueries.GenerateTicketNumber(ctx, prefix).Scan(&number)
+	err := r.pool.QueryRow(ctx, sql, prefix+"%").Scan(&number)
 	if err != nil {
 		return "", err
 	}
-
 	return fmt.Sprintf("%s%03d", prefix, number), nil
 }
 
-// GetWaitingPreview retrieves a preview of waiting tickets
 func (r *TicketRepository) GetWaitingPreview(ctx context.Context, limit int) ([]model.Ticket, error) {
-	rows, err := r.ticketQueries.GetWaitingTicketsPreview(ctx, limit)
+	sql := r.ticketQry.GetWaitingTicketsPreview(ctx)
+	rows, err := r.pool.Query(ctx, sql, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -269,13 +264,17 @@ func (r *TicketRepository) GetWaitingPreview(ctx context.Context, limit int) ([]
 		log.Error().Err(err).Str("layer", "repository").Str("func", "GetWaitingPreview").Msg("Failed to collect rows")
 		return nil, err
 	}
-
 	return res, nil
 }
 
-// GetWaitingPreviewByCategories retrieves waiting tickets preview for specific categories
 func (r *TicketRepository) GetWaitingPreviewByCategories(ctx context.Context, categoryIDs []int, limit int) ([]model.Ticket, error) {
-	rows, err := r.ticketQueries.GetWaitingTicketsPreviewByCategories(ctx, categoryIDs, limit)
+	sql := r.ticketQry.GetWaitingTicketsPreviewByCategories(ctx, categoryIDs)
+	args := make([]any, 0, len(categoryIDs)+1)
+	args = append(args, limit)
+	for _, id := range categoryIDs {
+		args = append(args, id)
+	}
+	rows, err := r.pool.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -286,13 +285,16 @@ func (r *TicketRepository) GetWaitingPreviewByCategories(ctx context.Context, ca
 		log.Error().Err(err).Str("layer", "repository").Str("func", "GetWaitingPreviewByCategories").Msg("Failed to collect rows")
 		return nil, err
 	}
-
 	return res, nil
 }
 
-// GetTodayCompletedByCategories retrieves completed tickets today for specific categories
 func (r *TicketRepository) GetTodayCompletedByCategories(ctx context.Context, categoryIDs []int) ([]model.Ticket, error) {
-	rows, err := r.ticketQueries.GetTodayCompletedTicketsByCategories(ctx, categoryIDs)
+	sql := r.ticketQry.GetTodayCompletedTicketsByCategories(ctx, categoryIDs)
+	args := make([]any, len(categoryIDs))
+	for i, id := range categoryIDs {
+		args[i] = id
+	}
+	rows, err := r.pool.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -301,13 +303,13 @@ func (r *TicketRepository) GetTodayCompletedByCategories(ctx context.Context, ca
 	var tickets []model.Ticket
 	for rows.Next() {
 		ticket := model.Ticket{Category: &model.Category{}, Counter: &model.Counter{}}
-		var catID *int
-		var catName, catPrefix, catColor *string
+		var catID int
+		var catName, catPrefix, catColor string
 		var coID *int
-		var coNumber, coName *string
+		var coNumber, coName string
 
 		err := rows.Scan(
-			&ticket.ID, &ticket.TicketNumber, &ticket.CategoryID, &ticket.CounterID,
+			&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
 			&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
 			&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
 			&catID, &catName, &catPrefix, &catColor,
@@ -318,16 +320,14 @@ func (r *TicketRepository) GetTodayCompletedByCategories(ctx context.Context, ca
 			return nil, err
 		}
 
-		if catID != nil {
-			ticket.Category.ID = *catID
-			ticket.Category.Name = *catName
-			ticket.Category.Prefix = *catPrefix
-			ticket.Category.ColorCode = *catColor
-		}
+		ticket.Category.ID = catID
+		ticket.Category.Name = catName
+		ticket.Category.Prefix = catPrefix
+		ticket.Category.ColorCode = catColor
 		if coID != nil {
 			ticket.Counter.ID = *coID
-			ticket.Counter.Number = *coNumber
-			ticket.Counter.Name = *coName
+			ticket.Counter.Number = coNumber
+			ticket.Counter.Name = coName
 		}
 
 		tickets = append(tickets, ticket)
@@ -336,10 +336,10 @@ func (r *TicketRepository) GetTodayCompletedByCategories(ctx context.Context, ca
 	return tickets, nil
 }
 
-// GetLastCalledByCategoryID retrieves the last called ticket number for a specific category
 func (r *TicketRepository) GetLastCalledByCategoryID(ctx context.Context, categoryID int) (string, error) {
+	sql := r.ticketQry.GetLastCalledTicketByCategory(ctx)
 	var ticketNumber string
-	err := r.ticketQueries.GetLastCalledTicketByCategory(ctx, categoryID).Scan(&ticketNumber)
+	err := r.pool.QueryRow(ctx, sql, categoryID).Scan(&ticketNumber)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return "", nil

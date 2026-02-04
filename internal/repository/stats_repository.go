@@ -10,60 +10,60 @@ import (
 	"tenangantri/internal/query"
 )
 
-// StatsRepository handles statistics data operations
 type StatsRepository struct {
-	statsQueries *query.StatsQueries
+	pool     *pgxpool.Pool
+	statsQry *query.StatsQueries
 }
 
 func NewStatsRepository(pool *pgxpool.Pool) *StatsRepository {
 	return &StatsRepository{
-		statsQueries: query.NewStatsQueries(pool),
+		pool:     pool,
+		statsQry: query.NewStatsQueries(),
 	}
 }
 
-// GetDashboardStats retrieves comprehensive dashboard statistics
 func (r *StatsRepository) GetDashboardStats(ctx context.Context) (*model.DashboardStats, error) {
 	stats := &model.DashboardStats{
 		TicketsByStatus: make(map[string]int),
 	}
 
-	// Total tickets today
-	if err := r.statsQueries.GetTotalTicketsToday(ctx).Scan(&stats.TotalTicketsToday); err != nil {
+	sql := r.statsQry.GetTotalTicketsToday(ctx)
+	if err := r.pool.QueryRow(ctx, sql).Scan(&stats.TotalTicketsToday); err != nil {
 		return nil, err
 	}
 
-	// Currently serving
-	if err := r.statsQueries.GetCurrentlyServingCount(ctx).Scan(&stats.CurrentlyServing); err != nil {
+	sql = r.statsQry.GetCurrentlyServingCount(ctx)
+	if err := r.pool.QueryRow(ctx, sql).Scan(&stats.CurrentlyServing); err != nil {
 		return nil, err
 	}
 
-	// Waiting tickets
-	if err := r.statsQueries.GetWaitingTicketsCount(ctx).Scan(&stats.WaitingTickets); err != nil {
+	sql = r.statsQry.GetWaitingTicketsCount(ctx)
+	if err := r.pool.QueryRow(ctx, sql).Scan(&stats.WaitingTickets); err != nil {
 		return nil, err
 	}
 
-	// Active counters
-	if err := r.statsQueries.GetActiveCountersCount(ctx).Scan(&stats.ActiveCounters); err != nil {
+	sql = r.statsQry.GetActiveCountersCount(ctx)
+	if err := r.pool.QueryRow(ctx, sql).Scan(&stats.ActiveCounters); err != nil {
 		return nil, err
 	}
 
-	// Paused counters
-	if err := r.statsQueries.GetPausedCountersCount(ctx).Scan(&stats.PausedCounters); err != nil {
+	sql = r.statsQry.GetPausedCountersCount(ctx)
+	if err := r.pool.QueryRow(ctx, sql).Scan(&stats.PausedCounters); err != nil {
 		return nil, err
 	}
 
-	// Average wait time today
-	if err := r.statsQueries.GetAvgWaitTimeToday(ctx).Scan(&stats.AvgWaitTime); err != nil {
+	sql = r.statsQry.GetAvgWaitTimeToday(ctx)
+	if err := r.pool.QueryRow(ctx, sql).Scan(&stats.AvgWaitTime); err != nil {
 		return nil, err
 	}
 
-	// Average service time today
-	if err := r.statsQueries.GetAvgServiceTimeToday(ctx).Scan(&stats.AvgServiceTime); err != nil {
+	sql = r.statsQry.GetAvgServiceTimeToday(ctx)
+	if err := r.pool.QueryRow(ctx, sql).Scan(&stats.AvgServiceTime); err != nil {
 		return nil, err
 	}
 
-	// Tickets by status today
-	rows, err := r.statsQueries.GetTicketsByStatusToday(ctx)
+	sql = r.statsQry.GetTicketsByStatusToday(ctx)
+	rows, err := r.pool.Query(ctx, sql)
 	if err != nil {
 		return nil, err
 	}
@@ -78,13 +78,11 @@ func (r *StatsRepository) GetDashboardStats(ctx context.Context) (*model.Dashboa
 		stats.TicketsByStatus[status] = count
 	}
 
-	// Queue length by category
 	stats.QueueLengthByCategory, err = r.GetQueueLengthByCategory(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Hourly distribution
 	stats.HourlyDistribution, err = r.GetHourlyDistribution(ctx)
 	if err != nil {
 		return nil, err
@@ -93,9 +91,9 @@ func (r *StatsRepository) GetDashboardStats(ctx context.Context) (*model.Dashboa
 	return stats, nil
 }
 
-// GetQueueLengthByCategory retrieves queue length for each category
 func (r *StatsRepository) GetQueueLengthByCategory(ctx context.Context) ([]model.CategoryQueueStats, error) {
-	rows, err := r.statsQueries.GetQueueLengthByCategory(ctx)
+	sql := r.statsQry.GetQueueLengthByCategory(ctx)
+	rows, err := r.pool.Query(ctx, sql)
 	if err != nil {
 		return nil, err
 	}
@@ -113,13 +111,17 @@ func (r *StatsRepository) GetQueueLengthByCategory(ctx context.Context) ([]model
 	return result, nil
 }
 
-// GetQueueLengthByCategories retrieves queue length for specific categories
 func (r *StatsRepository) GetQueueLengthByCategories(ctx context.Context, categoryIDs []int) ([]model.CategoryQueueStats, error) {
 	if len(categoryIDs) == 0 {
 		return []model.CategoryQueueStats{}, nil
 	}
 
-	rows, err := r.statsQueries.GetQueueLengthByCategories(ctx, categoryIDs)
+	sql := r.statsQry.GetQueueLengthByCategories(ctx, categoryIDs)
+	args := make([]any, len(categoryIDs))
+	for i, id := range categoryIDs {
+		args[i] = id
+	}
+	rows, err := r.pool.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,9 +141,9 @@ func (r *StatsRepository) GetQueueLengthByCategories(ctx context.Context, catego
 	return result, nil
 }
 
-// GetHourlyDistribution retrieves hourly ticket distribution
 func (r *StatsRepository) GetHourlyDistribution(ctx context.Context) ([]model.HourlyStats, error) {
-	rows, err := r.statsQueries.GetHourlyDistribution(ctx)
+	sql := r.statsQry.GetHourlyDistribution(ctx)
+	rows, err := r.pool.Query(ctx, sql)
 	if err != nil {
 		return nil, err
 	}
@@ -159,9 +161,9 @@ func (r *StatsRepository) GetHourlyDistribution(ctx context.Context) ([]model.Ho
 	return result, nil
 }
 
-// GetCurrentlyServingTickets retrieves currently serving tickets for display
 func (r *StatsRepository) GetCurrentlyServingTickets(ctx context.Context) ([]model.DisplayTicket, error) {
-	rows, err := r.statsQueries.GetCurrentlyServingTickets(ctx)
+	sql := r.statsQry.GetCurrentlyServingTickets(ctx)
+	rows, err := r.pool.Query(ctx, sql)
 	if err != nil {
 		return nil, err
 	}

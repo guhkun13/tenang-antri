@@ -37,30 +37,24 @@ type Category struct {
 
 // Counter represents a service counter
 type Counter struct {
-	ID             int        `json:"id" db:"id"`
-	Number         string     `json:"number" db:"number"`
-	Name           string     `json:"name" db:"name"`
-	Location       string     `json:"location" db:"location"`
-	Status         string     `json:"status" db:"status"` // active, paused, inactive
-	IsActive       bool       `json:"is_active" db:"is_active"`
-	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at" db:"updated_at"`
-	Categories     []Category `json:"categories,omitempty" db:"-"`
-	CurrentStaffID *int       `json:"-" db:"current_staff_id"`
-	CurrentStaff   *User      `json:"-" db:"-"`
-}
-
-// CounterCategory links counters to categories
-type CounterCategory struct {
-	CounterID  int `json:"counter_id" db:"counter_id"`
-	CategoryID int `json:"category_id" db:"category_id"`
+	ID             int       `json:"id" db:"id"`
+	Number         string    `json:"number" db:"number"`
+	Name           string    `json:"name" db:"name"`
+	Location       string    `json:"location" db:"location"`
+	Status         string    `json:"status" db:"status"` // active, paused, inactive
+	IsActive       bool      `json:"is_active" db:"is_active"`
+	CategoryID     *int      `json:"category_id,omitempty" db:"category_id"`
+	Category       *Category `json:"category,omitempty" db:"-"`
+	CreatedAt      time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
+	CurrentStaffID *int      `json:"-" db:"current_staff_id"`
+	CurrentStaff   *User     `json:"-" db:"-"`
 }
 
 // Ticket represents a queue ticket
 type Ticket struct {
 	ID           int        `json:"id" db:"id"`
 	TicketNumber string     `json:"ticket_number" db:"ticket_number"`
-	CategoryID   int        `json:"category_id" db:"category_id"`
 	Category     *Category  `json:"category,omitempty" db:"-"`
 	CounterID    *int       `json:"counter_id,omitempty" db:"counter_id"`
 	Counter      *Counter   `json:"counter,omitempty" db:"-"`

@@ -44,8 +44,9 @@ func ScanCounter(row pgx.Row) (*model.Counter, error) {
 // ScanTicket scans a row into a Ticket struct
 func ScanTicket(row pgx.Row) (*model.Ticket, error) {
 	ticket := &model.Ticket{}
+	var catID int
 	err := row.Scan(
-		&ticket.ID, &ticket.TicketNumber, &ticket.CategoryID, &ticket.CounterID,
+		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
 		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
 	)
@@ -56,13 +57,13 @@ func ScanTicket(row pgx.Row) (*model.Ticket, error) {
 func ScanTicketWithDetails(row pgx.Row) (*model.Ticket, error) {
 	ticket := &model.Ticket{Category: &model.Category{}, Counter: &model.Counter{}}
 
-	var catID *int
+	var catID int
 	var catName, catPrefix, catColor *string
 	var coID *int
 	var coNumber, coName *string
 
 	err := row.Scan(
-		&ticket.ID, &ticket.TicketNumber, &ticket.CategoryID, &ticket.CounterID,
+		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
 		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
 		&catID, &catName, &catPrefix, &catColor,
@@ -72,12 +73,10 @@ func ScanTicketWithDetails(row pgx.Row) (*model.Ticket, error) {
 		return nil, err
 	}
 
-	if catID != nil {
-		ticket.Category.ID = *catID
-		ticket.Category.Name = *catName
-		ticket.Category.Prefix = *catPrefix
-		ticket.Category.ColorCode = *catColor
-	}
+	ticket.Category.ID = catID
+	ticket.Category.Name = *catName
+	ticket.Category.Prefix = *catPrefix
+	ticket.Category.ColorCode = *catColor
 	if coID != nil {
 		ticket.Counter.ID = *coID
 		ticket.Counter.Number = *coNumber

@@ -54,7 +54,7 @@ func (s *KioskService) GenerateTicket(ctx context.Context, req *dto.CreateTicket
 
 	ticket := &model.Ticket{
 		TicketNumber: ticketNumber,
-		CategoryID:   req.CategoryID,
+		Category:     &model.Category{ID: req.CategoryID},
 		Status:       "waiting",
 		Priority:     req.Priority,
 	}

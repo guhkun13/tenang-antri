@@ -41,7 +41,7 @@ func (s *TicketService) CreateTicket(ctx context.Context, req *dto.CreateTicketR
 
 	ticket := &model.Ticket{
 		TicketNumber: ticketNumber,
-		CategoryID:   req.CategoryID,
+		Category:     &model.Category{ID: req.CategoryID},
 		Status:       "waiting",
 		Priority:     req.Priority,
 	}
@@ -102,8 +102,8 @@ func (s *TicketService) GetCurrentTicketForCounter(ctx context.Context, counterI
 	}
 
 	// Load category details
-	if ticket.CategoryID != 0 {
-		category, err := s.categoryRepo.GetByID(ctx, ticket.CategoryID)
+	if ticket.Category != nil {
+		category, err := s.categoryRepo.GetByID(ctx, ticket.Category.ID)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to load ticket category")
 		} else {

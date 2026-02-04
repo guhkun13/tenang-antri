@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -11,20 +12,21 @@ import (
 	"tenangantri/internal/query"
 )
 
-// UserRepository handles user data operations
 type UserRepository struct {
-	userQueries *query.UserQueries
+	pool    *pgxpool.Pool
+	userQry *query.UserQueries
 }
 
 func NewUserRepository(pool *pgxpool.Pool) *UserRepository {
 	return &UserRepository{
-		userQueries: query.NewUserQueries(pool),
+		pool:    pool,
+		userQry: query.NewUserQueries(),
 	}
 }
 
-// GetByUsername retrieves a user by username
 func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*model.User, error) {
-	row := r.userQueries.GetUserByUsername(ctx, username)
+	sql := r.userQry.GetUserByUsername(ctx)
+	row := r.pool.QueryRow(ctx, sql, username)
 
 	user := &model.User{}
 	err := row.Scan(
@@ -39,9 +41,9 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 	return user, nil
 }
 
-// GetByID retrieves a user by ID
 func (r *UserRepository) GetByID(ctx context.Context, id int) (*model.User, error) {
-	row := r.userQueries.GetUserByID(ctx, id)
+	sql := r.userQry.GetUserByID(ctx)
+	row := r.pool.QueryRow(ctx, sql, id)
 
 	user := &model.User{}
 	err := row.Scan(
@@ -56,25 +58,11 @@ func (r *UserRepository) GetByID(ctx context.Context, id int) (*model.User, erro
 	return user, nil
 }
 
-// Create creates a new user
 func (r *UserRepository) Create(ctx context.Context, user *model.User) (*model.User, error) {
-	id, createdAt, updatedAt, err := r.userQueries.CreateUser(
-		ctx,
-		user.Username,
-		user.Password,
-		user.FullName.String,
-		user.Email.String,
-		user.Phone.String,
-		user.Role,
-		func() *int {
-			if user.CounterID.Valid {
-				id := int(user.CounterID.Int64)
-				return &id
-			}
-			return nil
-		}(),
-		user.IsActive,
-	)
+	sql := r.userQry.CreateUser(ctx)
+	var id int
+	var createdAt, updatedAt time.Time
+	err := r.pool.QueryRow(ctx, sql, user.Username, user.Password, user.FullName.String, user.Email.String, user.Phone.String, user.Role, user.CounterID, user.IsActive).Scan(&id, &createdAt, &updatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -85,49 +73,36 @@ func (r *UserRepository) Create(ctx context.Context, user *model.User) (*model.U
 	return user, nil
 }
 
-// Update updates user information
 func (r *UserRepository) Update(ctx context.Context, user *model.User) (*model.User, error) {
-	err := r.userQueries.UpdateUser(
-		ctx,
-		user.FullName.String,
-		user.Email.String,
-		user.Phone.String,
-		user.Role,
-		func() *int {
-			if user.CounterID.Valid {
-				id := int(user.CounterID.Int64)
-				return &id
-			}
-			return nil
-		}(),
-		user.IsActive,
-		user.ID,
-	)
+	sql := r.userQry.UpdateUser(ctx)
+	_, err := r.pool.Exec(ctx, sql, user.FullName.String, user.Email.String, user.Phone.String, user.Role, user.CounterID, user.IsActive, user.ID)
 	if err != nil {
 		return nil, err
 	}
-
 	return user, nil
 }
 
-// Delete deletes a user
 func (r *UserRepository) Delete(ctx context.Context, id int) error {
-	return r.userQueries.DeleteUser(ctx, id)
+	sql := r.userQry.DeleteUser(ctx)
+	_, err := r.pool.Exec(ctx, sql, id)
+	return err
 }
 
-// UpdatePassword updates user password
 func (r *UserRepository) UpdatePassword(ctx context.Context, id int, password string) error {
-	return r.userQueries.UpdateUserPassword(ctx, id, password)
+	sql := r.userQry.UpdateUserPassword(ctx)
+	_, err := r.pool.Exec(ctx, sql, password, id)
+	return err
 }
 
-// UpdateLastLogin updates the last login timestamp
 func (r *UserRepository) UpdateLastLogin(ctx context.Context, id int) error {
-	return r.userQueries.UpdateLastLogin(ctx, id)
+	sql := r.userQry.UpdateLastLogin(ctx)
+	_, err := r.pool.Exec(ctx, sql, id)
+	return err
 }
 
-// List retrieves users with optional role filter
 func (r *UserRepository) List(ctx context.Context, role string) ([]model.User, error) {
-	rows, err := r.userQueries.ListUsers(ctx, role)
+	sql := r.userQry.ListUsers(ctx, role)
+	rows, err := r.pool.Query(ctx, sql)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "repository").Str("method", "List").Str("domain", "user").Msg("Failed to list users")
 		return nil, err

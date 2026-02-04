@@ -51,11 +51,13 @@ func (s *StaffService) GetDashboardData(ctx context.Context, userID int) (*dto.S
 		return nil, err
 	}
 
-	// Load counter categories
-	counter.Categories, err = s.counterRepo.GetCategories(ctx, counter.ID)
-	if err != nil {
-		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load counter categories")
-		return nil, err
+	if counter.CategoryID != nil {
+		category, err := s.categoryRepo.GetByID(ctx, *counter.CategoryID)
+		if err != nil {
+			log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load counter category")
+			return nil, err
+		}
+		counter.Category = category
 	}
 
 	// Get current serving ticket
@@ -65,8 +67,8 @@ func (s *StaffService) GetDashboardData(ctx context.Context, userID int) (*dto.S
 		return nil, err
 	}
 
-	if currentTicket != nil && currentTicket.CategoryID != 0 {
-		currentCategory, err := s.categoryRepo.GetByID(ctx, currentTicket.CategoryID)
+	if currentTicket != nil && currentTicket.Category != nil {
+		currentCategory, err := s.categoryRepo.GetByID(ctx, currentTicket.Category.ID)
 		if err != nil {
 			log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load current ticket category")
 			return nil, err
@@ -78,8 +80,8 @@ func (s *StaffService) GetDashboardData(ctx context.Context, userID int) (*dto.S
 
 	// Get waiting tickets preview
 	var categoryIDs []int
-	for _, cat := range counter.Categories {
-		categoryIDs = append(categoryIDs, cat.ID)
+	if counter.CategoryID != nil {
+		categoryIDs = append(categoryIDs, *counter.CategoryID)
 	}
 
 	waitingTickets, err := s.ticketRepo.GetWaitingPreviewByCategories(ctx, categoryIDs, 5)
@@ -137,19 +139,14 @@ func (s *StaffService) CallNext(ctx context.Context, userID int) (*model.Ticket,
 		return nil, nil // Counter is not active
 	}
 
-	// Get categories for this counter
-	categories, err := s.counterRepo.GetCategories(ctx, counter.ID)
-	if err != nil {
-		return nil, err
-	}
-
+	// Get category for this counter
 	var categoryIDs []int
-	for _, cat := range categories {
-		categoryIDs = append(categoryIDs, cat.ID)
+	if counter.CategoryID != nil {
+		categoryIDs = append(categoryIDs, *counter.CategoryID)
 	}
 
 	if len(categoryIDs) == 0 {
-		return nil, nil // No categories assigned
+		return nil, nil // No category assigned
 	}
 
 	// Complete current ticket if exists

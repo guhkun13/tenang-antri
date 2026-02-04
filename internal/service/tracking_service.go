@@ -58,9 +58,9 @@ func (s *TrackingService) GetTicketTrackingInfo(ctx context.Context, ticketNumbe
 		trackingInfo.CategoryColor = ticket.Category.ColorCode
 
 		// Show last queue number called for this category
-		lastCalled, err := s.ticketRepo.GetLastCalledByCategoryID(ctx, ticket.CategoryID)
+		lastCalled, err := s.ticketRepo.GetLastCalledByCategoryID(ctx, ticket.Category.ID)
 		if err != nil {
-			log.Error().Err(err).Int("category_id", ticket.CategoryID).Msg("Failed to get last called ticket")
+			log.Error().Err(err).Int("category_id", ticket.Category.ID).Msg("Failed to get last called ticket")
 		} else {
 			trackingInfo.LastCalledTicketNumber = lastCalled
 		}
@@ -115,7 +115,7 @@ func (s *TrackingService) CalculateQueuePosition(ctx context.Context, ticket *mo
 	// Count tickets with same category that are waiting and were created before this ticket
 	filters := map[string]interface{}{
 		"status":      "waiting",
-		"category_id": ticket.CategoryID,
+		"category_id": ticket.Category.ID,
 	}
 
 	tickets, err := s.ticketRepo.List(ctx, filters)

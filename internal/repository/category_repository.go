@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -10,20 +11,21 @@ import (
 	"tenangantri/internal/query"
 )
 
-// CategoryRepository handles category data operations
 type CategoryRepository struct {
-	categoryQueries *query.CategoryQueries
+	pool        *pgxpool.Pool
+	categoryQry *query.CategoryQueries
 }
 
 func NewCategoryRepository(pool *pgxpool.Pool) *CategoryRepository {
 	return &CategoryRepository{
-		categoryQueries: query.NewCategoryQueries(pool),
+		pool:        pool,
+		categoryQry: query.NewCategoryQueries(),
 	}
 }
 
-// GetByID retrieves a category by ID
 func (r *CategoryRepository) GetByID(ctx context.Context, id int) (*model.Category, error) {
-	row := r.categoryQueries.GetCategoryByID(ctx, id)
+	sql := r.categoryQry.GetCategoryByID(ctx)
+	row := r.pool.QueryRow(ctx, sql, id)
 
 	category := &model.Category{}
 	err := row.Scan(
@@ -37,18 +39,11 @@ func (r *CategoryRepository) GetByID(ctx context.Context, id int) (*model.Catego
 	return category, nil
 }
 
-// Create creates a new category
 func (r *CategoryRepository) Create(ctx context.Context, category *model.Category) (*model.Category, error) {
-	id, createdAt, updatedAt, err := r.categoryQueries.CreateCategory(
-		ctx,
-		category.Name,
-		category.Prefix,
-		category.Priority,
-		category.ColorCode,
-		category.Description,
-		category.Icon,
-		category.IsActive,
-	)
+	sql := r.categoryQry.CreateCategory(ctx)
+	var id int
+	var createdAt, updatedAt time.Time
+	err := r.pool.QueryRow(ctx, sql, category.Name, category.Prefix, category.Priority, category.ColorCode, category.Description, category.Icon, category.IsActive).Scan(&id, &createdAt, &updatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -59,34 +54,24 @@ func (r *CategoryRepository) Create(ctx context.Context, category *model.Categor
 	return category, nil
 }
 
-// Update updates category information
 func (r *CategoryRepository) Update(ctx context.Context, category *model.Category) (*model.Category, error) {
-	err := r.categoryQueries.UpdateCategory(
-		ctx,
-		category.Name,
-		category.Prefix,
-		category.Priority,
-		category.ColorCode,
-		category.Description,
-		category.Icon,
-		category.IsActive,
-		category.ID,
-	)
+	sql := r.categoryQry.UpdateCategory(ctx)
+	_, err := r.pool.Exec(ctx, sql, category.Name, category.Prefix, category.Priority, category.ColorCode, category.Description, category.Icon, category.IsActive, category.ID)
 	if err != nil {
 		return nil, err
 	}
-
 	return category, nil
 }
 
-// Delete deletes a category
 func (r *CategoryRepository) Delete(ctx context.Context, id int) error {
-	return r.categoryQueries.DeleteCategory(ctx, id)
+	sql := r.categoryQry.DeleteCategory(ctx)
+	_, err := r.pool.Exec(ctx, sql, id)
+	return err
 }
 
-// List retrieves categories with optional active filter
 func (r *CategoryRepository) List(ctx context.Context, activeOnly bool) ([]model.Category, error) {
-	rows, err := r.categoryQueries.ListCategories(ctx, activeOnly)
+	sql := r.categoryQry.ListCategories(ctx, activeOnly)
+	rows, err := r.pool.Query(ctx, sql)
 	if err != nil {
 		return nil, err
 	}
