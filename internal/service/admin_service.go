@@ -331,11 +331,29 @@ func (s *AdminService) GetTicket(ctx context.Context, id int) (*model.Ticket, er
 
 // CreateTicket creates a new ticket
 func (s *AdminService) CreateTicket(ctx context.Context, req *dto.CreateTicketRequest) (*model.Ticket, error) {
-	return s.ticketRepo.Create(ctx, &model.Ticket{
-		CategoryID: req.CategoryID,
-		Status:     "waiting",
-		Priority:   req.Priority,
-	})
+	category, err := s.categoryRepo.GetByID(ctx, req.CategoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	ticketNumber, err := s.ticketRepo.GenerateNumber(ctx, category.Prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	ticket := &model.Ticket{
+		TicketNumber: ticketNumber,
+		CategoryID:   req.CategoryID,
+		Status:       "waiting",
+		Priority:     req.Priority,
+	}
+
+	createdTicket, err := s.ticketRepo.Create(ctx, ticket)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.ticketRepo.GetWithDetails(ctx, createdTicket.ID)
 }
 
 // UpdateTicketStatus updates ticket status

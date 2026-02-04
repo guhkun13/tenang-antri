@@ -133,11 +133,21 @@ func (q *TicketQueries) GetCurrentTicketForCounter(ctx context.Context, counterI
 func (q *TicketQueries) ListTickets(ctx context.Context, filters map[string]interface{}) (pgx.Rows, error) {
 	query := `
 		SELECT t.id, t.ticket_number, t.category_id, t.counter_id, t.status, t.priority,
-		       t.created_at, t.called_at, t.completed_at, t.wait_time, t.service_time, t.notes
-		FROM tickets t WHERE 1=1`
+		       t.created_at, t.called_at, t.completed_at, t.wait_time, t.service_time, t.notes,
+		       c.name as category_name, c.prefix as category_prefix, c.color_code as category_color,
+		       co.number as counter_number, co.name as counter_name
+		FROM tickets t 
+		LEFT JOIN categories c ON t.category_id = c.id
+		LEFT JOIN counters co ON t.counter_id = co.id
+		WHERE 1=1`
 	var args []interface{}
 	argCount := 1
 
+	if search, ok := filters["search"]; ok && search != "" {
+		query += fmt.Sprintf(" AND (t.ticket_number ILIKE $%d OR c.name ILIKE $%d)", argCount, argCount)
+		args = append(args, "%"+search.(string)+"%")
+		argCount++
+	}
 	if status, ok := filters["status"]; ok && status != "" {
 		query += fmt.Sprintf(" AND t.status = $%d", argCount)
 		args = append(args, status)
@@ -159,7 +169,8 @@ func (q *TicketQueries) ListTickets(ctx context.Context, filters map[string]inte
 		argCount++
 	}
 	if dateTo, ok := filters["date_to"]; ok && dateTo != "" {
-		query += fmt.Sprintf(" AND t.created_at <= $%d", argCount)
+		// Ensure it covers the whole day by adding 1 day or comparison logic
+		query += fmt.Sprintf(" AND t.created_at < ($%d::date + interval '1 day')", argCount)
 		args = append(args, dateTo)
 		argCount++
 	}

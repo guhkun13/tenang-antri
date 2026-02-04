@@ -61,11 +61,11 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select name="status" class="border rounded-lg px-3 py-2">
                         <option value="">All Status</option>
-                        <option value="waiting" {{if eq .Filters.status "waiting"}}selected{{end}}>Waiting</option>
-                        <option value="serving" {{if eq .Filters.status "serving"}}selected{{end}}>Serving</option>
-                        <option value="completed" {{if eq .Filters.status "completed"}}selected{{end}}>Completed</option>
-                        <option value="no_show" {{if eq .Filters.status "no_show"}}selected{{end}}>No Show</option>
-                        <option value="cancelled" {{if eq .Filters.status "cancelled"}}selected{{end}}>Cancelled</option>
+                        <option value="waiting" {{if eq .Filters.status "waiting"}} selected{{end}}>Waiting</option>
+                        <option value="serving" {{if eq .Filters.status "serving"}} selected{{end}}>Serving</option>
+                        <option value="completed" {{if eq .Filters.status "completed"}} selected{{end}}>Completed</option>
+                        <option value="no_show" {{if eq .Filters.status "no_show"}} selected{{end}}>No Show</option>
+                        <option value="cancelled" {{if eq .Filters.status "cancelled"}} selected{{end}}>Cancelled</option>
                     </select>
                 </div>
                 
@@ -74,7 +74,7 @@
                     <select name="category_id" class="border rounded-lg px-3 py-2">
                         <option value="">All Categories</option>
                         {{range .Categories}}
-                        <option value="{{.ID}}" {{if eq .Filters.category_id .ID}}selected{{end}}>{{.Name}}</option>
+                        <option value="{{.ID}}">{{.Name}}</option>
                         {{end}}
                     </select>
                 </div>
@@ -84,7 +84,7 @@
                     <select name="counter_id" class="border rounded-lg px-3 py-2">
                         <option value="">All Counters</option>
                         {{range .Counters}}
-                        <option value="{{.ID}}" {{if eq .Filters.counter_id .ID}}selected{{end}}>{{.Name}}</option>
+                        <option value="{{.ID}}">{{.Name}}</option>
                         {{end}}
                     </select>
                 </div>
@@ -141,7 +141,7 @@
                         </div>
                         <div class="ml-3">
                             <p class="text-sm text-gray-500">Total Tickets</p>
-                            <p class="text-xl font-bold text-gray-800">{{len .Tickets}}</p>
+                            <p class="text-xl font-bold text-gray-800">{{.Stats.Total}}</p>
                         </div>
                     </div>
                 </div>
@@ -152,9 +152,7 @@
                         </div>
                         <div class="ml-3">
                             <p class="text-sm text-gray-500">Waiting</p>
-                            <p class="text-xl font-bold text-gray-800">
-                                {{range .Tickets}}{{if eq .Status "waiting"}}{{add . 1}}{{end}}{{end}}
-                            </p>
+                            <p class="text-xl font-bold text-gray-800">{{.Stats.Waiting}}</p>
                         </div>
                     </div>
                 </div>
@@ -165,9 +163,7 @@
                         </div>
                         <div class="ml-3">
                             <p class="text-sm text-gray-500">Serving</p>
-                            <p class="text-xl font-bold text-gray-800">
-                                {{range .Tickets}}{{if eq .Status "serving"}}{{add . 1}}{{end}}{{end}}
-                            </p>
+                            <p class="text-xl font-bold text-gray-800">{{.Stats.Serving}}</p>
                         </div>
                     </div>
                 </div>
@@ -178,9 +174,7 @@
                         </div>
                         <div class="ml-3">
                             <p class="text-sm text-gray-500">Completed Today</p>
-                            <p class="text-xl font-bold text-gray-800">
-                                {{range .Tickets}}{{if and (eq .Status "completed") (eq .CreatedAt.Format "2006-01-02" (now.Format "2006-01-02"))}}{{add . 1}}{{end}}{{end}}
-                            </p>
+                            <p class="text-xl font-bold text-gray-800">{{.Stats.Completed}}</p>
                         </div>
                     </div>
                 </div>
@@ -222,8 +216,7 @@
                                 <td class="px-6 py-4 font-medium text-gray-900">{{.TicketNumber}}</td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
-                                        <span class="px-2 py-1 rounded text-xs text-white font-medium"
-                                              style="background-color: '{{.Category.ColorCode}}';">
+                                        <span class="px-2 py-1 rounded text-xs text-white font-medium bg-black rounded-sm p-1">
                                             {{.Category.Prefix}}
                                         </span>
                                         <span class="ml-2">{{.Category.Name}}</span>
@@ -238,11 +231,11 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     <span class="px-2 py-1 rounded-full text-xs font-medium
-                                          {{if eq .Status "waiting"}}bg-yellow-100 text-yellow-800
-                                          {{else if eq .Status "serving"}}bg-blue-100 text-blue-800
-                                          {{else if eq .Status "completed"}}bg-green-100 text-green-800
-                                          {{else if eq .Status "no_show"}}bg-orange-100 text-orange-800
-                                          {{else}}bg-red-100 text-red-800{{end}}">
+                                          {{if eq .Status "waiting"}} bg-yellow-100 text-yellow-800
+                                          {{else if eq .Status "serving"}} bg-blue-100 text-blue-800
+                                          {{else if eq .Status "completed"}} bg-green-100 text-green-800
+                                          {{else if eq .Status "no_show"}} bg-orange-100 text-orange-800
+                                          {{else}} bg-red-100 text-red-800{{end}}">
                                         {{.Status}}
                                     </span>
                                 </td>
@@ -271,12 +264,12 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex space-x-2">
-                                        <button onclick="viewTicketDetails({{.ID}})" 
+                                        <button onclick="viewTicketDetails('{{.ID}}')" 
                                                 class="text-blue-600 hover:text-blue-800" title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                         {{if eq .Status "waiting"}}
-                                        <button onclick="cancelTicket({{.ID}})" 
+                                        <button onclick="cancelTicket('{{.ID}}')" 
                                                 class="text-red-600 hover:text-red-800" title="Cancel">
                                             <i class="fas fa-times"></i>
                                         </button>
@@ -361,159 +354,173 @@
 </div>
 
 <script>
-// Modal functions
-function openModal(id) {
-    document.getElementById(id).classList.remove('hidden');
-    document.getElementById(id).classList.add('flex');
-}
-
-function closeModal(id) {
-    document.getElementById(id).classList.add('hidden');
-    document.getElementById(id).classList.remove('flex');
-}
-
-// Date helper functions
-function setQuickDateRange(range) {
-    const dateFrom = document.querySelector('input[name="date_from"]');
-    const dateTo = document.querySelector('input[name="date_to"]');
-    const today = new Date();
-    
-    switch(range) {
-        case 'today':
-            dateFrom.value = today.toISOString().split('T')[0];
-            dateTo.value = today.toISOString().split('T')[0];
-            break;
-        case 'week':
-            const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-            dateFrom.value = weekAgo.toISOString().split('T')[0];
-            dateTo.value = today.toISOString().split('T')[0];
-            break;
-        case 'month':
-            const monthAgo = new Date(today.getFullYear(), today.getMonth(), 1);
-            dateFrom.value = monthAgo.toISOString().split('T')[0];
-            dateTo.value = today.toISOString().split('T')[0];
-            break;
+    function openModal(id) {
+        const modal = document.getElementById(id);
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
     }
-}
 
-function clearFilters() {
-    document.getElementById('filterForm').reset();
-    // Clear the form and submit
-    document.getElementById('filterForm').submit();
-}
+    function closeModal(id) {
+        const modal = document.getElementById(id);
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    }
 
-// Ticket management functions
-async function addTicket(event) {
-    event.preventDefault();
-    const form = event.target;
-    const data = Object.fromEntries(new FormData(form));
-    data.category_id = parseInt(data.category_id);
-    data.priority = parseInt(data.priority);
-    
-    try {
-        const response = await fetch('/admin/api/tickets', {
+    function addTicket(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+
+        fetch('/api/tickets', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                closeModal('addTicketModal');
+                form.reset();
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to create ticket');
         });
-        
-        if (response.ok) {
-            const result = await response.json();
-            alert(`Ticket created successfully!\\n\\nTicket Number: ${result.ticket_number}\\nQueue Position: ${result.queue_position}\\nEstimated Wait: ${result.estimated_wait_time} minutes`);
-            closeModal('addTicketModal');
-            window.location.reload();
-        } else {
-            const error = await response.json();
-            alert(error.error || 'Failed to create ticket');
-        }
-    } catch (error) {
-        alert('Network error');
-    }
-    return false;
-}
 
-async function cancelTicket(id) {
-    if (!confirm('Are you sure you want to cancel this ticket?')) return;
-    
-    try {
-        const response = await fetch(`/admin/api/tickets/${id}/cancel`, {
-            method: 'POST'
-        });
-        if (response.ok) {
-            window.location.reload();
-        } else {
-            alert('Failed to cancel ticket');
-        }
-    } catch (error) {
-        alert('Network error');
+        return false;
     }
-}
 
-async function viewTicketDetails(id) {
-    try {
-        const response = await fetch(`/admin/api/tickets/${id}`);
-        if (response.ok) {
-            const ticket = await response.json();
+    function viewTicketDetails(ticketId) {
+        fetch('/admin/api/tickets/' + ticketId)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(ticket => {
+            console.log('Ticket data:', ticket);
+            const detailsDiv = document.getElementById('ticketDetails');
             
-            const detailsHTML = `
-                <div class="grid grid-cols-2 gap-6">
+            const createdAt = ticket.created_at ? new Date(ticket.created_at).toLocaleString() : '-';
+            
+            let categoryName = '-';
+            if (ticket.category) {
+                categoryName = ticket.category.name || '-';
+            }
+            
+            let counterInfo = 'Not assigned';
+            if (ticket.counter) {
+                counterInfo = ticket.counter.number + ' - ' + ticket.counter.name;
+            }
+            
+            let priorityText = 'Normal';
+            if (ticket.priority === 1) priorityText = 'High';
+            else if (ticket.priority === 2) priorityText = 'Urgent';
+            
+            detailsDiv.innerHTML = `
+                <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                        <h4 class="font-semibold mb-2">Ticket Information</h4>
-                        <div class="space-y-2">
-                            <div><strong>Ticket #:</strong> ${ticket.ticket_number}</div>
-                            <div><strong>Status:</strong> <span class="px-2 py-1 rounded text-xs text-white" style="background-color: ${ticket.category.color_code}">${ticket.status}</span></div>
-                            <div><strong>Priority:</strong> ${ticket.priority === 0 ? 'Normal' : ticket.priority === 1 ? 'High' : 'Urgent'}</div>
-                            <div><strong>Created:</strong> ${new Date(ticket.created_at).toLocaleString()}</div>
-                            ${ticket.wait_time ? `<div><strong>Wait Time:</strong> ${Math.floor(ticket.wait_time / 60)}m ${ticket.wait_time % 60}s</div>` : ''}
-                            ${ticket.service_time ? `<div><strong>Service Time:</strong> ${Math.floor(ticket.service_time / 60)}m ${ticket.service_time % 60}s</div>` : ''}
-                        </div>
+                        <label class="block text-sm font-medium text-gray-500">Ticket Number</label>
+                        <p class="text-lg font-bold text-gray-800">${ticket.ticket_number || '-'}</p>
                     </div>
                     <div>
-                        <h4 class="font-semibold mb-2">Service Details</h4>
-                        <div class="space-y-2">
-                            <div><strong>Category:</strong> ${ticket.category.name} (${ticket.category.prefix})</div>
-                            ${ticket.counter ? `<div><strong>Counter:</strong> ${ticket.counter.number} - ${ticket.counter.name}</div>` : '<div><strong>Counter:</strong> Not assigned</div>'}
-                            ${ticket.called_at ? `<div><strong>Called:</strong> ${new Date(ticket.called_at).toLocaleString()}</div>` : ''}
-                            ${ticket.completed_at ? `<div><strong>Completed:</strong> ${new Date(ticket.completed_at).toLocaleString()}</div>` : ''}
-                        </div>
+                        <label class="block text-sm font-medium text-gray-500">Status</label>
+                        <p class="text-lg font-bold text-gray-800 capitalize">${ticket.status || '-'}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Category</label>
+                        <p class="text-gray-800">${categoryName}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Priority</label>
+                        <p class="text-gray-800 capitalize">${priorityText}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Counter</label>
+                        <p class="text-gray-800">${counterInfo}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Created At</label>
+                        <p class="text-gray-800">${createdAt}</p>
                     </div>
                 </div>
-                ${ticket.notes ? `<div class="mt-4"><h4 class="font-semibold mb-2">Notes</h4><p>${ticket.notes}</p></div>` : ''}
             `;
-            
-            document.getElementById('ticketDetails').innerHTML = detailsHTML;
             openModal('ticketDetailsModal');
-        } else {
-            alert('Failed to load ticket details');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to load ticket details: ' + error.message);
+        });
+    }
+
+    function cancelTicket(ticketId) {
+        if (!confirm('Are you sure you want to cancel this ticket?')) {
+            return;
         }
-    } catch (error) {
-        alert('Network error');
-    }
-}
 
-// Search functionality
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        let searchTimeout;
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                document.getElementById('filterForm').submit();
-            }, 500);
+        fetch('/api/tickets/' + ticketId + '/cancel', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to cancel ticket');
         });
     }
-});
 
-// Auto-submit filters on change
-document.addEventListener('DOMContentLoaded', function() {
-    const selects = document.querySelectorAll('#filterForm select');
-    selects.forEach(select => {
-        select.addEventListener('change', function() {
-            document.getElementById('filterForm').submit();
-        });
-    });
-});
+    function setQuickDateRange(range) {
+        const today = new Date();
+        let dateFrom, dateTo;
+
+        switch(range) {
+            case 'today':
+                dateFrom = today.toISOString().split('T')[0];
+                dateTo = today.toISOString().split('T')[0];
+                break;
+            case 'week':
+                const lastWeek = new Date(today);
+                lastWeek.setDate(today.getDate() - 7);
+                dateFrom = lastWeek.toISOString().split('T')[0];
+                dateTo = today.toISOString().split('T')[0];
+                break;
+            case 'month':
+                const lastMonth = new Date(today);
+                lastMonth.setMonth(today.getMonth() - 1);
+                dateFrom = lastMonth.toISOString().split('T')[0];
+                dateTo = today.toISOString().split('T')[0];
+                break;
+        }
+
+        document.querySelector('input[name="date_from"]').value = dateFrom;
+        document.querySelector('input[name="date_to"]').value = dateTo;
+    }
+
+    function clearFilters() {
+        document.querySelector('input[name="search"]').value = '';
+        document.querySelector('select[name="status"]').value = '';
+        document.querySelector('select[name="category_id"]').value = '';
+        document.querySelector('select[name="counter_id"]').value = '';
+        document.querySelector('input[name="date_from"]').value = '';
+        document.querySelector('input[name="date_to"]').value = '';
+    }
 </script>
 
 {{ template "layouts/_footer.html" }}

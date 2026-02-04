@@ -193,13 +193,42 @@ func (r *TicketRepository) List(ctx context.Context, filters map[string]interfac
 	}
 	defer rows.Close()
 
-	res, err := pgx.CollectRows(rows, pgx.RowToStructByName[model.Ticket])
-	if err != nil {
-		log.Error().Err(err).Str("layer", "repository").Str("func", "List").Msg("Failed to collect rows")
-		return nil, err
+	var tickets []model.Ticket
+	for rows.Next() {
+		var t model.Ticket
+		t.Category = &model.Category{}
+		t.Counter = &model.Counter{}
+
+		var catName, catPrefix, catColor *string
+		var coNumber, coName *string
+
+		err := rows.Scan(
+			&t.ID, &t.TicketNumber, &t.CategoryID, &t.CounterID, &t.Status, &t.Priority,
+			&t.CreatedAt, &t.CalledAt, &t.CompletedAt, &t.WaitTime, &t.ServiceTime, &t.Notes,
+			&catName, &catPrefix, &catColor,
+			&coNumber, &coName,
+		)
+		if err != nil {
+			log.Error().Err(err).Str("layer", "repository").Str("func", "List").Msg("Failed to scan ticket")
+			return nil, err
+		}
+
+		if catName != nil {
+			t.Category.Name = *catName
+			t.Category.Prefix = *catPrefix
+			t.Category.ColorCode = *catColor
+		}
+		if coNumber != nil {
+			t.Counter.Number = *coNumber
+			t.Counter.Name = *coName
+		} else {
+			t.Counter = nil
+		}
+
+		tickets = append(tickets, t)
 	}
 
-	return res, nil
+	return tickets, nil
 }
 
 // GetTodayCount retrieves today's ticket count

@@ -433,6 +433,9 @@ func (h *AdminHandler) ListTickets(c *gin.Context) {
 	if dateTo := c.Query("date_to"); dateTo != "" {
 		filters["date_to"] = dateTo
 	}
+	if search := c.Query("search"); search != "" {
+		filters["search"] = search
+	}
 
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil {
@@ -457,6 +460,30 @@ func (h *AdminHandler) ListTickets(c *gin.Context) {
 		return
 	}
 
+	// Calculate stats for the header cards
+	stats := struct {
+		Total     int
+		Waiting   int
+		Serving   int
+		Completed int
+	}{
+		Total: len(tickets),
+	}
+
+	today := time.Now().Format("2006-01-02")
+	for _, t := range tickets {
+		switch t.Status {
+		case "waiting":
+			stats.Waiting++
+		case "serving":
+			stats.Serving++
+		case "completed":
+			if t.CreatedAt.Format("2006-01-02") == today {
+				stats.Completed++
+			}
+		}
+	}
+
 	categories, err := h.adminService.ListCategories(c.Request.Context(), false)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "handler").Str("func", "ListTickets").Msg("Failed to list categories")
@@ -476,6 +503,7 @@ func (h *AdminHandler) ListTickets(c *gin.Context) {
 		"Categories": categories,
 		"Counters":   counters,
 		"Filters":    filters,
+		"Stats":      stats,
 	})
 }
 
@@ -627,7 +655,7 @@ func (h *AdminHandler) ExportTickets(c *gin.Context) {
 			ticket.Category.Name,
 			ticket.Status,
 			ticket.CreatedAt.Format("2006-01-02 15:04:05"),
-			ticket.Priority,
+			fmt.Sprintf("%d", ticket.Priority),
 			waitTime,
 			serviceTime,
 			ticket.Notes,
