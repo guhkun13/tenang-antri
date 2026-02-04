@@ -49,35 +49,57 @@ func (s *TrackingService) GetTicketTrackingInfo(ctx context.Context, ticketNumbe
 		Status:           ticket.Status,
 		CreatedAt:        ticket.CreatedAt,
 		QueuePosition:    0,
-		EstimatedWaitMin: 0,
+		OperationalHours: "Mon-Fri: 08:00 - 17:00",
 	}
 
 	// Add category information
 	if ticket.Category != nil {
 		trackingInfo.CategoryName = ticket.Category.Name
 		trackingInfo.CategoryColor = ticket.Category.ColorCode
+
+		// Show last queue number called for this category
+		lastCalled, err := s.ticketRepo.GetLastCalledByCategoryID(ctx, ticket.CategoryID)
+		if err != nil {
+			log.Error().Err(err).Int("category_id", ticket.CategoryID).Msg("Failed to get last called ticket")
+		} else {
+			trackingInfo.LastCalledTicketNumber = lastCalled
+		}
 	}
 
 	// Add counter information if assigned
 	if ticket.Counter != nil && ticket.Counter.ID != 0 {
 		trackingInfo.CounterNumber = ticket.Counter.Number
 		trackingInfo.CounterName = ticket.Counter.Name
+
+		// Get full counter details for status and current serving
+		counter, err := s.counterRepo.GetByID(ctx, ticket.Counter.ID)
+		if err == nil {
+			// Map status for better user experience
+			switch counter.Status {
+			case "active":
+				trackingInfo.CounterStatus = "Open"
+			case "paused":
+				trackingInfo.CounterStatus = "Paused"
+			default:
+				trackingInfo.CounterStatus = "Closed"
+			}
+
+			// Check what this counter is currently serving
+			currentServing, err := s.ticketRepo.GetCurrentForCounter(ctx, counter.ID)
+			if err == nil && currentServing != nil {
+				trackingInfo.IsCounterServing = true
+				trackingInfo.CounterCurrentServingTicket = currentServing.TicketNumber
+			}
+		}
 	}
 
-	// Calculate queue position and wait time for waiting tickets
+	// Calculate queue position for waiting tickets
 	if ticket.Status == "waiting" {
 		position, err := s.CalculateQueuePosition(ctx, ticket)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to calculate queue position")
 		} else {
 			trackingInfo.QueuePosition = position
-		}
-
-		waitTime, err := s.EstimateWaitTime(ctx, ticket, position)
-		if err != nil {
-			log.Error().Err(err).Msg("Failed to estimate wait time")
-		} else {
-			trackingInfo.EstimatedWaitMin = waitTime
 		}
 	}
 

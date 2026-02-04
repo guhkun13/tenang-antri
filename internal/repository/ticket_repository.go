@@ -306,3 +306,16 @@ func (r *TicketRepository) GetTodayCompletedByCategories(ctx context.Context, ca
 
 	return tickets, nil
 }
+
+// GetLastCalledByCategoryID retrieves the last called ticket number for a specific category
+func (r *TicketRepository) GetLastCalledByCategoryID(ctx context.Context, categoryID int) (string, error) {
+	var ticketNumber string
+	err := r.ticketQueries.GetLastCalledTicketByCategory(ctx, categoryID).Scan(&ticketNumber)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return "", nil
+		}
+		return "", err
+	}
+	return ticketNumber, nil
+}

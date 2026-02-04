@@ -73,24 +73,51 @@
   <!-- Main Info -->
   <div class="p-6">
     {{if eq .TrackingInfo.Status "waiting"}}
-    <!-- Queue Position and Wait Time -->
+    <!-- Queue Position and Last Called -->
     <div class="grid grid-cols-2 gap-6 mb-6">
       <div class="text-center p-6 bg-purple-50 rounded-xl">
         <i class="fas fa-users text-3xl text-purple-600 mb-2"></i>
-        <p class="text-sm text-gray-600 mb-1">Your Position</p>
+        <p class="text-sm text-gray-600 mb-1">Remaining Queue</p>
         <p class="text-5xl font-bold text-purple-600">
           {{.TrackingInfo.QueuePosition}}
         </p>
       </div>
       <div class="text-center p-6 bg-orange-50 rounded-xl">
-        <i class="fas fa-clock text-3xl text-orange-600 mb-2"></i>
-        <p class="text-sm text-gray-600 mb-1">Estimated Wait</p>
+        <i class="fas fa-bullhorn text-3xl text-orange-600 mb-2"></i>
+        <p class="text-sm text-gray-600 mb-1">Last Called</p>
         <p class="text-5xl font-bold text-orange-600">
-          {{.TrackingInfo.EstimatedWaitMin}}
+          {{if .TrackingInfo.LastCalledTicketNumber}}{{.TrackingInfo.LastCalledTicketNumber}}{{else}}-{{end}}
         </p>
-        <p class="text-sm text-gray-600">minutes</p>
+        <p class="text-sm text-gray-600">for {{.TrackingInfo.CategoryName}}</p>
       </div>
     </div>
+    
+    <!-- Counter Information for Waiting Stage -->
+    {{if .TrackingInfo.CounterNumber}}
+    <div class="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center">
+          <i class="fas fa-desktop text-gray-400 mr-2"></i>
+          <span class="text-sm font-medium text-gray-700">Counter {{.TrackingInfo.CounterNumber}}</span>
+        </div>
+        <span class="px-2 py-1 text-xs font-semibold rounded-full {{if eq .TrackingInfo.CounterStatus "Open"}}bg-green-100 text-green-700{{else if eq .TrackingInfo.CounterStatus "Paused"}}bg-yellow-100 text-yellow-700{{else}}bg-gray-100 text-gray-600{{end}}">
+          {{upper .TrackingInfo.CounterStatus}}
+        </span>
+      </div>
+      
+      {{if .TrackingInfo.IsCounterServing}}
+      <div class="text-sm text-gray-600 flex items-center">
+        <span class="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></span>
+        Currently serving: <span class="font-bold ml-1 text-gray-800">{{.TrackingInfo.CounterCurrentServingTicket}}</span>
+      </div>
+      {{else if eq .TrackingInfo.CounterStatus "Open"}}
+      <div class="text-sm text-gray-500 italic">
+        Ready to serve next ticket
+      </div>
+      {{end}}
+    </div>
+    {{end}}
+
     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
       <p class="text-blue-800 text-sm">
         <i class="fas fa-info-circle mr-1"></i>
@@ -137,11 +164,20 @@
 
   <!-- Footer -->
   <div class="px-6 py-4 bg-gray-50 border-t text-center text-sm text-gray-600">
-    <i class="fas fa-calendar-alt mr-1"></i>
-    Created: {{formatDate .TrackingInfo.CreatedAt}}
-    <span class="mx-2">•</span>
-    <i class="fas fa-sync-alt mr-1"></i>
-    Auto-updating every 10 seconds
+    <div class="flex flex-col md:flex-row justify-between items-center gap-2">
+      <div>
+        <i class="fas fa-calendar-alt mr-1"></i>
+        Created: {{formatDate .TrackingInfo.CreatedAt}}
+      </div>
+      <div class="font-medium">
+        <i class="fas fa-clock mr-1 text-blue-500"></i>
+        Operational: {{.TrackingInfo.OperationalHours}}
+      </div>
+      <div>
+        <i class="fas fa-sync-alt mr-1"></i>
+        Auto-updating every 10 seconds
+      </div>
+    </div>
   </div>
 </div>
 {{end}}

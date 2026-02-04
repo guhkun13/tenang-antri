@@ -271,3 +271,14 @@ func (q *TicketQueries) GetTodayCompletedTicketsByCategories(ctx context.Context
 
 	return q.pool.Query(ctx, query, args...)
 }
+
+// GetLastCalledTicketByCategory retrieves the most recently called ticket number for a category
+func (q *TicketQueries) GetLastCalledTicketByCategory(ctx context.Context, categoryID int) pgx.Row {
+	query := `
+		SELECT ticket_number
+		FROM tickets
+		WHERE category_id = $1 AND status IN ('serving', 'completed')
+		ORDER BY called_at DESC
+		LIMIT 1`
+	return q.pool.QueryRow(ctx, query, categoryID)
+}
