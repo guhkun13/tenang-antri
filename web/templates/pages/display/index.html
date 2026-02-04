@@ -114,7 +114,7 @@
                             {{else if eq .Status "active"}} bg-green-500 text-white
                             {{else if eq .Status "paused"}} bg-orange-500 text-white
                             {{else}} bg-gray-500 text-white{{end}}">
-                            {{if not .IsActive}}Disabled
+                            {{if not .IsActive}} Inactive
                             {{else}}{{.Status}}{{end}}
                         </span>
                     </div>

@@ -56,6 +56,20 @@ func (q *TicketQueries) GetTicketWithDetails(ctx context.Context, id int) pgx.Ro
 	return q.pool.QueryRow(ctx, query, id)
 }
 
+// GetTicketByNumber retrieves a ticket with full details by ticket number
+func (q *TicketQueries) GetTicketByNumber(ctx context.Context, ticketNumber string) pgx.Row {
+	query := `
+		SELECT t.id, t.ticket_number, t.category_id, t.counter_id, t.status, t.priority,
+		       t.created_at, t.called_at, t.completed_at, t.wait_time, t.service_time, t.notes,
+		       c.id, c.name, c.prefix, c.color_code,
+		       co.id, co.number, co.name
+		FROM tickets t
+		LEFT JOIN categories c ON t.category_id = c.id
+		LEFT JOIN counters co ON t.counter_id = co.id
+		WHERE t.ticket_number = $1`
+	return q.pool.QueryRow(ctx, query, ticketNumber)
+}
+
 // UpdateTicketStatus updates the status of a ticket
 func (q *TicketQueries) UpdateTicketStatus(ctx context.Context, id int, status string) error {
 	var query string

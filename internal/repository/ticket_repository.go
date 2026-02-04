@@ -76,6 +76,43 @@ func (r *TicketRepository) GetWithDetails(ctx context.Context, id int) (*model.T
 	return ticket, nil
 }
 
+// GetByTicketNumber retrieves a ticket with full details by ticket number
+func (r *TicketRepository) GetByTicketNumber(ctx context.Context, ticketNumber string) (*model.Ticket, error) {
+	row := r.ticketQueries.GetTicketByNumber(ctx, ticketNumber)
+
+	ticket := &model.Ticket{Category: &model.Category{}, Counter: &model.Counter{}}
+
+	var catID *int
+	var catName, catPrefix, catColor *string
+	var coID *int
+	var coNumber, coName *string
+
+	err := row.Scan(
+		&ticket.ID, &ticket.TicketNumber, &ticket.CategoryID, &ticket.CounterID,
+		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
+		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
+		&catID, &catName, &catPrefix, &catColor,
+		&coID, &coNumber, &coName,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if catID != nil {
+		ticket.Category.ID = *catID
+		ticket.Category.Name = *catName
+		ticket.Category.Prefix = *catPrefix
+		ticket.Category.ColorCode = *catColor
+	}
+	if coID != nil {
+		ticket.Counter.ID = *coID
+		ticket.Counter.Number = *coNumber
+		ticket.Counter.Name = *coName
+	}
+
+	return ticket, nil
+}
+
 // Create creates a new ticket
 func (r *TicketRepository) Create(ctx context.Context, ticket *model.Ticket) (*model.Ticket, error) {
 	id, createdAt, err := r.ticketQueries.CreateTicket(
