@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 
@@ -69,13 +70,18 @@ func (r *StatsRepository) GetDashboardStats(ctx context.Context) (*model.Dashboa
 	}
 	defer rows.Close()
 
-	for rows.Next() {
-		var status string
-		var count int
-		if err := rows.Scan(&status, &count); err != nil {
-			return nil, err
-		}
-		stats.TicketsByStatus[status] = count
+	type statusCount struct {
+		Status string
+		Count  int
+	}
+
+	statusRows, err := pgx.CollectRows(rows, pgx.RowToStructByPos[statusCount])
+	if err != nil {
+		return nil, err
+	}
+
+	for _, sr := range statusRows {
+		stats.TicketsByStatus[sr.Status] = sr.Count
 	}
 
 	stats.QueueLengthByCategory, err = r.GetQueueLengthByCategory(ctx)
@@ -99,13 +105,14 @@ func (r *StatsRepository) GetQueueLengthByCategory(ctx context.Context) ([]model
 	}
 	defer rows.Close()
 
-	var result []model.CategoryQueueStats
-	for rows.Next() {
-		var stats model.CategoryQueueStats
-		if err := rows.Scan(&stats.CategoryID, &stats.CategoryName, &stats.Prefix, &stats.ColorCode, &stats.WaitingCount); err != nil {
-			return nil, err
-		}
-		result = append(result, stats)
+	ptrResult, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByPos[model.CategoryQueueStats])
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]model.CategoryQueueStats, len(ptrResult))
+	for i, ptr := range ptrResult {
+		result[i] = *ptr
 	}
 
 	return result, nil
@@ -127,15 +134,15 @@ func (r *StatsRepository) GetQueueLengthByCategories(ctx context.Context, catego
 	}
 	defer rows.Close()
 
-	var result []model.CategoryQueueStats
-	for rows.Next() {
-		var stats model.CategoryQueueStats
-		err := rows.Scan(&stats.CategoryID, &stats.CategoryName, &stats.Prefix, &stats.ColorCode, &stats.WaitingCount)
-		if err != nil {
-			log.Error().Err(err).Str("layer", "repository").Str("func", "GetQueueLengthByCategories").Msg("Failed to scan row")
-			return nil, err
-		}
-		result = append(result, stats)
+	ptrResult, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByPos[model.CategoryQueueStats])
+	if err != nil {
+		log.Error().Err(err).Str("layer", "repository").Str("func", "GetQueueLengthByCategories").Msg("Failed to collect rows")
+		return nil, err
+	}
+
+	result := make([]model.CategoryQueueStats, len(ptrResult))
+	for i, ptr := range ptrResult {
+		result[i] = *ptr
 	}
 
 	return result, nil
@@ -149,13 +156,14 @@ func (r *StatsRepository) GetHourlyDistribution(ctx context.Context) ([]model.Ho
 	}
 	defer rows.Close()
 
-	var result []model.HourlyStats
-	for rows.Next() {
-		var stats model.HourlyStats
-		if err := rows.Scan(&stats.Hour, &stats.Count); err != nil {
-			return nil, err
-		}
-		result = append(result, stats)
+	ptrResult, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByPos[model.HourlyStats])
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]model.HourlyStats, len(ptrResult))
+	for i, ptr := range ptrResult {
+		result[i] = *ptr
 	}
 
 	return result, nil
@@ -169,13 +177,14 @@ func (r *StatsRepository) GetCurrentlyServingTickets(ctx context.Context) ([]mod
 	}
 	defer rows.Close()
 
-	var result []model.DisplayTicket
-	for rows.Next() {
-		var dt model.DisplayTicket
-		if err := rows.Scan(&dt.TicketNumber, &dt.CounterNumber, &dt.CategoryPrefix, &dt.ColorCode, &dt.Status); err != nil {
-			return nil, err
-		}
-		result = append(result, dt)
+	ptrResult, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByPos[model.DisplayTicket])
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]model.DisplayTicket, len(ptrResult))
+	for i, ptr := range ptrResult {
+		result[i] = *ptr
 	}
 
 	return result, nil

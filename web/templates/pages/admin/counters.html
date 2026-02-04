@@ -185,14 +185,7 @@
           <select name="category_id" class="w-full border rounded-lg px-3 py-2">
             <option value="">No category assigned</option>
             {{range .Categories}}
-            <option value="{{.ID}}">
-              <span
-                class="w-6 h-6 rounded-full inline-flex items-center justify-center text-white text-xs"
-                style="background-color: '{{.ColorCode}}'"
-                >{{.Prefix}}</span
-              >
-              {{.Name}}
-            </option>
+            <option value="{{.ID}}">{{.Name}} ({{.Prefix}})</option>
             {{end}}
           </select>
         </div>
@@ -276,17 +269,14 @@
           <label class="block text-sm font-medium text-gray-700 mb-1"
             >Assigned Category (Optional)</label
           >
-          <select name="category_id" id="editCounterCategory" class="w-full border rounded-lg px-3 py-2">
+          <select
+            name="category_id"
+            id="editCounterCategory"
+            class="w-full border rounded-lg px-3 py-2"
+          >
             <option value="">No category assigned</option>
             {{range .Categories}}
-            <option value="{{.ID}}">
-              <span
-                class="w-6 h-6 rounded-full inline-flex items-center justify-center text-white text-xs"
-                style="background-color: '{{.ColorCode}}'"
-                >{{.Prefix}}</span
-              >
-              {{.Name}}
-            </option>
+            <option value="{{.ID}}">{{.Name}} ({{.Prefix}})</option>
             {{end}}
           </select>
         </div>

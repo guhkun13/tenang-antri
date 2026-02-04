@@ -25,18 +25,18 @@ func NewCategoryRepository(pool *pgxpool.Pool) *CategoryRepository {
 
 func (r *CategoryRepository) GetByID(ctx context.Context, id int) (*model.Category, error) {
 	sql := r.categoryQry.GetCategoryByID(ctx)
-	row := r.pool.QueryRow(ctx, sql, id)
-
-	category := &model.Category{}
-	err := row.Scan(
-		&category.ID, &category.Name, &category.Prefix, &category.Priority,
-		&category.ColorCode, &category.Description, &category.Icon,
-		&category.IsActive, &category.CreatedAt, &category.UpdatedAt,
-	)
+	rows, err := r.pool.Query(ctx, sql, id)
 	if err != nil {
 		return nil, err
 	}
-	return category, nil
+	defer rows.Close()
+
+	category, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[model.Category])
+	if err != nil {
+		return nil, err
+	}
+
+	return &category, nil
 }
 
 func (r *CategoryRepository) Create(ctx context.Context, category *model.Category) (*model.Category, error) {

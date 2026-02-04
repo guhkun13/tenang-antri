@@ -189,8 +189,7 @@ func (r *TicketRepository) List(ctx context.Context, filters map[string]interfac
 	}
 	defer rows.Close()
 
-	var tickets []model.Ticket
-	for rows.Next() {
+	tickets, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (model.Ticket, error) {
 		var t model.Ticket
 		t.Category = &model.Category{}
 		t.Counter = &model.Counter{}
@@ -199,15 +198,14 @@ func (r *TicketRepository) List(ctx context.Context, filters map[string]interfac
 		var catName, catPrefix, catColor string
 		var coNumber, coName string
 
-		err := rows.Scan(
+		err := row.Scan(
 			&t.ID, &t.TicketNumber, &catID, &t.CounterID, &t.Status, &t.Priority,
 			&t.CreatedAt, &t.CalledAt, &t.CompletedAt, &t.WaitTime, &t.ServiceTime, &t.Notes,
 			&catName, &catPrefix, &catColor,
 			&coNumber, &coName,
 		)
 		if err != nil {
-			log.Error().Err(err).Str("layer", "repository").Str("func", "List").Msg("Failed to scan ticket")
-			return nil, err
+			return model.Ticket{}, err
 		}
 
 		t.Category.ID = catID
@@ -221,7 +219,12 @@ func (r *TicketRepository) List(ctx context.Context, filters map[string]interfac
 			t.Counter = nil
 		}
 
-		tickets = append(tickets, t)
+		return t, nil
+	})
+
+	if err != nil {
+		log.Error().Err(err).Str("layer", "repository").Str("func", "List").Msg("Failed to collect rows")
+		return nil, err
 	}
 
 	return tickets, nil
@@ -259,19 +262,10 @@ func (r *TicketRepository) GetWaitingPreview(ctx context.Context, limit int) ([]
 	}
 	defer rows.Close()
 
-	var tickets []model.Ticket
-	for rows.Next() {
-		ticket := model.Ticket{}
-		err := rows.Scan(
-			&ticket.ID, &ticket.TicketNumber, &ticket.Category.ID, &ticket.CounterID,
-			&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
-			&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
-		)
-		if err != nil {
-			log.Error().Err(err).Str("layer", "repository").Str("func", "GetWaitingPreview").Msg("Failed to scan ticket")
-			return nil, err
-		}
-		tickets = append(tickets, ticket)
+	tickets, err := pgx.CollectRows(rows, pgx.RowToStructByPos[model.Ticket])
+	if err != nil {
+		log.Error().Err(err).Str("layer", "repository").Str("func", "GetWaitingPreview").Msg("Failed to collect rows")
+		return nil, err
 	}
 
 	return tickets, nil
@@ -290,19 +284,10 @@ func (r *TicketRepository) GetWaitingPreviewByCategories(ctx context.Context, ca
 	}
 	defer rows.Close()
 
-	var tickets []model.Ticket
-	for rows.Next() {
-		ticket := model.Ticket{}
-		err := rows.Scan(
-			&ticket.ID, &ticket.TicketNumber, &ticket.Category.ID, &ticket.CounterID,
-			&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
-			&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
-		)
-		if err != nil {
-			log.Error().Err(err).Str("layer", "repository").Str("func", "GetWaitingPreviewByCategories").Msg("Failed to scan ticket")
-			return nil, err
-		}
-		tickets = append(tickets, ticket)
+	tickets, err := pgx.CollectRows(rows, pgx.RowToStructByPos[model.Ticket])
+	if err != nil {
+		log.Error().Err(err).Str("layer", "repository").Str("func", "GetWaitingPreviewByCategories").Msg("Failed to collect rows")
+		return nil, err
 	}
 
 	return tickets, nil
@@ -320,37 +305,43 @@ func (r *TicketRepository) GetTodayCompletedByCategories(ctx context.Context, ca
 	}
 	defer rows.Close()
 
-	var tickets []model.Ticket
-	for rows.Next() {
-		ticket := model.Ticket{Category: &model.Category{}, Counter: &model.Counter{}}
+	tickets, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (model.Ticket, error) {
+		var t model.Ticket
+		t.Category = &model.Category{}
+		t.Counter = &model.Counter{}
+
 		var catID int
 		var catName, catPrefix, catColor string
 		var coID *int
 		var coNumber, coName string
 
-		err := rows.Scan(
-			&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
-			&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
-			&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
+		err := row.Scan(
+			&t.ID, &t.TicketNumber, &catID, &t.CounterID,
+			&t.Status, &t.Priority, &t.CreatedAt, &t.CalledAt,
+			&t.CompletedAt, &t.WaitTime, &t.ServiceTime, &t.Notes,
 			&catID, &catName, &catPrefix, &catColor,
 			&coID, &coNumber, &coName,
 		)
 		if err != nil {
-			log.Error().Err(err).Str("layer", "repository").Str("func", "GetTodayCompletedByCategories").Msg("Failed to scan row")
-			return nil, err
+			return model.Ticket{}, err
 		}
 
-		ticket.Category.ID = catID
-		ticket.Category.Name = catName
-		ticket.Category.Prefix = catPrefix
-		ticket.Category.ColorCode = catColor
+		t.Category.ID = catID
+		t.Category.Name = catName
+		t.Category.Prefix = catPrefix
+		t.Category.ColorCode = catColor
 		if coID != nil {
-			ticket.Counter.ID = *coID
-			ticket.Counter.Number = coNumber
-			ticket.Counter.Name = coName
+			t.Counter.ID = *coID
+			t.Counter.Number = coNumber
+			t.Counter.Name = coName
 		}
 
-		tickets = append(tickets, ticket)
+		return t, nil
+	})
+
+	if err != nil {
+		log.Error().Err(err).Str("layer", "repository").Str("func", "GetTodayCompletedByCategories").Msg("Failed to collect rows")
+		return nil, err
 	}
 
 	return tickets, nil

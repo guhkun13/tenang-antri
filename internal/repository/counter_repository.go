@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 
@@ -25,18 +26,18 @@ func NewCounterRepository(pool *pgxpool.Pool) *CounterRepository {
 
 func (r *CounterRepository) GetByID(ctx context.Context, id int) (*model.Counter, error) {
 	sql := r.counterQry.GetCounterByID(ctx)
-	row := r.pool.QueryRow(ctx, sql, id)
-
-	counter := &model.Counter{}
-	err := row.Scan(
-		&counter.ID, &counter.Number, &counter.Name, &counter.Location,
-		&counter.Status, &counter.IsActive, &counter.CategoryID,
-		&counter.CurrentStaffID, &counter.CreatedAt, &counter.UpdatedAt,
-	)
+	rows, err := r.pool.Query(ctx, sql, id)
 	if err != nil {
 		return nil, err
 	}
-	return counter, nil
+	defer rows.Close()
+
+	counter, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[model.Counter])
+	if err != nil {
+		return nil, err
+	}
+
+	return &counter, nil
 }
 
 func (r *CounterRepository) Create(ctx context.Context, counter *model.Counter) (*model.Counter, error) {
@@ -60,7 +61,7 @@ func (r *CounterRepository) Update(ctx context.Context, counter *model.Counter) 
 	if err != nil {
 		return nil, err
 	}
-	return counter, nil
+	return r.GetByID(ctx, counter.ID)
 }
 
 func (r *CounterRepository) UpdateStatus(ctx context.Context, id int, status string) error {
@@ -90,23 +91,9 @@ func (r *CounterRepository) List(ctx context.Context) ([]model.Counter, error) {
 	}
 	defer rows.Close()
 
-	var counters []model.Counter
-	for rows.Next() {
-		counter := model.Counter{}
-		err := rows.Scan(
-			&counter.ID, &counter.Number, &counter.Name, &counter.Location,
-			&counter.Status, &counter.IsActive, &counter.CategoryID,
-			&counter.CurrentStaffID, &counter.CreatedAt, &counter.UpdatedAt,
-		)
-		if err != nil {
-			log.Error().Err(err).Str("layer", "repository").Str("func", "List").Msg("Failed to scan counter")
-			return nil, err
-		}
-		counters = append(counters, counter)
-	}
-
-	if err := rows.Err(); err != nil {
-		log.Error().Err(err).Str("layer", "repository").Str("func", "List").Msg("Error iterating counters")
+	counters, err := pgx.CollectRows(rows, pgx.RowToStructByName[model.Counter])
+	if err != nil {
+		log.Error().Err(err).Str("layer", "repository").Str("func", "List").Msg("Failed to collect rows")
 		return nil, err
 	}
 

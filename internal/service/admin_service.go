@@ -275,6 +275,8 @@ func (s *AdminService) ListCounters(ctx context.Context) ([]model.Counter, error
 		return nil, err
 	}
 
+	log.Info().Interface("counters", counters).Msg("Counters loaded successfully")
+
 	for i := range counters {
 		if counters[i].CategoryID != nil {
 			category, err := s.categoryRepo.GetByID(ctx, *counters[i].CategoryID)
