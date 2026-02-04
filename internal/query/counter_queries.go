@@ -37,5 +37,6 @@ func (q *CounterQueries) DeleteCounter(ctx context.Context) string {
 }
 
 func (q *CounterQueries) ListCounters(ctx context.Context) string {
-	return `SELECT id, number, name, location, status, is_active, current_staff_id, created_at, updated_at FROM counters ORDER BY number`
+	return `SELECT id, number, name, location, status, is_active, current_staff_id, category_id, created_at, updated_at 
+	FROM counters ORDER BY number`
 }

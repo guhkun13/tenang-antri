@@ -259,12 +259,22 @@ func (r *TicketRepository) GetWaitingPreview(ctx context.Context, limit int) ([]
 	}
 	defer rows.Close()
 
-	res, err := pgx.CollectRows(rows, pgx.RowToStructByName[model.Ticket])
-	if err != nil {
-		log.Error().Err(err).Str("layer", "repository").Str("func", "GetWaitingPreview").Msg("Failed to collect rows")
-		return nil, err
+	var tickets []model.Ticket
+	for rows.Next() {
+		ticket := model.Ticket{}
+		err := rows.Scan(
+			&ticket.ID, &ticket.TicketNumber, &ticket.Category.ID, &ticket.CounterID,
+			&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
+			&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
+		)
+		if err != nil {
+			log.Error().Err(err).Str("layer", "repository").Str("func", "GetWaitingPreview").Msg("Failed to scan ticket")
+			return nil, err
+		}
+		tickets = append(tickets, ticket)
 	}
-	return res, nil
+
+	return tickets, nil
 }
 
 func (r *TicketRepository) GetWaitingPreviewByCategories(ctx context.Context, categoryIDs []int, limit int) ([]model.Ticket, error) {
@@ -280,12 +290,22 @@ func (r *TicketRepository) GetWaitingPreviewByCategories(ctx context.Context, ca
 	}
 	defer rows.Close()
 
-	res, err := pgx.CollectRows(rows, pgx.RowToStructByName[model.Ticket])
-	if err != nil {
-		log.Error().Err(err).Str("layer", "repository").Str("func", "GetWaitingPreviewByCategories").Msg("Failed to collect rows")
-		return nil, err
+	var tickets []model.Ticket
+	for rows.Next() {
+		ticket := model.Ticket{}
+		err := rows.Scan(
+			&ticket.ID, &ticket.TicketNumber, &ticket.Category.ID, &ticket.CounterID,
+			&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
+			&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
+		)
+		if err != nil {
+			log.Error().Err(err).Str("layer", "repository").Str("func", "GetWaitingPreviewByCategories").Msg("Failed to scan ticket")
+			return nil, err
+		}
+		tickets = append(tickets, ticket)
 	}
-	return res, nil
+
+	return tickets, nil
 }
 
 func (r *TicketRepository) GetTodayCompletedByCategories(ctx context.Context, categoryIDs []int) ([]model.Ticket, error) {

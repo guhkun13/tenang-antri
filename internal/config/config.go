@@ -29,11 +29,17 @@ type DatabaseConfig struct {
 }
 
 type JWTConfig struct {
-	Secret           string
+	Secret            string
 	AccessTokenExpiry time.Duration
 }
 
 func Load() (*Config, error) {
+
+	viper.AddConfigPath(".")
+	viper.SetConfigName(".env")
+	viper.SetConfigType("env")
+	viper.ReadInConfig()
+
 	viper.SetDefault("SERVER_PORT", "8080")
 	viper.SetDefault("SERVER_MODE", "debug")
 	viper.SetDefault("SERVER_READ_TIMEOUT", "10s")
@@ -65,7 +71,7 @@ func Load() (*Config, error) {
 			SSLMode:  viper.GetString("DB_SSLMODE"),
 		},
 		JWT: JWTConfig{
-			Secret:           viper.GetString("JWT_SECRET"),
+			Secret:            viper.GetString("JWT_SECRET"),
 			AccessTokenExpiry: viper.GetDuration("JWT_ACCESS_TOKEN_EXPIRY"),
 		},
 	}, nil

@@ -82,12 +82,13 @@ func (q *TicketQueries) ListTickets(ctx context.Context, filters map[string]inte
 
 	query += ` ORDER BY t.created_at DESC`
 
-	if limit, ok := filters["limit"]; ok && limit != 0 {
-		query += fmt.Sprintf(" LIMIT $%d", argCount)
-		argCount++
-	}
-	if offset, ok := filters["offset"]; ok && offset != 0 {
-		query += fmt.Sprintf(" OFFSET $%d", argCount)
+	if limit, ok := filters["limit"].(int); ok && limit > 0 {
+		query += fmt.Sprintf(" LIMIT %d", limit)
+		if offset, ok := filters["offset"].(int); ok && offset > 0 {
+			query += fmt.Sprintf(" OFFSET %d", offset)
+		}
+	} else {
+		query += " LIMIT 50"
 	}
 
 	return query

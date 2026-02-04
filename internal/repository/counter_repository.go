@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 
@@ -91,11 +90,25 @@ func (r *CounterRepository) List(ctx context.Context) ([]model.Counter, error) {
 	}
 	defer rows.Close()
 
-	res, err := pgx.CollectRows(rows, pgx.RowToStructByName[model.Counter])
-	if err != nil {
-		log.Error().Err(err).Str("layer", "repository").Str("func", "List").Msg("Failed to collect rows")
+	var counters []model.Counter
+	for rows.Next() {
+		counter := model.Counter{}
+		err := rows.Scan(
+			&counter.ID, &counter.Number, &counter.Name, &counter.Location,
+			&counter.Status, &counter.IsActive, &counter.CategoryID,
+			&counter.CurrentStaffID, &counter.CreatedAt, &counter.UpdatedAt,
+		)
+		if err != nil {
+			log.Error().Err(err).Str("layer", "repository").Str("func", "List").Msg("Failed to scan counter")
+			return nil, err
+		}
+		counters = append(counters, counter)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Error().Err(err).Str("layer", "repository").Str("func", "List").Msg("Error iterating counters")
 		return nil, err
 	}
 
-	return res, nil
+	return counters, nil
 }
