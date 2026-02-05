@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -22,16 +23,40 @@ func InitAuth(cfg *config.JWTConfig) {
 	jwtSecret = []byte(cfg.Secret)
 }
 
+type FlexibleInt int
+
+func (fi *FlexibleInt) UnmarshalJSON(b []byte) error {
+	if len(b) > 0 && b[0] == '"' {
+		var s string
+		if err := json.Unmarshal(b, &s); err != nil {
+			return err
+		}
+		i, err := strconv.Atoi(s)
+		if err != nil {
+			return err
+		}
+		*fi = FlexibleInt(i)
+		return nil
+	}
+
+	var i int
+	if err := json.Unmarshal(b, &i); err != nil {
+		return err
+	}
+	*fi = FlexibleInt(i)
+	return nil
+}
+
 type Claims struct {
-	UserID   int    `json:"user_id"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
+	UserID   FlexibleInt `json:"user_id"`
+	Username string      `json:"username"`
+	Role     string      `json:"role"`
 	jwt.RegisteredClaims
 }
 
 func GenerateToken(userID int, username, role string, expiry time.Duration) (string, error) {
 	claims := Claims{
-		UserID:   userID,
+		UserID:   FlexibleInt(userID),
 		Username: username,
 		Role:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -91,7 +116,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("userID", claims.UserID)
+		c.Set("userID", int(claims.UserID))
 		c.Set("username", claims.Username)
 		c.Set("role", claims.Role)
 		c.Next()
