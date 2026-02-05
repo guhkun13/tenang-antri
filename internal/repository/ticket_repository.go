@@ -172,9 +172,8 @@ func (r *TicketRepository) GetCurrentForCounter(ctx context.Context, counterID i
 	row := r.pool.QueryRow(ctx, sql, counterID)
 
 	ticket := &model.Ticket{}
-	var catID int
 	err := row.Scan(
-		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
+		&ticket.ID, &ticket.TicketNumber, &ticket.CategoryID, &ticket.CounterID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
 		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
 	)

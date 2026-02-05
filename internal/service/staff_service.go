@@ -66,9 +66,10 @@ func (s *StaffService) GetDashboardData(ctx context.Context, userID int) (*dto.S
 		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load current ticket")
 		return nil, err
 	}
+	log.Info().Interface("currentTicket", currentTicket).Msg("Current ticket")
 
-	if currentTicket != nil && currentTicket.Category != nil {
-		currentCategory, err := s.categoryRepo.GetByID(ctx, currentTicket.Category.ID)
+	if currentTicket != nil && currentTicket.CategoryID != nil {
+		currentCategory, err := s.categoryRepo.GetByID(ctx, *currentTicket.CategoryID)
 		if err != nil {
 			log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load current ticket category")
 			return nil, err

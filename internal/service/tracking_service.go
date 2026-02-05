@@ -123,7 +123,7 @@ func (s *TrackingService) CalculateQueuePosition(ctx context.Context, ticket *mo
 		return 0, err
 	}
 
-	position := 1
+	position := 0
 	for _, t := range tickets {
 		if t.CreatedAt.Before(ticket.CreatedAt) {
 			position++
