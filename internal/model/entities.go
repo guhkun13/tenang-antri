@@ -53,18 +53,20 @@ type Counter struct {
 
 // Ticket represents a queue ticket
 type Ticket struct {
-	ID           int        `json:"id" db:"id"`
-	TicketNumber string     `json:"ticket_number" db:"ticket_number"`
-	CategoryID   *int       `json:"category_id,omitempty" db:"category_id"`
-	Category     *Category  `json:"category,omitempty" db:"-"`
-	CounterID    *int       `json:"counter_id,omitempty" db:"counter_id"`
-	Counter      *Counter   `json:"counter,omitempty" db:"-"`
-	Status       string     `json:"status" db:"status"` // waiting, serving, completed, no_show, cancelled
-	Priority     int        `json:"priority" db:"priority"`
-	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
-	CalledAt     *time.Time `json:"called_at,omitempty" db:"called_at"`
-	CompletedAt  *time.Time `json:"completed_at,omitempty" db:"completed_at"`
-	WaitTime     *int       `json:"wait_time,omitempty" db:"wait_time"`       // in seconds
-	ServiceTime  *int       `json:"service_time,omitempty" db:"service_time"` // in seconds
-	Notes        string     `json:"notes" db:"notes"`
+	ID            int        `json:"id" db:"id"`
+	TicketNumber  string     `json:"ticket_number" db:"ticket_number"`
+	CategoryID    *int       `json:"category_id,omitempty" db:"category_id"`
+	Category      *Category  `json:"category,omitempty" db:"-"`
+	CounterID     *int       `json:"counter_id,omitempty" db:"counter_id"`
+	Counter       *Counter   `json:"counter,omitempty" db:"-"`
+	Status        string     `json:"status" db:"status"` // waiting, serving, completed, no_show, cancelled
+	Priority      int        `json:"priority" db:"priority"`
+	CreatedAt     time.Time  `json:"created_at" db:"created_at"`
+	CalledAt      *time.Time `json:"called_at,omitempty" db:"called_at"`
+	CompletedAt   *time.Time `json:"completed_at,omitempty" db:"completed_at"`
+	WaitTime      *int       `json:"wait_time,omitempty" db:"wait_time"`       // in seconds
+	ServiceTime   *int       `json:"service_time,omitempty" db:"service_time"` // in seconds
+	DailySequence int        `json:"daily_sequence" db:"daily_sequence"`
+	QueueDate     time.Time  `json:"queue_date" db:"queue_date"`
+	Notes         string     `json:"notes" db:"notes"`
 }

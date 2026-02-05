@@ -1,0 +1,36 @@
+# Walkthrough - Ticket Sequence Improvements
+
+I have implemented a more robust ticket numbering system by introducing an explicit `daily_sequence` column. This eliminates potential confusion in the database and improves code readability.
+
+## Key Changes
+
+### Database Migration
+Added the `daily_sequence` column and an optimized index. I also included a backfill script to populate existing data.
+- [005_add_daily_sequence.up.sql](file:///home/guhkun/work/mine/antih/v7/source/migrations/005_add_daily_sequence.up.sql)
+
+### Model Updates
+- Added `DailySequence` to `model.Ticket` and `model.DisplayTicket`.
+
+### Query Improvements
+- Simplified [GenerateTicketNumber](file:///home/guhkun/work/mine/antih/v7/source/internal/query/ticket_queries.go#117-120) query by using the numeric `daily_sequence` instead of complex regex on the ticket string.
+- All ticket retrieval queries (details, list, preview, next ticket) now include the `daily_sequence`.
+
+### Enhanced Data Integrity & Performance
+Added a `queue_date` column to explicitly store the service date, along with the requested indices and a unique constraint.
+
+- **Indices**:
+  - `idx_date_category` on [(queue_date, category_id)](file:///home/guhkun/work/mine/antih/v7/source/internal/repository/ticket_repository.go#190-243)
+  - `idx_date_number` on [(queue_date, daily_sequence)](file:///home/guhkun/work/mine/antih/v7/source/internal/repository/ticket_repository.go#190-243)
+- **Constraint**: `unique_daily_queue` on [(category_id, queue_date, daily_sequence)](file:///home/guhkun/work/mine/antih/v7/source/internal/repository/ticket_repository.go#190-243). This guarantees that no two tickets in the same category can ever share the same daily number on the same day.
+
+### Model & Query Updates
+- All queries (including dashboard statistics and serving lists) now use the `queue_date` column for filtering. This is much faster than using the `DATE(created_at)` function on the fly.
+- Updated `model.Ticket` and `model.DisplayTicket` to include the `QueueDate` field.
+
+## Verification Results
+
+### Data Integrity Guaranteed
+The `UNIQUE` constraint at the database level provides a final safety net, ensuring the "A001" format remains unique per category per day regardless of any potential application-level race conditions.
+
+### Performance Optimized
+By using the indexable `queue_date` instead of a function call in SQL (`DATE(created_at)`), all daily reports and queue generation queries are now significantly faster.

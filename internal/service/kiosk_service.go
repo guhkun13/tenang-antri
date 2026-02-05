@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/rs/zerolog/log"
 
@@ -46,17 +47,19 @@ func (s *KioskService) GenerateTicket(ctx context.Context, req *dto.CreateTicket
 	}
 
 	// Generate ticket number
-	ticketNumber, err := s.ticketRepo.GenerateNumber(ctx, category.Prefix)
+	ticketNumber, dailySequence, err := s.ticketRepo.GenerateNumber(ctx, category.ID, category.Prefix)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to generate ticket number")
 		return nil, 0, 0, err
 	}
 
 	ticket := &model.Ticket{
-		TicketNumber: ticketNumber,
-		Category:     &model.Category{ID: req.CategoryID},
-		Status:       "waiting",
-		Priority:     req.Priority,
+		TicketNumber:  ticketNumber,
+		DailySequence: dailySequence,
+		QueueDate:     time.Now(),
+		Category:      &model.Category{ID: req.CategoryID},
+		Status:        "waiting",
+		Priority:      req.Priority,
 	}
 
 	createdTicket, err := s.ticketRepo.Create(ctx, ticket)

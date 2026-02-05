@@ -1,0 +1,10 @@
+# Task Checklist
+
+- [x] Propose improvements for ticket sequence readability and data clarity <!-- id: 0 -->
+- [x] Implement initial `daily_sequence` logic <!-- id: 1 -->
+- [x] Implement `queue_date` and enhanced data integrity <!-- id: 7 -->
+    - [x] Create migration for `queue_date` and unique constraints <!-- id: 8 -->
+    - [x] Update [Ticket](file:///home/guhkun/work/mine/antih/v7/source/internal/model/entities.go#55-73) model for `QueueDate` <!-- id: 9 -->
+    - [x] Update queries to use `queue_date` instead of `DATE(created_at)` <!-- id: 10 -->
+    - [x] Update repository and services to populate `queue_date` <!-- id: 11 -->
+- [x] Verify changes and performance <!-- id: 6 -->

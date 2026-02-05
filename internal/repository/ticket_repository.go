@@ -34,7 +34,7 @@ func (r *TicketRepository) GetByID(ctx context.Context, id int) (*model.Ticket, 
 	err := row.Scan(
 		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
-		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
+		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.DailySequence, &ticket.QueueDate, &ticket.Notes,
 	)
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (r *TicketRepository) GetWithDetails(ctx context.Context, id int) (*model.T
 	err := row.Scan(
 		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
-		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
+		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.DailySequence, &ticket.QueueDate, &ticket.Notes,
 		&catIDFromJoin, &catName, &catPrefix, &catColor,
 		&coID, &coNumber, &coName,
 	)
@@ -93,7 +93,7 @@ func (r *TicketRepository) GetByTicketNumber(ctx context.Context, ticketNumber s
 	err := row.Scan(
 		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
-		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
+		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.DailySequence, &ticket.QueueDate, &ticket.Notes,
 		&catIDFromJoin, &catName, &catPrefix, &catColor,
 		&coID, &coNumber, &coName,
 	)
@@ -122,7 +122,7 @@ func (r *TicketRepository) Create(ctx context.Context, ticket *model.Ticket) (*m
 	sql := r.ticketQry.CreateTicket(ctx)
 	var id int
 	var createdAt time.Time
-	err := r.pool.QueryRow(ctx, sql, ticket.TicketNumber, ticket.Category.ID, ticket.Status, ticket.Priority, ticket.Notes).Scan(&id, &createdAt)
+	err := r.pool.QueryRow(ctx, sql, ticket.TicketNumber, ticket.Category.ID, ticket.Status, ticket.Priority, ticket.Notes, ticket.DailySequence, ticket.QueueDate).Scan(&id, &createdAt)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (r *TicketRepository) GetNextTicket(ctx context.Context, categoryIDs []int)
 	var catID int
 	err := row.Scan(
 		&ticket.ID, &ticket.TicketNumber, &catID,
-		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.Notes,
+		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.DailySequence, &ticket.QueueDate, &ticket.Notes,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -175,7 +175,7 @@ func (r *TicketRepository) GetCurrentForCounter(ctx context.Context, counterID i
 	err := row.Scan(
 		&ticket.ID, &ticket.TicketNumber, &ticket.CategoryID, &ticket.CounterID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
-		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
+		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.DailySequence, &ticket.QueueDate, &ticket.Notes,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -208,7 +208,7 @@ func (r *TicketRepository) List(ctx context.Context, filters map[string]interfac
 
 		err := row.Scan(
 			&t.ID, &t.TicketNumber, &catID, &t.CounterID, &t.Status, &t.Priority,
-			&t.CreatedAt, &t.CalledAt, &t.CompletedAt, &t.WaitTime, &t.ServiceTime, &notes,
+			&t.CreatedAt, &t.CalledAt, &t.CompletedAt, &t.WaitTime, &t.ServiceTime, &t.DailySequence, &t.QueueDate, &notes,
 			&catName, &catPrefix, &catColor,
 			&coNumber, &coName,
 		)
@@ -255,14 +255,14 @@ func (r *TicketRepository) GetTodayCountByCategory(ctx context.Context, category
 	return count, err
 }
 
-func (r *TicketRepository) GenerateNumber(ctx context.Context, prefix string) (string, error) {
+func (r *TicketRepository) GenerateNumber(ctx context.Context, categoryID int, prefix string) (string, int, error) {
 	sql := r.ticketQry.GenerateTicketNumber(ctx)
 	var number int
-	err := r.pool.QueryRow(ctx, sql, prefix+"%").Scan(&number)
+	err := r.pool.QueryRow(ctx, sql, categoryID).Scan(&number)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
-	return fmt.Sprintf("%s%03d", prefix, number), nil
+	return fmt.Sprintf("%s%03d", prefix, number), number, nil
 }
 
 func (r *TicketRepository) GetWaitingPreview(ctx context.Context, limit int) ([]model.Ticket, error) {
@@ -335,7 +335,7 @@ func (r *TicketRepository) GetTodayCompletedByCategories(ctx context.Context, ca
 		err := row.Scan(
 			&t.ID, &t.TicketNumber, &catID, &t.CounterID,
 			&t.Status, &t.Priority, &t.CreatedAt, &t.CalledAt,
-			&t.CompletedAt, &t.WaitTime, &t.ServiceTime, &t.Notes,
+			&t.CompletedAt, &t.WaitTime, &t.ServiceTime, &t.DailySequence, &t.QueueDate, &t.Notes,
 			&catIDFromJoin, &catName, &catPrefix, &catColor,
 			&coID, &coNumber, &coName,
 		)

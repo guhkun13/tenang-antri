@@ -29,15 +29,15 @@ func (q *StatsQueries) GetQueueLengthByCategories(ctx context.Context, categoryI
 }
 
 func (q *StatsQueries) GetHourlyDistribution(ctx context.Context) string {
-	return `SELECT EXTRACT(HOUR FROM created_at)::INT as hour, COUNT(*) as count FROM tickets WHERE DATE(created_at) = CURRENT_DATE GROUP BY EXTRACT(HOUR FROM created_at) ORDER BY hour`
+	return `SELECT EXTRACT(HOUR FROM created_at)::INT as hour, COUNT(*) as count FROM tickets WHERE queue_date = CURRENT_DATE GROUP BY EXTRACT(HOUR FROM created_at) ORDER BY hour`
 }
 
 func (q *StatsQueries) GetCurrentlyServingTickets(ctx context.Context) string {
-	return `SELECT t.ticket_number, c.number, cat.prefix, cat.color_code, t.status FROM tickets t JOIN counters c ON t.counter_id = c.id JOIN categories cat ON t.category_id = cat.id WHERE t.status = 'serving' ORDER BY t.called_at DESC LIMIT 10`
+	return `SELECT t.ticket_number, c.number, cat.prefix, cat.color_code, t.status, t.daily_sequence, t.queue_date FROM tickets t JOIN counters c ON t.counter_id = c.id JOIN categories cat ON t.category_id = cat.id WHERE t.status = 'serving' ORDER BY t.called_at DESC LIMIT 10`
 }
 
 func (q *StatsQueries) GetTotalTicketsToday(ctx context.Context) string {
-	return `SELECT COUNT(*) FROM tickets WHERE DATE(created_at) = CURRENT_DATE`
+	return `SELECT COUNT(*) FROM tickets WHERE queue_date = CURRENT_DATE`
 }
 
 func (q *StatsQueries) GetCurrentlyServingCount(ctx context.Context) string {
@@ -57,13 +57,13 @@ func (q *StatsQueries) GetPausedCountersCount(ctx context.Context) string {
 }
 
 func (q *StatsQueries) GetAvgWaitTimeToday(ctx context.Context) string {
-	return `SELECT COALESCE(AVG(wait_time)::INT, 0) FROM tickets WHERE DATE(created_at) = CURRENT_DATE AND wait_time IS NOT NULL`
+	return `SELECT COALESCE(AVG(wait_time)::INT, 0) FROM tickets WHERE queue_date = CURRENT_DATE AND wait_time IS NOT NULL`
 }
 
 func (q *StatsQueries) GetAvgServiceTimeToday(ctx context.Context) string {
-	return `SELECT COALESCE(AVG(service_time)::INT, 0) FROM tickets WHERE DATE(created_at) = CURRENT_DATE AND service_time IS NOT NULL`
+	return `SELECT COALESCE(AVG(service_time)::INT, 0) FROM tickets WHERE queue_date = CURRENT_DATE AND service_time IS NOT NULL`
 }
 
 func (q *StatsQueries) GetTicketsByStatusToday(ctx context.Context) string {
-	return `SELECT status, COUNT(*) FROM tickets WHERE DATE(created_at) = CURRENT_DATE GROUP BY status`
+	return `SELECT status, COUNT(*) FROM tickets WHERE queue_date = CURRENT_DATE GROUP BY status`
 }

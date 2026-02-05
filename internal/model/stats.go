@@ -47,11 +47,13 @@ type HourlyStats struct {
 
 // DisplayTicket represents a ticket for display board
 type DisplayTicket struct {
-	TicketNumber   string `json:"ticket_number"`
-	CounterNumber  string `json:"counter_number"`
-	CategoryPrefix string `json:"category_prefix"`
-	ColorCode      string `json:"color_code"`
-	Status         string `json:"status"`
+	TicketNumber   string    `json:"ticket_number"`
+	CounterNumber  string    `json:"counter_number"`
+	CategoryPrefix string    `json:"category_prefix"`
+	ColorCode      string    `json:"color_code"`
+	Status         string    `json:"status"`
+	DailySequence  int       `json:"daily_sequence"`
+	QueueDate      time.Time `json:"queue_date"`
 }
 
 // WebSocketMessage represents a WebSocket message
