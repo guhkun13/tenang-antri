@@ -35,8 +35,8 @@ type CategoryQueueStats struct {
 	CategoryID   int    `json:"category_id"`
 	CategoryName string `json:"category_name"`
 	Prefix       string `json:"prefix"`
-	WaitingCount int    `json:"waiting_count"`
 	ColorCode    string `json:"color_code"`
+	WaitingCount int    `json:"waiting_count"`
 }
 
 // HourlyStats represents hourly ticket statistics

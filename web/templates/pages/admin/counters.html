@@ -41,33 +41,6 @@
       >
         <i class="fas fa-chart-bar mr-2"></i>Laporan
       </a>
-      <a
-        href="/admin/tickets"
-        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-      >
-        <i class="fas fa-ticket-alt mr-2"></i>Tiket
-      </a>
-      <a
-        href="/admin/categories"
-        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-      >
-        <i class="fas fa-tags mr-2"></i>Kategori
-      </a>
-      <a href="/admin/counters" class="block px-4 py-2 bg-blue-600 rounded-lg">
-        <i class="fas fa-desktop mr-2"></i>Loket
-      </a>
-      <a
-        href="/admin/users"
-        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-      >
-        <i class="fas fa-users mr-2"></i>Staf
-      </a>
-      <a
-        href="/admin/reports"
-        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-      >
-        <i class="fas fa-chart-bar mr-2"></i>Laporan
-      </a>
     </nav>
   </aside>
 
@@ -447,7 +420,12 @@
 
   async function toggleCounterStatus(id, currentStatus) {
     const action = currentStatus === "active" ? "deactivate" : "activate";
-    if (!confirm(`Apakah Anda yakin ingin ${action === 'deactivate' ? 'menonaktifkan' : 'mengaktifkan'} loket ini?`)) return;
+    if (
+      !confirm(
+        `Apakah Anda yakin ingin ${action === "deactivate" ? "menonaktifkan" : "mengaktifkan"} loket ini?`,
+      )
+    )
+      return;
 
     try {
       const newStatus = currentStatus === "active" ? false : true;
@@ -467,7 +445,7 @@
         const successDiv = document.createElement("div");
         successDiv.className =
           "fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50";
-        successDiv.innerHTML = `<i class="fas fa-check-circle"></i> Loket berhasil ${action === 'deactivate' ? 'dinonaktifkan' : 'diaktifkan'}!`;
+        successDiv.innerHTML = `<i class="fas fa-check-circle"></i> Loket berhasil ${action === "deactivate" ? "dinonaktifkan" : "diaktifkan"}!`;
         document.body.appendChild(successDiv);
 
         setTimeout(() => {
@@ -476,7 +454,10 @@
         }, 1000);
       } else {
         const error = await response.json();
-        alert(error.error || `Gagal ${action === 'deactivate' ? 'menonaktifkan' : 'mengaktifkan'} loket`);
+        alert(
+          error.error ||
+            `Gagal ${action === "deactivate" ? "menonaktifkan" : "mengaktifkan"} loket`,
+        );
         button.disabled = false;
         button.innerHTML = originalIcon;
       }

@@ -15,7 +15,11 @@ func (q *UserQueries) CreateUser(ctx context.Context) string {
 }
 
 func (q *UserQueries) GetUserByUsername(ctx context.Context) string {
-	return `SELECT id, username, password, full_name, email, phone, role, is_active, counter_id, created_at, updated_at, last_login FROM users WHERE username = $1`
+	return `SELECT id, username, full_name, email, phone, role, is_active, counter_id, created_at, updated_at, last_login FROM users WHERE username = $1`
+}
+
+func (q *UserQueries) GetUserPasswordByUsername(ctx context.Context) string {
+	return `SELECT id, username, password FROM users WHERE username = $1`
 }
 
 func (q *UserQueries) GetUserByID(ctx context.Context) string {

@@ -102,15 +102,25 @@ func (s *UserService) ListUsers(ctx context.Context, role string) ([]model.User,
 }
 
 // ValidatePassword validates user password
-func (s *UserService) ValidatePassword(user *model.User, password string) error {
+func (s *UserService) ValidatePassword(ctx context.Context, username string, password string) error {
+	userWithPass, err := s.userRepo.GetByUsernameWithPassword(ctx, username)
+	if err != nil {
+		return errors.New("invalid username or password")
+	}
+
+	user, err := s.userRepo.GetByID(ctx, userWithPass.ID)
+	if err != nil {
+		return errors.New("invalid username or password")
+	}
+
 	if !user.IsActive {
 		return errors.New("account is disabled")
 	}
 
-	// err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	// if err != nil {
-	// 	return errors.New("invalid username or password")
-	// }
+	err = bcrypt.CompareHashAndPassword([]byte(userWithPass.Password), []byte(password))
+	if err != nil {
+		return errors.New("invalid username or password")
+	}
 
 	return nil
 }
@@ -131,12 +141,13 @@ func (s *UserService) UpdateProfile(ctx context.Context, userID int, req *dto.Up
 
 // ChangePassword changes a user's password
 func (s *UserService) ChangePassword(ctx context.Context, userID int, req *dto.ChangePasswordRequest) error {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	userWithPass, err := s.userRepo.GetByIDWithPassword(ctx, userID)
 	if err != nil {
-		return err
+		return errors.New("user not found")
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.CurrentPassword)); err != nil {
+	err = bcrypt.CompareHashAndPassword([]byte(userWithPass.Password), []byte(req.CurrentPassword))
+	if err != nil {
 		return errors.New("current password is incorrect")
 	}
 

@@ -47,30 +47,34 @@ func (r *TicketRepository) GetWithDetails(ctx context.Context, id int) (*model.T
 	row := r.pool.QueryRow(ctx, sql, id)
 
 	ticket := &model.Ticket{Category: &model.Category{}, Counter: &model.Counter{}}
-	var catID int
+	var catID, catIDFromJoin int
 	var catName, catPrefix, catColor string
 	var coID *int
-	var coNumber, coName string
+	var coNumber, coName *string
 
 	err := row.Scan(
 		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
 		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
-		&catID, &catName, &catPrefix, &catColor,
+		&catIDFromJoin, &catName, &catPrefix, &catColor,
 		&coID, &coNumber, &coName,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	ticket.Category.ID = catID
+	ticket.Category.ID = catIDFromJoin
 	ticket.Category.Name = catName
 	ticket.Category.Prefix = catPrefix
 	ticket.Category.ColorCode = catColor
 	if coID != nil {
 		ticket.Counter.ID = *coID
-		ticket.Counter.Number = coNumber
-		ticket.Counter.Name = coName
+		if coNumber != nil {
+			ticket.Counter.Number = *coNumber
+		}
+		if coName != nil {
+			ticket.Counter.Name = *coName
+		}
 	}
 
 	return ticket, nil
@@ -81,30 +85,34 @@ func (r *TicketRepository) GetByTicketNumber(ctx context.Context, ticketNumber s
 	row := r.pool.QueryRow(ctx, sql, ticketNumber)
 
 	ticket := &model.Ticket{Category: &model.Category{}, Counter: &model.Counter{}}
-	var catID int
+	var catID, catIDFromJoin int
 	var catName, catPrefix, catColor string
 	var coID *int
-	var coNumber, coName string
+	var coNumber, coName *string
 
 	err := row.Scan(
 		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
 		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
-		&catID, &catName, &catPrefix, &catColor,
+		&catIDFromJoin, &catName, &catPrefix, &catColor,
 		&coID, &coNumber, &coName,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	ticket.Category.ID = catID
+	ticket.Category.ID = catIDFromJoin
 	ticket.Category.Name = catName
 	ticket.Category.Prefix = catPrefix
 	ticket.Category.ColorCode = catColor
 	if coID != nil {
 		ticket.Counter.ID = *coID
-		ticket.Counter.Number = coNumber
-		ticket.Counter.Name = coName
+		if coNumber != nil {
+			ticket.Counter.Number = *coNumber
+		}
+		if coName != nil {
+			ticket.Counter.Name = *coName
+		}
 	}
 
 	return ticket, nil
@@ -196,11 +204,12 @@ func (r *TicketRepository) List(ctx context.Context, filters map[string]interfac
 
 		var catID int
 		var catName, catPrefix, catColor string
-		var coNumber, coName string
+		var coNumber, coName *string
+		var notes *string
 
 		err := row.Scan(
 			&t.ID, &t.TicketNumber, &catID, &t.CounterID, &t.Status, &t.Priority,
-			&t.CreatedAt, &t.CalledAt, &t.CompletedAt, &t.WaitTime, &t.ServiceTime, &t.Notes,
+			&t.CreatedAt, &t.CalledAt, &t.CompletedAt, &t.WaitTime, &t.ServiceTime, &notes,
 			&catName, &catPrefix, &catColor,
 			&coNumber, &coName,
 		)
@@ -212,9 +221,12 @@ func (r *TicketRepository) List(ctx context.Context, filters map[string]interfac
 		t.Category.Name = catName
 		t.Category.Prefix = catPrefix
 		t.Category.ColorCode = catColor
-		if coNumber != "" {
-			t.Counter.Number = coNumber
-			t.Counter.Name = coName
+		if notes != nil {
+			t.Notes = *notes
+		}
+		if coNumber != nil && *coNumber != "" {
+			t.Counter.Number = *coNumber
+			t.Counter.Name = *coName
 		} else {
 			t.Counter = nil
 		}
@@ -310,30 +322,34 @@ func (r *TicketRepository) GetTodayCompletedByCategories(ctx context.Context, ca
 		t.Category = &model.Category{}
 		t.Counter = &model.Counter{}
 
-		var catID int
+		var catID, catIDFromJoin int
 		var catName, catPrefix, catColor string
 		var coID *int
-		var coNumber, coName string
+		var coNumber, coName *string
 
 		err := row.Scan(
 			&t.ID, &t.TicketNumber, &catID, &t.CounterID,
 			&t.Status, &t.Priority, &t.CreatedAt, &t.CalledAt,
 			&t.CompletedAt, &t.WaitTime, &t.ServiceTime, &t.Notes,
-			&catID, &catName, &catPrefix, &catColor,
+			&catIDFromJoin, &catName, &catPrefix, &catColor,
 			&coID, &coNumber, &coName,
 		)
 		if err != nil {
 			return model.Ticket{}, err
 		}
 
-		t.Category.ID = catID
+		t.Category.ID = catIDFromJoin
 		t.Category.Name = catName
 		t.Category.Prefix = catPrefix
 		t.Category.ColorCode = catColor
 		if coID != nil {
 			t.Counter.ID = *coID
-			t.Counter.Number = coNumber
-			t.Counter.Name = coName
+			if coNumber != nil {
+				t.Counter.Number = *coNumber
+			}
+			if coName != nil {
+				t.Counter.Name = *coName
+			}
 		}
 
 		return t, nil

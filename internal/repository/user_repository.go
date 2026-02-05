@@ -38,7 +38,55 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 		if err == pgx.ErrNoRows {
 			return nil, err
 		}
-		log.Error().Err(err).Str("layer", "repository").Msg("Failed to collect user")
+		log.Error().Err(err).Str("layer", "repository").Str("function", "GetByUsername").Msg("Failed to collect user")
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+type UserWithPassword struct {
+	ID       int    `db:"id"`
+	Username string `db:"username"`
+	Password string `db:"password"`
+}
+
+func (r *UserRepository) GetByUsernameWithPassword(ctx context.Context, username string) (*UserWithPassword, error) {
+	sql := r.userQry.GetUserPasswordByUsername(ctx)
+	rows, err := r.pool.Query(ctx, sql, username)
+	if err != nil {
+		log.Error().Err(err).Str("layer", "repository").Msg("Failed to query user by username with password")
+		return nil, err
+	}
+	defer rows.Close()
+
+	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[UserWithPassword])
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, err
+		}
+		log.Error().Err(err).Str("layer", "repository").Str("function", "GetByUsernameWithPassword").Msg("Failed to collect user")
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (r *UserRepository) GetByIDWithPassword(ctx context.Context, id int) (*UserWithPassword, error) {
+	sql := `SELECT id, username, password FROM users WHERE id = $1`
+	rows, err := r.pool.Query(ctx, sql, id)
+	if err != nil {
+		log.Error().Err(err).Str("layer", "repository").Msg("Failed to query user by id with password")
+		return nil, err
+	}
+	defer rows.Close()
+
+	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[UserWithPassword])
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, err
+		}
+		log.Error().Err(err).Str("layer", "repository").Str("function", "GetByIDWithPassword").Msg("Failed to collect user")
 		return nil, err
 	}
 
@@ -49,7 +97,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id int) (*model.User, erro
 	sql := r.userQry.GetUserByID(ctx)
 	rows, err := r.pool.Query(ctx, sql, id)
 	if err != nil {
-		log.Error().Err(err).Str("layer", "repository").Msg("Failed to query user by id")
+		log.Error().Err(err).Str("layer", "repository").Str("function", "GetByID").Msg("Failed to query user by id")
 		return nil, err
 	}
 	defer rows.Close()
@@ -59,7 +107,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id int) (*model.User, erro
 		if err == pgx.ErrNoRows {
 			return nil, err
 		}
-		log.Error().Err(err).Str("layer", "repository").Msg("Failed to collect user")
+		log.Error().Err(err).Str("layer", "repository").Str("function", "GetByID").Msg("Failed to collect user")
 		return nil, err
 	}
 

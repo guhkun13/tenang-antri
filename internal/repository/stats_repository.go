@@ -86,12 +86,12 @@ func (r *StatsRepository) GetDashboardStats(ctx context.Context) (*model.Dashboa
 
 	stats.QueueLengthByCategory, err = r.GetQueueLengthByCategory(ctx)
 	if err != nil {
-		return nil, err
+		stats.QueueLengthByCategory = []model.CategoryQueueStats{}
 	}
 
 	stats.HourlyDistribution, err = r.GetHourlyDistribution(ctx)
 	if err != nil {
-		return nil, err
+		stats.HourlyDistribution = []model.HourlyStats{}
 	}
 
 	return stats, nil
