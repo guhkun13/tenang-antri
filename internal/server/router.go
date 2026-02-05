@@ -246,7 +246,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool) *gin.Engine {
 
 		// Staff routes
 		staff := protected.Group("/staff")
-		staff.Use(middleware.RoleMiddleware("staff", "admin"))
+		// staff.Use(middleware.RoleMiddleware("staff", "admin"))
 		{
 			staff.GET("/dashboard", staffHandler.Dashboard)
 			staff.POST("/call-next", staffHandler.CallNext)
@@ -261,7 +261,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool) *gin.Engine {
 
 		// Admin routes
 		admin := protected.Group("/admin")
-		admin.Use(middleware.RoleMiddleware("admin"))
+		// admin.Use(middleware.RoleMiddleware("admin"))
 		{
 			// Dashboard
 			admin.GET("/dashboard", adminHandler.Dashboard)
