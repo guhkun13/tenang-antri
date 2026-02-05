@@ -47,12 +47,14 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	if err := h.userService.ValidatePassword(c.Request.Context(), req.Username, req.Password); err != nil {
-		log.Error().Err(err).Str("layer", "handler").Msg("Invalid username or password")
-		c.HTML(http.StatusUnauthorized, "pages/login.html", gin.H{
-			"Error": "Invalid username or password",
-		})
-		return
+	if h.config.EnablePassword {
+		if err := h.userService.ValidatePassword(c.Request.Context(), req.Username, req.Password); err != nil {
+			log.Error().Err(err).Str("layer", "handler").Msg("Invalid username or password")
+			c.HTML(http.StatusUnauthorized, "pages/login.html", gin.H{
+				"Error": "Invalid username or password",
+			})
+			return
+		}
 	}
 
 	// Update last login
