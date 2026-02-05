@@ -29,10 +29,10 @@ docker-logs:
 
 # Database migrations
 migrate-up:
-	psql -h localhost -U postgres -d tenangantri -f migrations/001_initial_schema.up.sql
+	go run cmd/server/main.go migrate
 
 migrate-down:
-	psql -h localhost -U postgres -d tenangantri -f migrations/001_initial_schema.down.sql
+	@echo "Down migrations should be handled with care. Use psql manual if needed or implement in Go."
 
 # Seed data
 seed:

@@ -48,7 +48,7 @@ func Load() (*Config, error) {
 	viper.SetDefault("DB_PORT", "5432")
 	viper.SetDefault("DB_USER", "postgres")
 	viper.SetDefault("DB_PASSWORD", "postgres")
-	viper.SetDefault("DB_NAME", "queue_system")
+	viper.SetDefault("DB_NAME", "tenang_antri")
 	viper.SetDefault("DB_SSLMODE", "disable")
 	viper.SetDefault("JWT_SECRET", "your-secret-key-change-in-production")
 	viper.SetDefault("JWT_ACCESS_TOKEN_EXPIRY", "24h")

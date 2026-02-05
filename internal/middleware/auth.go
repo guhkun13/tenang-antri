@@ -2,17 +2,23 @@ package middleware
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
+	"tenangantri/internal/config"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"tenangantri/internal/config"
+	"github.com/rs/zerolog/log"
 )
 
 var jwtSecret []byte
 
 func InitAuth(cfg *config.JWTConfig) {
+	if cfg.Secret == "" || cfg.Secret == "your-secret-key-change-in-production" {
+		log.Warn().Msg("JWT secret is empty or using default value. Please set a secure secret in production.")
+	}
 	jwtSecret = []byte(cfg.Secret)
 }
 
@@ -40,6 +46,10 @@ func GenerateToken(userID int, username, role string, expiry time.Duration) (str
 
 func ParseToken(tokenString string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		// Verify signing method
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
 		return jwtSecret, nil
 	})
 
@@ -64,6 +74,7 @@ func AuthMiddleware() gin.HandlerFunc {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header or cookie required"})
 				return
 			}
+			log.Debug().Msg("Token retrieved from auth_token cookie")
 			authHeader = "Bearer " + tokenCookie
 		}
 
@@ -75,6 +86,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		claims, err := ParseToken(parts[1])
 		if err != nil {
+			log.Warn().Err(err).Str("token_parts_len", strconv.Itoa(len(parts[1]))).Msg("Failed to parse token")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}

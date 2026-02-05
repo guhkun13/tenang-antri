@@ -31,9 +31,11 @@ COPY --from=builder /app/server .
 COPY --from=builder /app/templates ./templates
 COPY --from=builder /app/static ./static
 COPY --from=builder /app/migrations ./migrations
+COPY docker/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 
 # Expose port
 EXPOSE 8080
 
-# Run the server
-CMD ["./server"]
+# Run the entrypoint script
+ENTRYPOINT ["./entrypoint.sh"]

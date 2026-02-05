@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,6 +15,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"tenangantri/internal/config"
+	"tenangantri/internal/migrate"
 	"tenangantri/internal/server"
 )
 
@@ -26,6 +28,33 @@ func main() {
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load configuration")
+	}
+
+	// Check for migrate command
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "migrate":
+			log.Info().Msg("Running migrations...")
+			if err := migrate.Run(cfg.GetDatabaseURL(), "migrations"); err != nil {
+				log.Fatal().Err(err).Msg("Migration failed")
+			}
+			log.Info().Msg("Migrations completed")
+			return
+		case "migrate-force":
+			if len(os.Args) < 3 {
+				log.Fatal().Msg("Usage: server migrate-force <version>")
+			}
+			versionStr := os.Args[2]
+			var version int
+			fmt.Sscanf(versionStr, "%d", &version)
+
+			log.Info().Int("version", version).Msg("Forcing migration version...")
+			if err := migrate.Force(cfg.GetDatabaseURL(), "migrations", version); err != nil {
+				log.Fatal().Err(err).Msg("Force migration failed")
+			}
+			log.Info().Msg("Migration version forced")
+			return
+		}
 	}
 
 	// Set Gin mode
