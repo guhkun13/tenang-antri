@@ -189,8 +189,8 @@ func (r *TicketRepository) GetCurrentForCounter(ctx context.Context, counterID i
 }
 
 func (r *TicketRepository) List(ctx context.Context, filters map[string]interface{}) ([]model.Ticket, error) {
-	sql := r.ticketQry.ListTickets(ctx, filters)
-	rows, err := r.pool.Query(ctx, sql)
+	result := r.ticketQry.ListTickets(ctx, filters)
+	rows, err := r.pool.Query(ctx, result.Query, result.Args...)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "repository").Str("func", "List").Msg("Failed to query tickets")
 		return nil, err

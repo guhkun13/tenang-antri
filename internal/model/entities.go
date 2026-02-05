@@ -55,6 +55,7 @@ type Counter struct {
 type Ticket struct {
 	ID           int        `json:"id" db:"id"`
 	TicketNumber string     `json:"ticket_number" db:"ticket_number"`
+	CategoryID   *int       `json:"category_id,omitempty" db:"category_id"`
 	Category     *Category  `json:"category,omitempty" db:"-"`
 	CounterID    *int       `json:"counter_id,omitempty" db:"counter_id"`
 	Counter      *Counter   `json:"counter,omitempty" db:"-"`

@@ -51,32 +51,44 @@ func (q *TicketQueries) GetCurrentTicketForCounter(ctx context.Context) string {
 	return `SELECT t.id, t.ticket_number, t.category_id, t.counter_id, t.status, t.priority, t.created_at, t.called_at, t.completed_at, t.wait_time, t.service_time, t.notes FROM tickets t WHERE t.counter_id = $1 AND t.status = 'serving' ORDER BY t.called_at DESC LIMIT 1`
 }
 
-func (q *TicketQueries) ListTickets(ctx context.Context, filters map[string]interface{}) string {
+type ListTicketsResult struct {
+	Query string
+	Args  []any
+}
+
+func (q *TicketQueries) ListTickets(ctx context.Context, filters map[string]interface{}) ListTicketsResult {
 	query := `SELECT t.id, t.ticket_number, t.category_id, t.counter_id, t.status, t.priority, t.created_at, t.called_at, t.completed_at, t.wait_time, t.service_time, t.notes, c.name as category_name, c.prefix as category_prefix, c.color_code as category_color, co.number as counter_number, co.name as counter_name FROM tickets t LEFT JOIN categories c ON t.category_id = c.id LEFT JOIN counters co ON t.counter_id = co.id WHERE 1=1`
+	args := make([]any, 0)
 	argCount := 1
 
 	if search, ok := filters["search"]; ok && search != "" {
 		query += fmt.Sprintf(" AND (t.ticket_number ILIKE $%d OR c.name ILIKE $%d)", argCount, argCount)
+		args = append(args, search)
 		argCount++
 	}
 	if status, ok := filters["status"]; ok && status != "" {
 		query += fmt.Sprintf(" AND t.status = $%d", argCount)
+		args = append(args, status)
 		argCount++
 	}
 	if categoryID, ok := filters["category_id"]; ok && categoryID != 0 {
 		query += fmt.Sprintf(" AND t.category_id = $%d", argCount)
+		args = append(args, categoryID)
 		argCount++
 	}
 	if counterID, ok := filters["counter_id"]; ok && counterID != 0 {
 		query += fmt.Sprintf(" AND t.counter_id = $%d", argCount)
+		args = append(args, counterID)
 		argCount++
 	}
 	if dateFrom, ok := filters["date_from"]; ok && dateFrom != "" {
 		query += fmt.Sprintf(" AND t.created_at >= $%d", argCount)
+		args = append(args, dateFrom)
 		argCount++
 	}
 	if dateTo, ok := filters["date_to"]; ok && dateTo != "" {
 		query += fmt.Sprintf(" AND t.created_at < ($%d::date + interval '1 day')", argCount)
+		args = append(args, dateTo)
 		argCount++
 	}
 
@@ -91,7 +103,7 @@ func (q *TicketQueries) ListTickets(ctx context.Context, filters map[string]inte
 		query += " LIMIT 50"
 	}
 
-	return query
+	return ListTicketsResult{Query: query, Args: args}
 }
 
 func (q *TicketQueries) GetTodayTicketCount(ctx context.Context) string {
@@ -115,7 +127,16 @@ func (q *TicketQueries) GetWaitingTicketsPreviewByCategories(ctx context.Context
 	for i := range categoryIDs {
 		placeholders[i] = fmt.Sprintf("$%d", i+2)
 	}
-	return fmt.Sprintf(`SELECT t.id, t.ticket_number, t.category_id, t.counter_id, t.status, t.priority, t.created_at, t.called_at, t.completed_at, t.wait_time, t.service_time, t.notes FROM tickets t WHERE t.status = 'waiting' AND t.category_id IN (%s) ORDER BY (SELECT priority FROM categories WHERE id = t.category_id) DESC, t.created_at ASC LIMIT $1`, strings.Join(placeholders, ","))
+	return fmt.Sprintf(`SELECT t.id, t.ticket_number, t.category_id, t.counter_id, t.status, 
+	t.priority, t.created_at, t.called_at, t.completed_at, t.wait_time, t.service_time, t.notes 
+	FROM tickets t 
+	WHERE t.status = 'waiting' AND t.category_id IN (%s) 
+	ORDER BY (
+			SELECT priority 
+			FROM categories 
+			WHERE id = t.category_id
+		) 
+	DESC, t.created_at ASC LIMIT $1`, strings.Join(placeholders, ","))
 }
 
 func (q *TicketQueries) GetTodayCompletedTicketsByCategories(ctx context.Context, categoryIDs []int) string {
