@@ -283,6 +283,9 @@ func (r *TicketRepository) GetWaitingPreview(ctx context.Context, limit int) ([]
 }
 
 func (r *TicketRepository) GetWaitingPreviewByCategories(ctx context.Context, categoryIDs []int, limit int) ([]model.Ticket, error) {
+	if len(categoryIDs) == 0 {
+		return []model.Ticket{}, nil
+	}
 	sql := r.ticketQry.GetWaitingTicketsPreviewByCategories(ctx, categoryIDs)
 	args := make([]any, 0, len(categoryIDs)+1)
 	args = append(args, limit)
@@ -305,6 +308,9 @@ func (r *TicketRepository) GetWaitingPreviewByCategories(ctx context.Context, ca
 }
 
 func (r *TicketRepository) GetTodayCompletedByCategories(ctx context.Context, categoryIDs []int) ([]model.Ticket, error) {
+	if len(categoryIDs) == 0 {
+		return []model.Ticket{}, nil
+	}
 	sql := r.ticketQry.GetTodayCompletedTicketsByCategories(ctx, categoryIDs)
 	args := make([]any, len(categoryIDs))
 	for i, id := range categoryIDs {
