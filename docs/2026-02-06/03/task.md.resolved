@@ -1,0 +1,18 @@
+# Task Checklist
+
+- [x] Implement initial `daily_sequence` logic <!-- id: 1 -->
+- [x] Implement `queue_date` and enhanced data integrity <!-- id: 7 -->
+- [/] Testing and Coverage <!-- id: 12 -->
+    - [/] Analyze current- [x] Refactor repositories to use interfaces
+    - [x] Define `ITicketRepository`, [CategoryRepository](file:///home/guhkun/work/mine/antih/v7/source/internal/repository/category_repository.go#14-21), [StatsRepository](file:///home/guhkun/work/mine/antih/v7/source/internal/repository/stats_repository.go#13-20), [UserRepository](file:///home/guhkun/work/mine/antih/v7/source/internal/repository/user_repository.go#14-26), [CounterRepository](file:///home/guhkun/work/mine/antih/v7/source/internal/repository/counter_repository.go#15-24)
+    - [x] Update concrete implementations
+    - [x] Refactor all services to use interfaces
+- [x] Implement unit tests for repositories
+    - [x] [TicketRepository](file:///home/guhkun/work/mine/antih/v7/source/internal/repository/ticket_repository.go#16-34) unit tests
+    - [x] [UserRepository](file:///home/guhkun/work/mine/antih/v7/source/internal/repository/user_repository.go#14-26) unit tests
+    - [x] [CounterRepository](file:///home/guhkun/work/mine/antih/v7/source/internal/repository/counter_repository.go#15-24) unit tests
+- [x] Implement unit tests for services
+    - [x] [KioskService](file:///home/guhkun/work/mine/antih/v7/source/internal/service/kiosk_service.go#15-20) unit tests
+    - [x] [StaffService](file:///home/guhkun/work/mine/antih/v7/source/internal/service/staff_service.go#14-21) unit tests
+ ([KioskService](file:///home/guhkun/work/mine/antih/v7/source/internal/service/kiosk_service.go#15-20), [TicketService](file:///home/guhkun/work/mine/antih/v7/source/internal/service/ticket_service.go#15-20)) <!-- id: 16 -->
+- [x] Verify changes and performance <!-- id: 6 -->

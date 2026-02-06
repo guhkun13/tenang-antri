@@ -14,15 +14,15 @@ import (
 
 // TrackingService handles ticket tracking business logic
 type TrackingService struct {
-	ticketRepo   *repository.TicketRepository
-	categoryRepo *repository.CategoryRepository
-	counterRepo  *repository.CounterRepository
+	ticketRepo   repository.TicketRepository
+	categoryRepo repository.CategoryRepository
+	counterRepo  repository.CounterRepository
 }
 
 func NewTrackingService(
-	ticketRepo *repository.TicketRepository,
-	categoryRepo *repository.CategoryRepository,
-	counterRepo *repository.CounterRepository,
+	ticketRepo repository.TicketRepository,
+	categoryRepo repository.CategoryRepository,
+	counterRepo repository.CounterRepository,
 ) *TrackingService {
 	return &TrackingService{
 		ticketRepo:   ticketRepo,

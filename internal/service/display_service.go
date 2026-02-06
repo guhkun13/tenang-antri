@@ -11,12 +11,12 @@ import (
 
 // DisplayService handles display-related business logic
 type DisplayService struct {
-	statsRepo    *repository.StatsRepository
-	categoryRepo *repository.CategoryRepository
-	counterRepo  *repository.CounterRepository
+	statsRepo    repository.StatsRepository
+	categoryRepo repository.CategoryRepository
+	counterRepo  repository.CounterRepository
 }
 
-func NewDisplayService(statsRepo *repository.StatsRepository, categoryRepo *repository.CategoryRepository, counterRepo *repository.CounterRepository) *DisplayService {
+func NewDisplayService(statsRepo repository.StatsRepository, categoryRepo repository.CategoryRepository, counterRepo repository.CounterRepository) *DisplayService {
 	return &DisplayService{
 		statsRepo:    statsRepo,
 		categoryRepo: categoryRepo,

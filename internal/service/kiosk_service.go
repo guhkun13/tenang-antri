@@ -13,12 +13,12 @@ import (
 
 // KioskService handles kiosk-related business logic
 type KioskService struct {
-	categoryRepo *repository.CategoryRepository
-	ticketRepo   *repository.TicketRepository
-	statsRepo    *repository.StatsRepository
+	categoryRepo repository.CategoryRepository
+	ticketRepo   repository.TicketRepository
+	statsRepo    repository.StatsRepository
 }
 
-func NewKioskService(categoryRepo *repository.CategoryRepository, ticketRepo *repository.TicketRepository, statsRepo *repository.StatsRepository) *KioskService {
+func NewKioskService(categoryRepo repository.CategoryRepository, ticketRepo repository.TicketRepository, statsRepo repository.StatsRepository) *KioskService {
 	return &KioskService{
 		categoryRepo: categoryRepo,
 		ticketRepo:   ticketRepo,

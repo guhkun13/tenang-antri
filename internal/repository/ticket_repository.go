@@ -2,49 +2,93 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 
 	"tenangantri/internal/model"
 	"tenangantri/internal/query"
 )
 
-type TicketRepository struct {
-	pool      *pgxpool.Pool
+type TicketRepository interface {
+	GetByID(ctx context.Context, id int) (*model.Ticket, error)
+	GetWithDetails(ctx context.Context, id int) (*model.Ticket, error)
+	GetByTicketNumber(ctx context.Context, ticketNumber string) (*model.Ticket, error)
+	Create(ctx context.Context, ticket *model.Ticket) (*model.Ticket, error)
+	UpdateStatus(ctx context.Context, id int, status string) error
+	AssignToCounter(ctx context.Context, ticketID, counterID int) error
+	GetNextTicket(ctx context.Context, categoryIDs []int) (*model.Ticket, error)
+	GetCurrentForCounter(ctx context.Context, counterID int) (*model.Ticket, error)
+	List(ctx context.Context, filters map[string]interface{}) ([]model.Ticket, error)
+	GetTodayCount(ctx context.Context) (int, error)
+	GetTodayCountByCategory(ctx context.Context, categoryID int) (int, error)
+	GenerateNumber(ctx context.Context, categoryID int, prefix string) (string, int, error)
+	GetWaitingPreview(ctx context.Context, limit int) ([]model.Ticket, error)
+	GetWaitingPreviewByCategories(ctx context.Context, categoryIDs []int, limit int) ([]model.Ticket, error)
+	GetTodayCompletedByCategories(ctx context.Context, categoryIDs []int) ([]model.Ticket, error)
+	GetLastCalledByCategoryID(ctx context.Context, categoryID int) (string, error)
+}
+
+type ticketRepository struct {
+	pool      DB
 	ticketQry *query.TicketQueries
 }
 
-func NewTicketRepository(pool *pgxpool.Pool) *TicketRepository {
-	return &TicketRepository{
+func NewTicketRepository(pool DB) TicketRepository {
+	return &ticketRepository{
 		pool:      pool,
 		ticketQry: query.NewTicketQueries(),
 	}
 }
 
-func (r *TicketRepository) GetByID(ctx context.Context, id int) (*model.Ticket, error) {
-	sql := r.ticketQry.GetTicketByID(ctx)
-	row := r.pool.QueryRow(ctx, sql, id)
+func (r *ticketRepository) GetByID(ctx context.Context, id int) (*model.Ticket, error) {
+	queryStr := r.ticketQry.GetTicketByID(ctx)
+	row := r.pool.QueryRow(ctx, queryStr, id)
 
 	ticket := &model.Ticket{}
 	var catID int
+	var coID sql.NullInt64
+	var waitTime, serviceTime sql.NullInt64
+	var calledAt, completedAt sql.NullTime
+
 	err := row.Scan(
-		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
-		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
-		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.DailySequence, &ticket.QueueDate, &ticket.Notes,
+		&ticket.ID, &ticket.TicketNumber, &catID, &coID,
+		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &calledAt,
+		&completedAt, &waitTime, &serviceTime, &ticket.DailySequence, &ticket.QueueDate, &ticket.Notes,
 	)
 	if err != nil {
 		return nil, err
 	}
+
+	ticket.CategoryID = &catID
+	if coID.Valid {
+		val := int(coID.Int64)
+		ticket.CounterID = &val
+	}
+	if calledAt.Valid {
+		ticket.CalledAt = &calledAt.Time
+	}
+	if completedAt.Valid {
+		ticket.CompletedAt = &completedAt.Time
+	}
+	if waitTime.Valid {
+		val := int(waitTime.Int64)
+		ticket.WaitTime = &val
+	}
+	if serviceTime.Valid {
+		val := int(serviceTime.Int64)
+		ticket.ServiceTime = &val
+	}
+
 	return ticket, nil
 }
 
-func (r *TicketRepository) GetWithDetails(ctx context.Context, id int) (*model.Ticket, error) {
-	sql := r.ticketQry.GetTicketWithDetails(ctx)
-	row := r.pool.QueryRow(ctx, sql, id)
+func (r *ticketRepository) GetWithDetails(ctx context.Context, id int) (*model.Ticket, error) {
+	queryStr := r.ticketQry.GetTicketWithDetails(ctx)
+	row := r.pool.QueryRow(ctx, queryStr, id)
 
 	ticket := &model.Ticket{Category: &model.Category{}, Counter: &model.Counter{}}
 	var catID, catIDFromJoin int
@@ -80,9 +124,9 @@ func (r *TicketRepository) GetWithDetails(ctx context.Context, id int) (*model.T
 	return ticket, nil
 }
 
-func (r *TicketRepository) GetByTicketNumber(ctx context.Context, ticketNumber string) (*model.Ticket, error) {
-	sql := r.ticketQry.GetTicketByNumber(ctx)
-	row := r.pool.QueryRow(ctx, sql, ticketNumber)
+func (r *ticketRepository) GetByTicketNumber(ctx context.Context, ticketNumber string) (*model.Ticket, error) {
+	queryStr := r.ticketQry.GetTicketByNumber(ctx)
+	row := r.pool.QueryRow(ctx, queryStr, ticketNumber)
 
 	ticket := &model.Ticket{Category: &model.Category{}, Counter: &model.Counter{}}
 	var catID, catIDFromJoin int
@@ -118,11 +162,11 @@ func (r *TicketRepository) GetByTicketNumber(ctx context.Context, ticketNumber s
 	return ticket, nil
 }
 
-func (r *TicketRepository) Create(ctx context.Context, ticket *model.Ticket) (*model.Ticket, error) {
-	sql := r.ticketQry.CreateTicket(ctx)
+func (r *ticketRepository) Create(ctx context.Context, ticket *model.Ticket) (*model.Ticket, error) {
+	queryStr := r.ticketQry.CreateTicket(ctx)
 	var id int
 	var createdAt time.Time
-	err := r.pool.QueryRow(ctx, sql, ticket.TicketNumber, ticket.Category.ID, ticket.Status, ticket.Priority, ticket.Notes, ticket.DailySequence, ticket.QueueDate).Scan(&id, &createdAt)
+	err := r.pool.QueryRow(ctx, queryStr, ticket.TicketNumber, ticket.Category.ID, ticket.Status, ticket.Priority, ticket.Notes, ticket.DailySequence, ticket.QueueDate).Scan(&id, &createdAt)
 	if err != nil {
 		return nil, err
 	}
@@ -132,19 +176,19 @@ func (r *TicketRepository) Create(ctx context.Context, ticket *model.Ticket) (*m
 	return ticket, nil
 }
 
-func (r *TicketRepository) UpdateStatus(ctx context.Context, id int, status string) error {
-	sql := r.ticketQry.UpdateTicketStatus(ctx, status)
-	_, err := r.pool.Exec(ctx, sql, status, id)
+func (r *ticketRepository) UpdateStatus(ctx context.Context, id int, status string) error {
+	queryStr := r.ticketQry.UpdateTicketStatus(ctx, status)
+	_, err := r.pool.Exec(ctx, queryStr, status, id)
 	return err
 }
 
-func (r *TicketRepository) AssignToCounter(ctx context.Context, ticketID, counterID int) error {
-	sql := r.ticketQry.AssignTicketToCounter(ctx)
-	_, err := r.pool.Exec(ctx, sql, counterID, ticketID)
+func (r *ticketRepository) AssignToCounter(ctx context.Context, ticketID, counterID int) error {
+	queryStr := r.ticketQry.AssignTicketToCounter(ctx)
+	_, err := r.pool.Exec(ctx, queryStr, counterID, ticketID)
 	return err
 }
 
-func (r *TicketRepository) GetNextTicket(ctx context.Context, categoryIDs []int) (*model.Ticket, error) {
+func (r *ticketRepository) GetNextTicket(ctx context.Context, categoryIDs []int) (*model.Ticket, error) {
 	if len(categoryIDs) == 0 {
 		return nil, fmt.Errorf("no categories provided")
 	}
@@ -167,9 +211,9 @@ func (r *TicketRepository) GetNextTicket(ctx context.Context, categoryIDs []int)
 	return ticket, nil
 }
 
-func (r *TicketRepository) GetCurrentForCounter(ctx context.Context, counterID int) (*model.Ticket, error) {
-	sql := r.ticketQry.GetCurrentTicketForCounter(ctx)
-	row := r.pool.QueryRow(ctx, sql, counterID)
+func (r *ticketRepository) GetCurrentForCounter(ctx context.Context, counterID int) (*model.Ticket, error) {
+	queryStr := r.ticketQry.GetCurrentTicketForCounter(ctx)
+	row := r.pool.QueryRow(ctx, queryStr, counterID)
 
 	ticket := &model.Ticket{}
 	err := row.Scan(
@@ -187,7 +231,7 @@ func (r *TicketRepository) GetCurrentForCounter(ctx context.Context, counterID i
 	return ticket, nil
 }
 
-func (r *TicketRepository) List(ctx context.Context, filters map[string]interface{}) ([]model.Ticket, error) {
+func (r *ticketRepository) List(ctx context.Context, filters map[string]interface{}) ([]model.Ticket, error) {
 	result := r.ticketQry.ListTickets(ctx, filters)
 	rows, err := r.pool.Query(ctx, result.Query, result.Args...)
 	if err != nil {
@@ -241,21 +285,21 @@ func (r *TicketRepository) List(ctx context.Context, filters map[string]interfac
 	return tickets, nil
 }
 
-func (r *TicketRepository) GetTodayCount(ctx context.Context) (int, error) {
+func (r *ticketRepository) GetTodayCount(ctx context.Context) (int, error) {
 	sql := r.ticketQry.GetTodayTicketCount(ctx)
 	var count int
 	err := r.pool.QueryRow(ctx, sql).Scan(&count)
 	return count, err
 }
 
-func (r *TicketRepository) GetTodayCountByCategory(ctx context.Context, categoryID int) (int, error) {
+func (r *ticketRepository) GetTodayCountByCategory(ctx context.Context, categoryID int) (int, error) {
 	sql := r.ticketQry.GetTodayTicketCountByCategory(ctx)
 	var count int
 	err := r.pool.QueryRow(ctx, sql, categoryID).Scan(&count)
 	return count, err
 }
 
-func (r *TicketRepository) GenerateNumber(ctx context.Context, categoryID int, prefix string) (string, int, error) {
+func (r *ticketRepository) GenerateNumber(ctx context.Context, categoryID int, prefix string) (string, int, error) {
 	sql := r.ticketQry.GenerateTicketNumber(ctx)
 	var number int
 	err := r.pool.QueryRow(ctx, sql, categoryID).Scan(&number)
@@ -265,7 +309,7 @@ func (r *TicketRepository) GenerateNumber(ctx context.Context, categoryID int, p
 	return fmt.Sprintf("%s%03d", prefix, number), number, nil
 }
 
-func (r *TicketRepository) GetWaitingPreview(ctx context.Context, limit int) ([]model.Ticket, error) {
+func (r *ticketRepository) GetWaitingPreview(ctx context.Context, limit int) ([]model.Ticket, error) {
 	sql := r.ticketQry.GetWaitingTicketsPreview(ctx)
 	rows, err := r.pool.Query(ctx, sql, limit)
 	if err != nil {
@@ -282,7 +326,7 @@ func (r *TicketRepository) GetWaitingPreview(ctx context.Context, limit int) ([]
 	return tickets, nil
 }
 
-func (r *TicketRepository) GetWaitingPreviewByCategories(ctx context.Context, categoryIDs []int, limit int) ([]model.Ticket, error) {
+func (r *ticketRepository) GetWaitingPreviewByCategories(ctx context.Context, categoryIDs []int, limit int) ([]model.Ticket, error) {
 	if len(categoryIDs) == 0 {
 		return []model.Ticket{}, nil
 	}
@@ -307,7 +351,7 @@ func (r *TicketRepository) GetWaitingPreviewByCategories(ctx context.Context, ca
 	return tickets, nil
 }
 
-func (r *TicketRepository) GetTodayCompletedByCategories(ctx context.Context, categoryIDs []int) ([]model.Ticket, error) {
+func (r *ticketRepository) GetTodayCompletedByCategories(ctx context.Context, categoryIDs []int) ([]model.Ticket, error) {
 	if len(categoryIDs) == 0 {
 		return []model.Ticket{}, nil
 	}
@@ -368,7 +412,7 @@ func (r *TicketRepository) GetTodayCompletedByCategories(ctx context.Context, ca
 	return tickets, nil
 }
 
-func (r *TicketRepository) GetLastCalledByCategoryID(ctx context.Context, categoryID int) (string, error) {
+func (r *ticketRepository) GetLastCalledByCategoryID(ctx context.Context, categoryID int) (string, error) {
 	sql := r.ticketQry.GetLastCalledTicketByCategory(ctx)
 	var ticketNumber string
 	err := r.pool.QueryRow(ctx, sql, categoryID).Scan(&ticketNumber)

@@ -12,18 +12,18 @@ import (
 
 // StaffService handles staff-specific business logic
 type StaffService struct {
-	userRepo     *repository.UserRepository
-	counterRepo  *repository.CounterRepository
-	ticketRepo   *repository.TicketRepository
-	statsRepo    *repository.StatsRepository
-	categoryRepo *repository.CategoryRepository
+	userRepo     repository.UserRepository
+	counterRepo  repository.CounterRepository
+	ticketRepo   repository.TicketRepository
+	statsRepo    repository.StatsRepository
+	categoryRepo repository.CategoryRepository
 }
 
-func NewStaffService(userRepo *repository.UserRepository,
-	counterRepo *repository.CounterRepository,
-	ticketRepo *repository.TicketRepository,
-	statsRepo *repository.StatsRepository,
-	categoryRepo *repository.CategoryRepository) *StaffService {
+func NewStaffService(userRepo repository.UserRepository,
+	counterRepo repository.CounterRepository,
+	ticketRepo repository.TicketRepository,
+	statsRepo repository.StatsRepository,
+	categoryRepo repository.CategoryRepository) *StaffService {
 	return &StaffService{
 		userRepo:     userRepo,
 		counterRepo:  counterRepo,

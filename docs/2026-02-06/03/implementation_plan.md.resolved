@@ -1,0 +1,62 @@
+# Ticket Numbering Improvements
+
+To address the confusion of having multiple identical ticket numbers across different days and to improve query performance and data integrity, I propose adding explicit `daily_sequence` and `queue_date` columns.
+
+## User Review Required
+
+> [!IMPORTANT]
+> This change introduces a `queue_date` column and a `UNIQUE` constraint on [(category_id, queue_date, daily_sequence)](file:///home/guhkun/work/mine/antih/v7/source/internal/repository/ticket_repository.go#190-243). This strictly enforces that no two tickets in the same category can have the same number on the same day.
+
+## Proposed Changes
+
+### Database Schema
+
+#### [MODIFY] [005_add_daily_sequence.up.sql](file:///home/guhkun/work/mine/antih/v7/source/migrations/005_add_daily_sequence.up.sql)
+Add `daily_sequence` and `queue_date` columns with constraints.
+
+```sql
+ALTER TABLE tickets ADD COLUMN daily_sequence INTEGER;
+ALTER TABLE tickets ADD COLUMN queue_date DATE DEFAULT CURRENT_DATE;
+
+CREATE INDEX idx_date_category ON tickets(queue_date, category_id);
+CREATE INDEX idx_date_number ON tickets(queue_date, daily_sequence);
+ALTER TABLE tickets ADD CONSTRAINT unique_daily_queue UNIQUE (category_id, queue_date, daily_sequence);
+```
+
+### Backend Components
+
+#### [MODIFY] [entities.go](file:///home/guhkun/work/mine/antih/v7/source/internal/model/entities.go)
+Add `DailySequence` field to the [Ticket](file:///home/guhkun/work/mine/antih/v7/source/internal/model/entities.go#55-73) struct.
+
+#### [MODIFY] [ticket_repository.go](file:///home/guhkun/work/mine/antih/v7/source/internal/repository/ticket_repository.go)
+Add `ITicketRepository` interface to allow mocking in unit tests.
+
+#### [MODIFY] [kiosk_service.go](file:///home/guhkun/work/mine/antih/v7/source/internal/service/kiosk_service.go)
+#### [MODIFY] [ticket_service.go](file:///home/guhkun/work/mine/antih/v7/source/internal/service/ticket_service.go)
+Update services to use repository interfaces instead of concrete pointers.
+
+#### [MODIFY] [ticket_queries.go](file:///home/guhkun/work/mine/antih/v7/source/internal/query/ticket_queries.go)
+Simplify [GenerateTicketNumber](file:///home/guhkun/work/mine/antih/v7/source/internal/query/ticket_queries.go#117-120) and update [CreateTicket](file:///home/guhkun/work/mine/antih/v7/source/internal/service/admin_service.go#336-364) to include the sequence.
+
+```go
+// From:
+SELECT COALESCE(MAX(NULLIF(regexp_replace(ticket_number, '[^0-9]', '', 'g'), ''))::INT, 0) + 1 FROM tickets ...
+// To:
+SELECT COALESCE(MAX(daily_sequence), 0) + 1 FROM tickets WHERE category_id = $1 AND DATE(created_at) = CURRENT_DATE
+```
+
+## Verification Plan
+
+### Automated Tests
+- **Unit Tests**:
+    - `internal/query`: Verify SQL string generation for new columns and filtered queries.
+    - `internal/service`: Verify business logic for populating `daily_sequence` and `queue_date`.
+- **Coverage**: Aim for significant coverage of the modified logic.
+- Run ticket generation multiple times to ensure the sequence increments correctly.
+- Verify that the sequence resets on a simulated new day.
+
+### Manual Verification
+- Run `go build ./...` to ensure no regressions.
+- Verify migration script manually for correct column types and indices.
+- Check the database directly to see the `daily_sequence` column alongside `ticket_number`.
+- Confirm that "A001" today is easily distinguishable from "A001" tomorrow via the `daily_sequence` + `created_at` combination.

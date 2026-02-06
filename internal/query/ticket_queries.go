@@ -144,7 +144,7 @@ func (q *TicketQueries) GetTodayCompletedTicketsByCategories(ctx context.Context
 	for i := range categoryIDs {
 		placeholders[i] = fmt.Sprintf("$%d", i+1)
 	}
-	return fmt.Sprintf(`SELECT t.id, t.ticket_number, t.category_id, t.counter_id, t.status, t.priority, t.created_at, t.called_at, t.completed_at, t.wait_time, t.service_time, t.notes, c.id, c.name, c.prefix, c.color_code, co.id, co.number, co.name FROM tickets t LEFT JOIN categories c ON t.category_id = c.id LEFT JOIN counters co ON t.counter_id = co.id WHERE t.status = 'completed' AND t.completed_at >= CURRENT_DATE AND t.category_id IN (%s) ORDER BY t.completed_at DESC LIMIT 50`, strings.Join(placeholders, ","))
+	return fmt.Sprintf(`SELECT t.id, t.ticket_number, t.category_id, t.counter_id, t.status, t.priority, t.created_at, t.called_at, t.completed_at, t.wait_time, t.service_time, t.daily_sequence, t.queue_date, t.notes, c.id, c.name, c.prefix, c.color_code, co.id, co.number, co.name FROM tickets t LEFT JOIN categories c ON t.category_id = c.id LEFT JOIN counters co ON t.counter_id = co.id WHERE t.status = 'completed' AND t.queue_date = CURRENT_DATE AND t.category_id IN (%s) ORDER BY t.completed_at DESC LIMIT 50`, strings.Join(placeholders, ","))
 }
 
 func (q *TicketQueries) GetLastCalledTicketByCategory(ctx context.Context) string {

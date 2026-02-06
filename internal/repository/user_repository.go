@@ -5,44 +5,54 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 
 	"tenangantri/internal/model"
 	"tenangantri/internal/query"
 )
 
-type UserRepository struct {
-	pool    *pgxpool.Pool
+type UserRepository interface {
+	GetByUsername(ctx context.Context, username string) (*model.User, error)
+	GetByUsernameWithPassword(ctx context.Context, username string) (*UserWithPassword, error)
+	GetByIDWithPassword(ctx context.Context, id int) (*UserWithPassword, error)
+	GetByID(ctx context.Context, id int) (*model.User, error)
+	Create(ctx context.Context, user *model.User) (*model.User, error)
+	Update(ctx context.Context, user *model.User) (*model.User, error)
+	Delete(ctx context.Context, id int) error
+	UpdatePassword(ctx context.Context, id int, password string) error
+	UpdateLastLogin(ctx context.Context, id int) error
+	List(ctx context.Context, role string) ([]model.User, error)
+}
+
+type userRepository struct {
+	pool    DB
 	userQry *query.UserQueries
 }
 
-func NewUserRepository(pool *pgxpool.Pool) *UserRepository {
-	return &UserRepository{
+func NewUserRepository(pool DB) UserRepository {
+	return &userRepository{
 		pool:    pool,
 		userQry: query.NewUserQueries(),
 	}
 }
 
-func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*model.User, error) {
-	sql := r.userQry.GetUserByUsername(ctx)
-	rows, err := r.pool.Query(ctx, sql, username)
-	if err != nil {
-		log.Error().Err(err).Str("layer", "repository").Msg("Failed to query user by username")
-		return nil, err
-	}
-	defer rows.Close()
+func (r *userRepository) GetByUsername(ctx context.Context, username string) (*model.User, error) {
+	queryStr := r.userQry.GetUserByUsername(ctx)
+	row := r.pool.QueryRow(ctx, queryStr, username)
 
-	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[model.User])
+	user := &model.User{}
+	err := row.Scan(
+		&user.ID, &user.Username, &user.FullName, &user.Email, &user.Phone,
+		&user.Role, &user.IsActive, &user.CounterID, &user.CreatedAt, &user.UpdatedAt, &user.LastLogin,
+	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, err
+			return nil, nil
 		}
-		log.Error().Err(err).Str("layer", "repository").Str("function", "GetByUsername").Msg("Failed to collect user")
+		log.Error().Err(err).Str("layer", "repository").Str("username", username).Msg("Failed to scan user")
 		return nil, err
 	}
-
-	return &user, nil
+	return user, nil
 }
 
 type UserWithPassword struct {
@@ -51,7 +61,7 @@ type UserWithPassword struct {
 	Password string `db:"password"`
 }
 
-func (r *UserRepository) GetByUsernameWithPassword(ctx context.Context, username string) (*UserWithPassword, error) {
+func (r *userRepository) GetByUsernameWithPassword(ctx context.Context, username string) (*UserWithPassword, error) {
 	sql := r.userQry.GetUserPasswordByUsername(ctx)
 	rows, err := r.pool.Query(ctx, sql, username)
 	if err != nil {
@@ -72,7 +82,7 @@ func (r *UserRepository) GetByUsernameWithPassword(ctx context.Context, username
 	return &user, nil
 }
 
-func (r *UserRepository) GetByIDWithPassword(ctx context.Context, id int) (*UserWithPassword, error) {
+func (r *userRepository) GetByIDWithPassword(ctx context.Context, id int) (*UserWithPassword, error) {
 	sql := `SELECT id, username, password FROM users WHERE id = $1`
 	rows, err := r.pool.Query(ctx, sql, id)
 	if err != nil {
@@ -93,28 +103,26 @@ func (r *UserRepository) GetByIDWithPassword(ctx context.Context, id int) (*User
 	return &user, nil
 }
 
-func (r *UserRepository) GetByID(ctx context.Context, id int) (*model.User, error) {
-	sql := r.userQry.GetUserByID(ctx)
-	rows, err := r.pool.Query(ctx, sql, id)
-	if err != nil {
-		log.Error().Err(err).Str("layer", "repository").Str("function", "GetByID").Msg("Failed to query user by id")
-		return nil, err
-	}
-	defer rows.Close()
+func (r *userRepository) GetByID(ctx context.Context, id int) (*model.User, error) {
+	queryStr := r.userQry.GetUserByID(ctx)
+	row := r.pool.QueryRow(ctx, queryStr, id)
 
-	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[model.User])
+	user := &model.User{}
+	err := row.Scan(
+		&user.ID, &user.Username, &user.FullName, &user.Email, &user.Phone,
+		&user.Role, &user.IsActive, &user.CounterID, &user.CreatedAt, &user.UpdatedAt, &user.LastLogin,
+	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, err
+			return nil, nil
 		}
-		log.Error().Err(err).Str("layer", "repository").Str("function", "GetByID").Msg("Failed to collect user")
+		log.Error().Err(err).Str("layer", "repository").Int("id", id).Msg("Failed to scan user")
 		return nil, err
 	}
-
-	return &user, nil
+	return user, nil
 }
 
-func (r *UserRepository) Create(ctx context.Context, user *model.User) (*model.User, error) {
+func (r *userRepository) Create(ctx context.Context, user *model.User) (*model.User, error) {
 	sql := r.userQry.CreateUser(ctx)
 	var id int
 	var createdAt, updatedAt time.Time
@@ -129,7 +137,7 @@ func (r *UserRepository) Create(ctx context.Context, user *model.User) (*model.U
 	return user, nil
 }
 
-func (r *UserRepository) Update(ctx context.Context, user *model.User) (*model.User, error) {
+func (r *userRepository) Update(ctx context.Context, user *model.User) (*model.User, error) {
 	sql := r.userQry.UpdateUser(ctx)
 	_, err := r.pool.Exec(ctx, sql, user.FullName.String, user.Email.String, user.Phone.String, user.Role, user.CounterID, user.IsActive, user.ID)
 	if err != nil {
@@ -138,25 +146,25 @@ func (r *UserRepository) Update(ctx context.Context, user *model.User) (*model.U
 	return user, nil
 }
 
-func (r *UserRepository) Delete(ctx context.Context, id int) error {
+func (r *userRepository) Delete(ctx context.Context, id int) error {
 	sql := r.userQry.DeleteUser(ctx)
 	_, err := r.pool.Exec(ctx, sql, id)
 	return err
 }
 
-func (r *UserRepository) UpdatePassword(ctx context.Context, id int, password string) error {
+func (r *userRepository) UpdatePassword(ctx context.Context, id int, password string) error {
 	sql := r.userQry.UpdateUserPassword(ctx)
 	_, err := r.pool.Exec(ctx, sql, password, id)
 	return err
 }
 
-func (r *UserRepository) UpdateLastLogin(ctx context.Context, id int) error {
+func (r *userRepository) UpdateLastLogin(ctx context.Context, id int) error {
 	sql := r.userQry.UpdateLastLogin(ctx)
 	_, err := r.pool.Exec(ctx, sql, id)
 	return err
 }
 
-func (r *UserRepository) List(ctx context.Context, role string) ([]model.User, error) {
+func (r *userRepository) List(ctx context.Context, role string) ([]model.User, error) {
 	sql := r.userQry.ListUsers(ctx, role)
 	rows, err := r.pool.Query(ctx, sql)
 	if err != nil {

@@ -13,12 +13,12 @@ import (
 
 // TicketService handles ticket-related business logic
 type TicketService struct {
-	ticketRepo   *repository.TicketRepository
-	categoryRepo *repository.CategoryRepository
-	statsRepo    *repository.StatsRepository
+	ticketRepo   repository.TicketRepository
+	categoryRepo repository.CategoryRepository
+	statsRepo    repository.StatsRepository
 }
 
-func NewTicketService(ticketRepo *repository.TicketRepository, categoryRepo *repository.CategoryRepository, statsRepo *repository.StatsRepository) *TicketService {
+func NewTicketService(ticketRepo repository.TicketRepository, categoryRepo repository.CategoryRepository, statsRepo repository.StatsRepository) *TicketService {
 	return &TicketService{
 		ticketRepo:   ticketRepo,
 		categoryRepo: categoryRepo,

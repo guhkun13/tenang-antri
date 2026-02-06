@@ -35,14 +35,18 @@ func getPriorityFromInterface(priority interface{}) int {
 
 // AdminService handles admin-specific business logic
 type AdminService struct {
-	userRepo     *repository.UserRepository
-	counterRepo  *repository.CounterRepository
-	categoryRepo *repository.CategoryRepository
-	ticketRepo   *repository.TicketRepository
-	statsRepo    *repository.StatsRepository
+	userRepo     repository.UserRepository
+	counterRepo  repository.CounterRepository
+	categoryRepo repository.CategoryRepository
+	ticketRepo   repository.TicketRepository
+	statsRepo    repository.StatsRepository
 }
 
-func NewAdminService(userRepo *repository.UserRepository, counterRepo *repository.CounterRepository, categoryRepo *repository.CategoryRepository, ticketRepo *repository.TicketRepository, statsRepo *repository.StatsRepository) *AdminService {
+func NewAdminService(userRepo repository.UserRepository,
+	counterRepo repository.CounterRepository,
+	categoryRepo repository.CategoryRepository,
+	ticketRepo repository.TicketRepository,
+	statsRepo repository.StatsRepository) *AdminService {
 	return &AdminService{
 		userRepo:     userRepo,
 		counterRepo:  counterRepo,
