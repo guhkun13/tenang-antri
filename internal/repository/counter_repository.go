@@ -42,7 +42,7 @@ func (r *counterRepository) GetByID(ctx context.Context, id int) (*model.Counter
 	var catID, staffID sql.NullInt64
 	err := row.Scan(
 		&counter.ID, &counter.Number, &counter.Name, &counter.Location,
-		&counter.Status, &counter.IsActive, &catID,
+		&counter.Status, &catID,
 		&counter.CreatedAt, &counter.UpdatedAt, &staffID,
 	)
 	if err != nil {
@@ -69,7 +69,7 @@ func (r *counterRepository) Create(ctx context.Context, counter *model.Counter) 
 	queryStr := r.counterQry.CreateCounter(ctx)
 	var id int
 	var createdAt, updatedAt time.Time
-	err := r.pool.QueryRow(ctx, queryStr, counter.Number, counter.Name, counter.Location, counter.Status, counter.IsActive, counter.CategoryID).Scan(&id, &createdAt, &updatedAt)
+	err := r.pool.QueryRow(ctx, queryStr, counter.Number, counter.Name, counter.Location, counter.Status, counter.CategoryID).Scan(&id, &createdAt, &updatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (r *counterRepository) Create(ctx context.Context, counter *model.Counter) 
 
 func (r *counterRepository) Update(ctx context.Context, counter *model.Counter) (*model.Counter, error) {
 	queryStr := r.counterQry.UpdateCounter(ctx)
-	_, err := r.pool.Exec(ctx, queryStr, counter.Number, counter.Name, counter.Location, counter.Status, counter.IsActive, counter.CategoryID, counter.ID)
+	_, err := r.pool.Exec(ctx, queryStr, counter.Number, counter.Name, counter.Location, counter.Status, counter.CategoryID, counter.ID)
 	if err != nil {
 		return nil, err
 	}

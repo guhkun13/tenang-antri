@@ -1,43 +1,27 @@
 {{template "layouts/_header.html" .}}
-<div
-  class="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800"
->
+<div class="min-h-screen bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800">
   <!-- Header -->
-  <header class="bg-white/10 backdrop-blur-md border-b border-white/20">
-    <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+  <header class="bg-white/10 backdrop-blur-md border-b border-white/20 sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto px-4 py-3 md:py-4 flex justify-between items-center">
       <div class="flex items-center">
-        <i class="fas fa-ticket-alt text-3xl text-white mr-3"></i>
+        <i class="fas fa-ticket-alt text-2xl md:text-3xl text-white mr-2 md:mr-3"></i>
         <div>
-          <h1 class="text-2xl font-bold text-white">Kiosk Pelanggan</h1>
-          <p class="text-blue-200 text-sm">
+          <h1 class="text-lg md:text-2xl font-bold text-white">Kiosk Pelanggan</h1>
+          <p class="text-blue-200 text-xs md:text-sm hidden sm:block">
             Pilih layanan untuk mendapatkan tiket
           </p>
         </div>
       </div>
       <div class="text-right text-white">
-        <p class="text-3xl font-bold" id="clock">--:--</p>
-        <p class="text-blue-200 text-sm" id="date">Memuat...</p>
+        <p class="text-xl md:text-3xl font-bold" id="clock">--:--:--</p>
+        <p class="text-blue-200 text-xs md:text-sm" id="date">Memuat...</p>
       </div>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-6 py-8">
-    <!-- Queue Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-      <div
-        class="bg-white/10 backdrop-blur-md rounded-xl p-4 text-center text-white border border-white/20"
-      >
-        <i class="fas fa-clock text-3xl mb-2 text-yellow-300"></i>
-        <p class="text-sm text-blue-200">Rata-rata Waktu Tunggu</p>
-        <p class="text-2xl font-bold">~5 menit</p>
-      </div>
-      <div
-        class="bg-white/10 backdrop-blur-md rounded-xl p-4 text-center text-white border border-white/20"
-      >
-        <i class="fas fa-users text-3xl mb-2 text-green-300"></i>
-        <p class="text-sm text-blue-200">Orang dalam Antrian</p>
-        <p class="text-2xl font-bold" id="waiting-count">--</p>
-      </div>
+  <main class="max-w-6xl mx-auto px-4 py-6 md:py-8">
+    <!-- Active Counters Stats -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
       <div
         class="bg-white/10 backdrop-blur-md rounded-xl p-4 text-center text-white border border-white/20"
       >
@@ -48,39 +32,44 @@
     </div>
 
     <!-- Category Selection -->
-    <h2 class="text-xl font-semibold text-white mb-4">
+    <h2 class="text-lg md:text-xl font-semibold text-white mb-4">
       <i class="fas fa-hand-pointer mr-2"></i>Pilih Layanan
     </h2>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
       {{range .Categories}}
       <button
         hx-post="/kiosk/ticket"
         hx-vals='{"category_id": {{.ID}}}'
         hx-target="#ticket-modal"
         hx-swap="innerHTML"
-        class="group bg-white rounded-xl p-6 shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-left"
+        class="group bg-white rounded-xl p-3 md:p-6 shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 text-left"
       >
-        <div class="flex items-start justify-between mb-4">
+        <div class="flex items-start justify-between mb-3">
           <div
-            class="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl"
+            class="w-12 h-12 md:w-16 md:h-16 rounded-xl flex items-center justify-center text-white text-xl md:text-2xl"
             style="background-color: '{{.ColorCode}}';"
           >
             <i class="fas fa-{{.Icon}}"></i>
           </div>
-          <span class="text-4xl font-bold" style="color: '{{.ColorCode}}';"
+          <span class="text-2xl md:text-4xl font-bold" style="color: '{{.ColorCode}}';"
             >{{.Prefix}}</span
           >
         </div>
-        <h3 class="text-lg font-bold text-gray-800 mb-1">{{.Name}}</h3>
-        <p class="text-sm text-gray-500">{{.Description}}</p>
-        <div
-          class="mt-4 flex items-center text-sm"
-          style="color: '{{.ColorCode}}';"
-        >
-          <span class="font-medium">Ketuk untuk mendapatkan tiket</span>
+        <h3 class="text-sm md:text-lg font-bold text-gray-800 mb-1">{{.Name}}</h3>
+        {{if .Description}}
+        <p class="text-xs md:text-sm text-gray-500 line-clamp-2 mb-2">{{.Description}}</p>
+        {{end}}
+        <div class="flex items-center justify-between mt-2 md:mt-4">
+          <span
+            class="text-xs md:text-sm font-medium px-2 py-1 rounded-full"
+            style="background-color: {{.ColorCode}}; color: white;"
+          >
+            {{if .WaitingCount}}{{.WaitingCount}} antrian{{else}}0 antrian{{end}}
+          </span>
           <i
-            class="fas fa-arrow-right ml-2 transform group-hover:translate-x-1 transition-transform"
+            class="fas fa-arrow-right transform group-hover:translate-x-1 transition-transform"
+            style="color: '{{.ColorCode}}';"
           ></i>
         </div>
       </button>
@@ -88,9 +77,9 @@
     </div>
 
     <!-- Footer -->
-    <div class="mt-12 text-center text-blue-200">
+    <div class="mt-10 md:mt-12 text-center text-blue-200">
       <p class="text-sm">
-        Terima kasih atas kesabaran Anda. Kami akan melayani Anda segera.
+        Terima kasih atas kesabaran Anda. kami akan melayani Anda segera.
       </p>
     </div>
   </main>
@@ -98,14 +87,13 @@
   <!-- Ticket Modal -->
   <div
     id="ticket-modal"
-    class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden"
+    class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden p-4"
   >
     <!-- Modal content will be loaded here -->
   </div>
 </div>
 
 <script>
-  // Clock
   function updateClock() {
     const now = new Date();
     document.getElementById("clock").textContent = now.toLocaleTimeString(
@@ -113,6 +101,7 @@
       {
         hour: "2-digit",
         minute: "2-digit",
+        second: "2-digit",
       },
     );
     document.getElementById("date").textContent = now.toLocaleDateString(
@@ -128,13 +117,10 @@
   updateClock();
   setInterval(updateClock, 1000);
 
-  // Fetch queue stats
   async function fetchStats() {
     try {
       const response = await fetch("/display/stats");
       const data = await response.json();
-      document.getElementById("waiting-count").textContent =
-        data.waiting_tickets || 0;
       document.getElementById("active-counters").textContent =
         data.active_counters || 0;
     } catch (error) {
@@ -144,7 +130,6 @@
   fetchStats();
   setInterval(fetchStats, 5000);
 
-  // Show modal when HTMX loads content
   document.body.addEventListener("htmx:afterSwap", function (evt) {
     if (evt.detail.target.id === "ticket-modal") {
       document.getElementById("ticket-modal").classList.remove("hidden");

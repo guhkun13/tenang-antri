@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -35,8 +36,41 @@ func (h *KioskHandler) ShowKiosk(c *gin.Context) {
 		categories = []model.Category{}
 	}
 
+	type CategoryWithQueue struct {
+		model.Category
+		WaitingCount int `json:"waiting_count"`
+	}
+
+	categoryQueueMap := make(map[int]int)
+	stats, queueCategories, err := h.kioskService.GetQueueInfo(c.Request.Context())
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to get queue info")
+		stats = &model.DashboardStats{}
+		queueCategories = []model.CategoryQueueStats{}
+	}
+
+	for _, cat := range queueCategories {
+		categoryQueueMap[cat.CategoryID] = cat.WaitingCount
+	}
+
+	categoriesWithQueue := make([]CategoryWithQueue, 0, len(categories))
+	for _, cat := range categories {
+		categoriesWithQueue = append(categoriesWithQueue, CategoryWithQueue{
+			Category:     cat,
+			WaitingCount: categoryQueueMap[cat.ID],
+		})
+	}
+
+	sort.Slice(categoriesWithQueue, func(i, j int) bool {
+		if categoriesWithQueue[i].Priority == categoriesWithQueue[j].Priority {
+			return categoriesWithQueue[i].Name < categoriesWithQueue[j].Name
+		}
+		return categoriesWithQueue[i].Priority > categoriesWithQueue[j].Priority
+	})
+
 	c.HTML(http.StatusOK, "pages/kiosk/index.html", gin.H{
-		"Categories": categories,
+		"Categories":     categoriesWithQueue,
+		"ActiveCounters": stats.ActiveCounters,
 	})
 }
 

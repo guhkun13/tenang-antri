@@ -224,8 +224,7 @@ func (s *AdminService) CreateCounter(ctx context.Context, req *model.CreateCount
 		Number:     req.Number,
 		Name:       req.Name,
 		Location:   req.Location,
-		Status:     "inactive",
-		IsActive:   true,
+		Status:     model.CounterStatusOffline,
 		CategoryID: req.CategoryID,
 	}
 
@@ -299,14 +298,14 @@ func (s *AdminService) ListCounters(ctx context.Context) ([]model.Counter, error
 	return counters, nil
 }
 
-// UpdateCounterStatus updates only the is_active status of a counter
-func (s *AdminService) UpdateCounterStatus(ctx context.Context, id int, isActive bool) (*model.Counter, error) {
+// UpdateCounterStatus updates counter status
+func (s *AdminService) UpdateCounterStatus(ctx context.Context, id int, status string) (*model.Counter, error) {
 	counter, err := s.counterRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	counter.IsActive = isActive
+	counter.Status = status
 	return s.counterRepo.Update(ctx, counter)
 }
 

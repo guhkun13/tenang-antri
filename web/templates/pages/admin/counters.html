@@ -1,48 +1,6 @@
 {{ template "layouts/_header.html" }}
 <div class="flex h-screen bg-gray-100">
-  <!-- Sidebar -->
-  <aside class="bg-gray-800 text-white w-64 flex-shrink-0 hidden md:block">
-    <div class="p-4 border-b border-gray-700">
-      <h1 class="text-xl font-bold">
-        <i class="fas fa-ticket-alt mr-2"></i>TenangAntri
-      </h1>
-    </div>
-    <nav class="p-4 space-y-2">
-      <a
-        href="/admin/dashboard"
-        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-      >
-        <i class="fas fa-tachometer-alt mr-2"></i>Dasbor
-      </a>
-      <a
-        href="/admin/tickets"
-        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-      >
-        <i class="fas fa-ticket-alt mr-2"></i>Tiket
-      </a>
-      <a
-        href="/admin/categories"
-        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-      >
-        <i class="fas fa-tags mr-2"></i>Kategori
-      </a>
-      <a href="/admin/counters" class="block px-4 py-2 bg-blue-600 rounded-lg">
-        <i class="fas fa-desktop mr-2"></i>Loket
-      </a>
-      <a
-        href="/admin/users"
-        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-      >
-        <i class="fas fa-users mr-2"></i>Staf
-      </a>
-      <a
-        href="/admin/reports"
-        class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-      >
-        <i class="fas fa-chart-bar mr-2"></i>Laporan
-      </a>
-    </nav>
-  </aside>
+  {{template "layouts/_admin_sidebar.html" .}}
 
   <!-- Main Content -->
   <div class="flex-1 flex flex-col overflow-hidden">
@@ -67,8 +25,10 @@
           <div class="flex items-start justify-between mb-4">
             <div
               class="w-14 h-14 rounded-xl flex items-center justify-center text-white text-2xl
-                            {{if .IsActive}} bg-blue-500
-                            {{else}}bg-gray-400{{end}}"
+                            {{if eq .Status "offline"}}bg-gray-400
+                            {{else if eq .Status "serving"}}bg-green-500
+                            {{else if eq .Status "paused"}}bg-orange-500
+                            {{else}}bg-blue-500{{end}}"
             >
               <i class="fas fa-desktop"></i>
             </div>
@@ -81,11 +41,11 @@
                 <i class="fas fa-edit"></i>
               </button>
               <button
-                onclick="toggleCounterStatus('{{.ID}}', '{{if .IsActive}}active{{else}}inactive{{end}}')"
-                class="text-{{if .IsActive}}yellow-600 hover:text-yellow-800{{else}}green-600 hover:text-green-800{{end}} p-2 rounded-full hover:bg-gray-50"
-                title="{{if .IsActive}}Nonaktifkan{{else}}Aktifkan{{end}}"
+                onclick="setCounterStatus('{{.ID}}', '{{.Status}}')"
+                class="text-{{if eq .Status "offline"}}green-600 hover:text-green-800{{else}}red-600 hover:text-red-800{{end}} p-2 rounded-full hover:bg-gray-50"
+                title="{{if eq .Status "offline"}}Aktifkan{{else}}Nonaktifkan{{end}}"
               >
-                <i class="fas fa-{{if .IsActive}}ban{{else}}check{{end}}"></i>
+                <i class="fas fa-power-off"></i>
               </button>
               <button
                 onclick="deleteCounter('{{.ID}}')"
@@ -102,10 +62,15 @@
             <span class="text-sm text-gray-600">Nomor: {{.Number}}</span>
             <span
               class="px-3 py-1 rounded-full text-xs font-medium
-                            {{if .IsActive}}bg-green-100 text-green-800
-                            {{else}}bg-red-100 text-red-800{{end}}"
+                            {{if eq .Status "offline"}}bg-gray-100 text-gray-800
+                            {{else if eq .Status "serving"}}bg-green-100 text-green-800
+                            {{else if eq .Status "paused"}}bg-orange-100 text-orange-800
+                            {{else}}bg-blue-100 text-blue-800{{end}}"
             >
-              {{if .IsActive}}Aktif{{else}}Nonaktif{{end}}
+              {{if eq .Status "offline"}}Offline
+              {{else if eq .Status "serving"}}Melayani
+              {{else if eq .Status "paused"}}Dijeda
+              {{else}}Siap{{end}}
             </span>
           </div>
           {{if .Category}}
@@ -297,176 +262,9 @@
         </button>
       </div>
     </form>
-  </div>
+    </div>
 </div>
 
-<script>
-  function openModal(id) {
-    document.getElementById(id).classList.remove("hidden");
-    document.getElementById(id).classList.add("flex");
-  }
-
-  function closeModal(id) {
-    document.getElementById(id).classList.add("hidden");
-    document.getElementById(id).classList.remove("flex");
-  }
-
-  async function addCounter(event) {
-    event.preventDefault();
-    const form = event.target;
-    const formData = new FormData(form);
-
-    const categoryId = formData.get("category_id");
-    const data = {
-      number: formData.get("number"),
-      name: formData.get("name"),
-      location: formData.get("location"),
-      category_id: categoryId ? parseInt(categoryId) : null,
-    };
-
-    try {
-      const response = await fetch("/admin/api/counters", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        alert(error.error || "Gagal menambahkan loket");
-      }
-    } catch (error) {
-      alert("Network error");
-    }
-    return false;
-  }
-
-  async function deleteCounter(id) {
-    if (!confirm("Apakah Anda yakin ingin menghapus loket ini?")) return;
-
-    try {
-      const response = await fetch(`/admin/api/counters/${id}`, {
-        method: "DELETE",
-      });
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        alert("Gagal menghapus loket");
-      }
-    } catch (error) {
-      alert("Network error");
-    }
-  }
-
-  async function loadEditCounter(id) {
-    try {
-      const response = await fetch(`/admin/api/counters/${id}`);
-      if (!response.ok) {
-        alert("Gagal memuat data loket");
-        return;
-      }
-
-      const counter = await response.json();
-
-      document.getElementById("editCounterId").value = counter.id;
-      document.getElementById("editCounterNumber").value = counter.number;
-      document.getElementById("editCounterName").value = counter.name;
-      document.getElementById("editCounterLocation").value =
-        counter.location || "";
-
-      const categorySelect = document.getElementById("editCounterCategory");
-      categorySelect.value = counter.category_id || "";
-
-      openModal("editCounterModal");
-    } catch (error) {
-      alert("Terjadi kesalahan jaringan saat memuat data loket");
-    }
-  }
-
-  async function editCounter(event) {
-    event.preventDefault();
-    const form = event.target;
-    const formData = new FormData(form);
-    const counterId = formData.get("id");
-
-    const categoryId = formData.get("category_id");
-    const data = {
-      number: formData.get("number"),
-      name: formData.get("name"),
-      location: formData.get("location"),
-      category_id: categoryId ? parseInt(categoryId) : null,
-    };
-
-    try {
-      const response = await fetch(`/admin/api/counters/${counterId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        alert(error.error || "Gagal memperbarui loket");
-      }
-    } catch (error) {
-      alert("Network error");
-    }
-    return false;
-  }
-
-  async function toggleCounterStatus(id, currentStatus) {
-    const action = currentStatus === "active" ? "deactivate" : "activate";
-    if (
-      !confirm(
-        `Apakah Anda yakin ingin ${action === "deactivate" ? "menonaktifkan" : "mengaktifkan"} loket ini?`,
-      )
-    )
-      return;
-
-    try {
-      const newStatus = currentStatus === "active" ? false : true;
-
-      const button = event.target.closest("button");
-      const originalIcon = button.innerHTML;
-      button.disabled = true;
-      button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-
-      const response = await fetch(`/admin/api/counters/${id}/status`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_active: newStatus }),
-      });
-
-      if (response.ok) {
-        const successDiv = document.createElement("div");
-        successDiv.className =
-          "fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50";
-        successDiv.innerHTML = `<i class="fas fa-check-circle"></i> Loket berhasil ${action === "deactivate" ? "dinonaktifkan" : "diaktifkan"}!`;
-        document.body.appendChild(successDiv);
-
-        setTimeout(() => {
-          successDiv.remove();
-          window.location.reload();
-        }, 1000);
-      } else {
-        const error = await response.json();
-        alert(
-          error.error ||
-            `Gagal ${action === "deactivate" ? "menonaktifkan" : "mengaktifkan"} loket`,
-        );
-        button.disabled = false;
-        button.innerHTML = originalIcon;
-      }
-    } catch (error) {
-      alert("Terjadi kesalahan jaringan. Mohon periksa koneksi Anda.");
-      button.disabled = false;
-      button.innerHTML = originalIcon;
-    }
-  }
-</script>
+<script src="/templates/pages/admin/js/counters.js"></script>
 
 {{ template "layouts/_footer.html" }}

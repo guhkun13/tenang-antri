@@ -35,7 +35,7 @@ func ScanCounter(row pgx.Row) (*model.Counter, error) {
 	counter := &model.Counter{}
 	err := row.Scan(
 		&counter.ID, &counter.Number, &counter.Name, &counter.Location,
-		&counter.Status, &counter.IsActive, &counter.CurrentStaffID,
+		&counter.Status, &counter.CurrentStaffID,
 		&counter.CreatedAt, &counter.UpdatedAt,
 	)
 	return counter, err

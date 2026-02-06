@@ -97,13 +97,13 @@ func (s *KioskService) GenerateTicket(ctx context.Context, req *dto.CreateTicket
 }
 
 // GetQueueInfo gets queue information for kiosk display
-func (s *KioskService) GetQueueInfo(ctx context.Context) (*model.DashboardStats, []model.Category, error) {
+func (s *KioskService) GetQueueInfo(ctx context.Context) (*model.DashboardStats, []model.CategoryQueueStats, error) {
 	stats, err := s.statsRepo.GetDashboardStats(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	categories, err := s.categoryRepo.List(ctx, true)
+	categories, err := s.statsRepo.GetQueueLengthByCategory(ctx)
 	if err != nil {
 		return nil, nil, err
 	}

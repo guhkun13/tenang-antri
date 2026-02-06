@@ -35,14 +35,21 @@ type Category struct {
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
+// CounterStatus constants
+const (
+	CounterStatusOffline = "offline"
+	CounterStatusIdle    = "idle"
+	CounterStatusServing = "serving"
+	CounterStatusPaused  = "paused"
+)
+
 // Counter represents a service counter
 type Counter struct {
 	ID             int       `json:"id" db:"id"`
 	Number         string    `json:"number" db:"number"`
 	Name           string    `json:"name" db:"name"`
 	Location       string    `json:"location" db:"location"`
-	Status         string    `json:"status" db:"status"` // active, paused, inactive
-	IsActive       bool      `json:"is_active" db:"is_active"`
+	Status         string    `json:"status" db:"status"` // offline, idle, serving, paused
 	CategoryID     *int      `json:"category_id,omitempty" db:"category_id"`
 	Category       *Category `json:"category,omitempty" db:"-"`
 	CreatedAt      time.Time `json:"created_at" db:"created_at"`

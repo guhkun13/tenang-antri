@@ -1,183 +1,101 @@
 {{if .Error}}
-<!-- Error State -->
-<div class="bg-white rounded-xl shadow-lg p-4 md:p-6 text-center">
-  <i class="fas fa-exclamation-triangle text-4xl md:text-5xl text-red-500 mb-3 md:mb-4"></i>
-  <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Tiket Tidak Ditemukan</h3>
-  <p class="text-sm md:text-base text-gray-600">{{.Error}}</p>
+<div class="bg-white rounded-xl shadow-lg p-6 text-center">
+  <i class="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
+  <h3 class="text-xl font-bold text-gray-800 mb-2">Tiket Tidak Ditemukan</h3>
+  <p class="text-gray-600">{{.Error}}</p>
 </div>
 {{else if .TrackingInfo}}
-<!-- Tracking Info Card -->
 <div class="bg-white rounded-xl shadow-2xl overflow-hidden">
-  <!-- Header with Category Color -->
   <div
-    class="p-4 md:p-6"
+    class="p-4"
     style="background: linear-gradient(135deg, {{.TrackingInfo.CategoryColor}} 0%, {{.TrackingInfo.CategoryColor}}dd 100%);"
   >
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between text-white">
-      <div class="mb-3 md:mb-0">
-        <p class="text-xs md:text-sm opacity-90 mb-1">Nomor Tiket</p>
-        <p class="text-3xl md:text-4xl font-bold">{{.TrackingInfo.TicketNumber}}</p>
+    <div class="flex justify-between items-center text-white">
+      <div>
+        <p class="text-xs opacity-90">Nomor Tiket</p>
+        <p class="text-3xl font-bold">{{.TrackingInfo.TicketNumber}}</p>
       </div>
-      <div class="md:text-right">
-        <p class="text-xs md:text-sm opacity-90 mb-1">Service</p>
-        <p class="text-lg md:text-xl font-semibold">{{.TrackingInfo.CategoryName}}</p>
+      <div class="text-right">
+        <p class="text-xs opacity-90">{{.TrackingInfo.CategoryName}}</p>
       </div>
     </div>
   </div>
 
-  <!-- Status Badge -->
-  <div class="px-4 md:px-6 py-3 md:py-4 bg-gray-50 border-b">
+  <div class="px-4 py-3 bg-gray-50 border-b text-center">
     {{if eq .TrackingInfo.Status "waiting"}}
-    <div class="flex items-center justify-center">
-      <span
-        class="px-3 md:px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full font-semibold flex items-center text-sm md:text-base"
-      >
-        <i class="fas fa-hourglass-half mr-1 md:mr-2"></i>Menunggu dalam Antrian
-      </span>
-    </div>
+    <span class="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full font-semibold flex items-center justify-center text-sm">
+      <i class="fas fa-hourglass-half mr-2"></i>Menunggu
+    </span>
     {{else if eq .TrackingInfo.Status "serving"}}
-    <div class="flex items-center justify-center">
-      <span
-        class="px-3 md:px-4 py-2 bg-green-100 text-green-800 rounded-full font-semibold flex items-center text-sm md:text-base animate-pulse"
-      >
-        <i class="fas fa-bell mr-1 md:mr-2"></i>Sedang Dilayani
-      </span>
-    </div>
+    <span class="px-4 py-2 bg-green-100 text-green-800 rounded-full font-semibold flex items-center justify-center text-sm animate-pulse">
+      <i class="fas fa-bell mr-2"></i>Sedang Dilayani
+    </span>
     {{else if eq .TrackingInfo.Status "completed"}}
-    <div class="flex items-center justify-center">
-      <span
-        class="px-3 md:px-4 py-2 bg-blue-100 text-blue-800 rounded-full font-semibold flex items-center text-sm md:text-base"
-      >
-        <i class="fas fa-check-circle mr-1 md:mr-2"></i>Selesai
-      </span>
-    </div>
-    {{else if eq .TrackingInfo.Status "cancelled"}}
-    <div class="flex items-center justify-center">
-      <span
-        class="px-3 md:px-4 py-2 bg-red-100 text-red-800 rounded-full font-semibold flex items-center text-sm md:text-base"
-      >
-        <i class="fas fa-times-circle mr-1 md:mr-2"></i>Dibatalkan
-      </span>
-    </div>
-    {{else if eq .TrackingInfo.Status "no_show"}}
-    <div class="flex items-center justify-center">
-      <span
-        class="px-3 md:px-4 py-2 bg-gray-100 text-gray-800 rounded-full font-semibold flex items-center text-sm md:text-base"
-      >
-        <i class="fas fa-user-times mr-1 md:mr-2"></i>Tidak Hadir
-      </span>
-    </div>
+    <span class="px-4 py-2 bg-blue-100 text-blue-800 rounded-full font-semibold flex items-center justify-center text-sm">
+      <i class="fas fa-check-circle mr-2"></i>Selesai
+    </span>
+    {{else}}
+    <span class="px-4 py-2 bg-gray-100 text-gray-800 rounded-full font-semibold flex items-center justify-center text-sm">
+      {{.TrackingInfo.Status}}
+    </span>
     {{end}}
   </div>
 
-  <!-- Main Info -->
-  <div class="p-4 md:p-6">
+  <div class="p-4">
     {{if eq .TrackingInfo.Status "waiting"}}
-    <!-- Queue Position and Last Called -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
-      <div class="text-center p-4 md:p-6 bg-purple-50 rounded-xl">
-        <i class="fas fa-users text-2xl md:text-3xl text-purple-600 mb-2"></i>
-        <p class="text-xs md:text-sm text-gray-600 mb-1">Sisa Antrian</p>
-        <p class="text-4xl md:text-5xl font-bold text-purple-600">
-          {{.TrackingInfo.QueuePosition}}
-        </p>
+    <div class="grid grid-cols-3 gap-3 mb-4">
+      <div class="text-center p-4 bg-purple-50 rounded-xl">
+        <p class="text-xs text-gray-600 mb-1">Sisa Antrian</p>
+        <p class="text-3xl font-bold text-purple-600">{{.TrackingInfo.QueuePosition}}</p>
       </div>
-      <div class="text-center p-4 md:p-6 bg-orange-50 rounded-xl">
-        <i class="fas fa-bullhorn text-2xl md:text-3xl text-orange-600 mb-2"></i>
-        <p class="text-xs md:text-sm text-gray-600 mb-1">Terakhir Dipanggil</p>
-        <p class="text-4xl md:text-5xl font-bold text-orange-600">
+      <div class="text-center p-4 bg-orange-50 rounded-xl">
+        <p class="text-xs text-gray-600 mb-1">Terakhir</p>
+        <p class="text-3xl font-bold text-orange-600">
           {{if .TrackingInfo.LastCalledTicketNumber}}{{.TrackingInfo.LastCalledTicketNumber}}{{else}}-{{end}}
         </p>
-        <p class="text-xs md:text-sm text-gray-600">for {{.TrackingInfo.CategoryName}}</p>
+      </div>
+      <div class="text-center p-4 bg-blue-50 rounded-xl">
+        <p class="text-xs text-gray-600 mb-1">Est. Tunggu</p>
+        <p class="text-3xl font-bold text-blue-600">{{.TrackingInfo.EstimatedWaitMin}}m</p>
       </div>
     </div>
 
-    <!-- Counter Information for Waiting Stage -->
     {{if .TrackingInfo.CounterNumber}}
-    <div class="mb-4 md:mb-6 p-3 md:p-4 bg-gray-50 rounded-xl border border-gray-100">
-      <div class="flex items-center justify-between mb-2">
+    <div class="p-3 bg-gray-50 rounded-xl border border-gray-100 mb-4">
+      <div class="flex items-center justify-between">
         <div class="flex items-center">
           <i class="fas fa-desktop text-gray-400 mr-2"></i>
-          <span class="text-xs md:text-sm font-medium text-gray-700">Loket {{.TrackingInfo.CounterNumber}}</span>
+          <span class="text-sm font-medium text-gray-700">Loket {{.TrackingInfo.CounterNumber}}</span>
         </div>
         <span class="px-2 py-1 text-xs font-semibold rounded-full {{if eq .TrackingInfo.CounterStatus "Open"}}bg-green-100 text-green-700{{else if eq .TrackingInfo.CounterStatus "Paused"}}bg-yellow-100 text-yellow-700{{else}}bg-gray-100 text-gray-600{{end}}">
           {{upper .TrackingInfo.CounterStatus}}
         </span>
       </div>
-
-      {{if .TrackingInfo.IsCounterServing}}
-        <div class="text-xs md:text-sm text-gray-600 flex items-center">
-          <span class="w-2 h-2 bg-blue-500 rounded-full mr-1 md:mr-2 animate-pulse"></span>
-          Sedang melayani: <span class="font-bold ml-1 text-gray-800 text-xs md:text-sm">{{.TrackingInfo.CounterCurrentServingTicket}}</span>
-        </div>
-      {{else if eq .TrackingInfo.CounterStatus "Open"}}
-      <div class="text-xs md:text-sm text-gray-500 italic">
-        Siap melayani tiket berikutnya
-      </div>
-      {{end}}
     </div>
     {{end}}
-
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4 text-center">
-      <p class="text-blue-800 text-xs md:text-sm">
-        <i class="fas fa-info-circle mr-1"></i>
-        Mohon tunggu di dekatnya. Nomor Anda akan segera dipanggil.
-      </p>
-    </div>
     {{else if eq .TrackingInfo.Status "serving"}}
-    <!-- Now Serving -->
-    <div class="text-center p-4 md:p-8 bg-green-50 rounded-xl mb-4 md:mb-6">
-      <i class="fas fa-bell text-4xl md:text-6xl text-green-600 mb-3 md:mb-4 animate-bounce"></i>
-      <h3 class="text-xl md:text-2xl font-bold text-gray-800 mb-1 md:mb-2">
-        Silakan Menuju ke Loket
-      </h3>
+    <div class="text-center p-6 bg-green-50 rounded-xl mb-4">
+      <i class="fas fa-bell text-5xl text-green-600 mb-3 animate-bounce"></i>
+      <h3 class="text-xl font-bold text-gray-800 mb-2">Menuju Loket</h3>
       {{if .TrackingInfo.CounterNumber}}
-      <div class="mt-3 md:mt-4">
-        <p class="text-sm md:text-base text-gray-600 mb-1 md:mb-2">Nomor Loket</p>
-        <p class="text-4xl md:text-6xl font-bold text-green-600">
-          {{.TrackingInfo.CounterNumber}}
-        </p>
-        {{if .TrackingInfo.CounterName}}
-        <p class="text-base md:text-lg text-gray-700 mt-1 md:mt-2">{{.TrackingInfo.CounterName}}</p>
-        {{end}}
-      </div>
+      <p class="text-4xl font-bold text-green-600">{{.TrackingInfo.CounterNumber}}</p>
       {{end}}
     </div>
     {{else if eq .TrackingInfo.Status "completed"}}
-    <!-- Completed -->
-    <div class="text-center p-4 md:p-8">
-      <i class="fas fa-check-circle text-4xl md:text-6xl text-blue-600 mb-3 md:mb-4"></i>
-      <h3 class="text-xl md:text-2xl font-bold text-gray-800 mb-1 md:mb-2">Layanan Selesai</h3>
-      <p class="text-sm md:text-base text-gray-600">Terima kasih telah berkunjung!</p>
+    <div class="text-center p-6">
+      <i class="fas fa-check-circle text-5xl text-blue-600 mb-3"></i>
+      <h3 class="text-xl font-bold text-gray-800">Layanan Selesai</h3>
     </div>
     {{else}}
-    <!-- Other statuses -->
-    <div class="text-center p-4 md:p-8">
-      <i class="fas fa-info-circle text-4xl md:text-5xl text-gray-400 mb-3 md:mb-4"></i>
-      <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-1 md:mb-2">
-        Status Tiket: {{.TrackingInfo.Status}}
-      </h3>
-      <p class="text-sm md:text-base text-gray-600">Tiket ini tidak lagi aktif.</p>
+    <div class="text-center p-6">
+      <i class="fas fa-info-circle text-5xl text-gray-400 mb-3"></i>
+      <h3 class="text-lg font-bold text-gray-800">Status: {{.TrackingInfo.Status}}</h3>
     </div>
     {{end}}
   </div>
 
-  <!-- Footer -->
-  <div class="px-4 md:px-6 py-3 md:py-4 bg-gray-50 border-t text-center text-xs md:text-sm text-gray-600">
-    <div class="flex flex-col gap-2 md:gap-0 md:flex-row md:justify-between md:items-center">
-      <div>
-        <i class="fas fa-calendar-alt mr-1"></i>
-        Dibuat: {{formatDate .TrackingInfo.CreatedAt}}
-      </div>
-      <div class="font-medium">
-        <i class="fas fa-clock mr-1 text-blue-500"></i>
-        Jam Operasional: {{.TrackingInfo.OperationalHours}}
-      </div>
-      <div>
-        <i class="fas fa-sync-alt mr-1"></i>
-        Diperbarui otomatis setiap 10 detik
-      </div>
-    </div>
+  <div class="px-4 py-3 bg-gray-50 border-t text-center text-xs text-gray-600">
+    <i class="fas fa-sync-alt mr-1"></i>Diperbarui otomatis
   </div>
 </div>
 {{end}}

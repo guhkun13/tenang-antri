@@ -169,7 +169,8 @@ func (h *AuthHandler) ShowProfile(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, template, gin.H{
-		"User":    user,
-		"Counter": counter,
+		"User":      user,
+		"Counter":   counter,
+		"ActiveTab": "profile",
 	})
 }

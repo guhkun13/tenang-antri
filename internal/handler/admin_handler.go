@@ -40,6 +40,7 @@ func (h *AdminHandler) Dashboard(c *gin.Context) {
 		"Stats":      stats,
 		"Counters":   counters,
 		"Categories": categories,
+		"ActiveTab":  "dashboard",
 	})
 }
 
@@ -70,8 +71,9 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 	counters, _ := h.adminService.ListCounters(c.Request.Context())
 
 	c.HTML(http.StatusOK, "pages/admin/users.html", gin.H{
-		"Users":    users,
-		"Counters": counters,
+		"Users":     users,
+		"Counters":  counters,
+		"ActiveTab": "users",
 	})
 }
 
@@ -178,6 +180,7 @@ func (h *AdminHandler) ListCategories(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "pages/admin/categories.html", gin.H{
 		"Categories": categories,
+		"ActiveTab":  "categories",
 	})
 }
 
@@ -303,6 +306,7 @@ func (h *AdminHandler) ListCounters(c *gin.Context) {
 	c.HTML(http.StatusOK, "pages/admin/counters.html", gin.H{
 		"Counters":   counters,
 		"Categories": categories,
+		"ActiveTab":  "counters",
 	})
 }
 
@@ -383,7 +387,7 @@ func (h *AdminHandler) GetCounter(c *gin.Context) {
 	c.JSON(http.StatusOK, counter)
 }
 
-// UpdateCounterStatus updates only the is_active status of a counter
+// UpdateCounterStatus updates counter status
 func (h *AdminHandler) UpdateCounterStatus(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -398,7 +402,7 @@ func (h *AdminHandler) UpdateCounterStatus(c *gin.Context) {
 		return
 	}
 
-	counter, err := h.adminService.UpdateCounterStatus(c.Request.Context(), id, req.IsActive)
+	counter, err := h.adminService.UpdateCounterStatus(c.Request.Context(), id, req.Status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update counter status"})
 		return
@@ -504,6 +508,7 @@ func (h *AdminHandler) ListTickets(c *gin.Context) {
 		"Counters":   counters,
 		"Filters":    filters,
 		"Stats":      stats,
+		"ActiveTab":  "tickets",
 	})
 }
 
@@ -604,8 +609,9 @@ func (h *AdminHandler) Reports(c *gin.Context) {
 	dateTo := c.DefaultQuery("date_to", time.Now().Format("2006-01-02"))
 
 	c.HTML(http.StatusOK, "pages/admin/reports.html", gin.H{
-		"DateFrom": dateFrom,
-		"DateTo":   dateTo,
+		"DateFrom":  dateFrom,
+		"DateTo":    dateTo,
+		"ActiveTab": "reports",
 	})
 }
 

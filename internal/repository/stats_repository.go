@@ -108,13 +108,13 @@ func (r *statsRepository) GetQueueLengthByCategory(ctx context.Context) ([]model
 	sql := r.statsQry.GetQueueLengthByCategory(ctx)
 	rows, err := r.pool.Query(ctx, sql)
 	if err != nil {
-		return nil, err
+		return []model.CategoryQueueStats{}, err
 	}
 	defer rows.Close()
 
 	ptrResult, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByPos[model.CategoryQueueStats])
 	if err != nil {
-		return nil, err
+		return []model.CategoryQueueStats{}, err
 	}
 
 	result := make([]model.CategoryQueueStats, len(ptrResult))

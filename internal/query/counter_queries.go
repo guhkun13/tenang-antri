@@ -11,17 +11,17 @@ func NewCounterQueries() *CounterQueries {
 }
 
 func (q *CounterQueries) CreateCounter(ctx context.Context) string {
-	return `INSERT INTO counters (number, name, location, status, is_active, category_id) 
-	VALUES ($1, $2, $3, $4, $5, $6) 
+	return `INSERT INTO counters (number, name, location, status, category_id) 
+	VALUES ($1, $2, $3, $4, $5) 
 	RETURNING id, created_at, updated_at`
 }
 
 func (q *CounterQueries) GetCounterByID(ctx context.Context) string {
-	return `SELECT id, number, name, location, status, is_active, category_id, current_staff_id, created_at, updated_at FROM counters WHERE id = $1`
+	return `SELECT id, number, name, location, status, category_id, current_staff_id, created_at, updated_at FROM counters WHERE id = $1`
 }
 
 func (q *CounterQueries) UpdateCounter(ctx context.Context) string {
-	return `UPDATE counters SET number = $1, name = $2, location = $3, status = $4, is_active = $5, category_id = $6, updated_at = NOW() WHERE id = $7`
+	return `UPDATE counters SET number = $1, name = $2, location = $3, status = $4, category_id = $5, updated_at = NOW() WHERE id = $6`
 }
 
 func (q *CounterQueries) UpdateCounterStatus(ctx context.Context) string {
@@ -37,6 +37,6 @@ func (q *CounterQueries) DeleteCounter(ctx context.Context) string {
 }
 
 func (q *CounterQueries) ListCounters(ctx context.Context) string {
-	return `SELECT id, number, name, location, status, is_active, current_staff_id, category_id, created_at, updated_at 
+	return `SELECT id, number, name, location, status, current_staff_id, category_id, created_at, updated_at 
 	FROM counters ORDER BY id asc`
 }

@@ -1,52 +1,7 @@
 {{ template "layouts/_header.html" }}
 
 <div class="flex h-screen bg-gray-100">
-  <!-- Sidebar -->
-  <aside class="bg-gray-800 text-white w-64 flex-shrink-0 hidden md:block">
-    <div class="p-4 border-b border-gray-700">
-      <h1 class="text-xl font-bold">
-        <i class="fas fa-ticket-alt mr-2"></i>TenangAntri
-      </h1>
-    </div>
-    <nav class="p-4 space-y-2">
-       <a
-         href="/admin/dashboard"
-         class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-       >
-         <i class="fas fa-tachometer-alt mr-2"></i>Dasbor
-       </a>
-       <a
-         href="/admin/tickets"
-         class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-       >
-         <i class="fas fa-ticket-alt mr-2"></i>Tiket
-       </a>
-       <a
-         href="/admin/categories"
-         class="block px-4 py-2 bg-blue-600 rounded-lg"
-       >
-         <i class="fas fa-tags mr-2"></i>Kategori
-       </a>
-       <a
-         href="/admin/counters"
-         class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-       >
-         <i class="fas fa-desktop mr-2"></i>Loket
-       </a>
-       <a
-         href="/admin/users"
-         class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-       >
-         <i class="fas fa-users mr-2"></i>Staf
-       </a>
-       <a
-         href="/admin/reports"
-         class="block px-4 py-2 hover:bg-gray-700 rounded-lg transition"
-       >
-         <i class="fas fa-chart-bar mr-2"></i>Laporan
-       </a>
-    </nav>
-  </aside>
+  {{template "layouts/_admin_sidebar.html" .}}
 
   <!-- Main Content -->
   <div class="flex-1 flex flex-col overflow-hidden">
@@ -578,6 +533,6 @@
   </div>
 </div>
 
-<script src="/static/js/categories.js"></script>
+<script src="/templates/pages/admin/js/categories.js"></script>
 
 {{ template "layouts/_footer.html" }}

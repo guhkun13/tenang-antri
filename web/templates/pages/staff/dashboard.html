@@ -3,7 +3,7 @@
 <div
   id="staff-data"
   data-has-ticket="{{if .CurrentTicket}}true{{else}}false{{end}}"
-  data-counter-status="{{if not .Counter.IsActive}}disabled{{else}}{{.Counter.Status}}{{end}}"
+  data-counter-status="{{if eq .Counter.Status "offline"}}disabled{{else}}{{.Counter.Status}}{{end}}"
 ></div>
 
 <script>
@@ -41,7 +41,11 @@
             } else if (data.message) {
               self.showToast(data.message);
             } else {
-              self.showToast("Next ticket called successfully");
+              self.showToast("Tiket berikutnya dipanggil");
+              self.hasCurrentTicket = true;
+              setTimeout(function () {
+                window.location.reload();
+              }, 500);
             }
           })
           .catch(function (error) {
@@ -65,7 +69,7 @@
             if (data.error) {
               self.showToast(data.error, "error");
             } else {
-              self.showToast("Ticket completed");
+              self.showToast("Tiket selesai");
               self.hasCurrentTicket = false;
               setTimeout(function () {
                 window.location.reload();
@@ -91,7 +95,7 @@
             if (data.error) {
               self.showToast(data.error, "error");
             } else {
-              self.showToast("Marked as no-show");
+              self.showToast("Ditandai tidak hadir");
               self.hasCurrentTicket = false;
               setTimeout(function () {
                 window.location.reload();
@@ -109,10 +113,10 @@
       toggleCounterStatus: function () {
         var self = this;
         if (self.counterStatus === "disabled") {
-          self.showToast("Counter is disabled by admin", "error");
+          self.showToast("Loket dinonaktifkan oleh admin", "error");
           return;
         }
-        var action = self.counterStatus === "active" ? "pause" : "resume";
+        var action = self.counterStatus === "idle" ? "pause" : "resume";
         fetch("/staff/" + action, { method: "POST" })
           .then(function (response) {
             return response.json();
@@ -121,8 +125,8 @@
             if (data.error) {
               self.showToast(data.error, "error");
             } else {
-              self.counterStatus = action === "pause" ? "paused" : "active";
-              self.showToast("Counter " + action + "d");
+              self.counterStatus = action === "pause" ? "paused" : "idle";
+              self.showToast("Loket " + (action === "pause" ? "dijeda" : "dilanjutkan"));
             }
           })
           .catch(function (error) {
@@ -150,11 +154,11 @@
         <div class="flex items-center space-x-2">
           <span
             class="w-3 h-3 rounded-full"
-            :class="counterStatus === 'active' ? 'bg-green-500 animate-pulse' : (counterStatus === 'paused' ? 'bg-orange-500' : 'bg-red-500')"
+            :class="counterStatus === 'serving' ? 'bg-green-500 animate-pulse' : (counterStatus === 'paused' ? 'bg-orange-500' : (counterStatus === 'idle' ? 'bg-blue-500' : 'bg-red-500'))"
           ></span>
           <span
             class="text-sm font-medium"
-            x-text="counterStatus === 'active' ? 'Aktif' : (counterStatus === 'paused' ? 'Dijeda' : 'Dinonaktifkan')"
+            x-text="counterStatus === 'serving' ? 'Melayani' : (counterStatus === 'paused' ? 'Dijeda' : (counterStatus === 'idle' ? 'Siap' : 'Offline'))"
           ></span>
         </div>
         <div class="relative" x-data="{ open: false }">
@@ -254,15 +258,15 @@
         <button
           @click="toggleCounterStatus()"
           :disabled="counterStatus === 'disabled'"
-          :class="counterStatus === 'disabled' ? 'bg-gray-400 cursor-not-allowed' : (counterStatus === 'active' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-500 hover:bg-green-600')"
+          :class="counterStatus === 'disabled' ? 'bg-gray-400 cursor-not-allowed' : (counterStatus === 'idle' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-500 hover:bg-blue-600')"
           class="text-white font-semibold py-3 px-8 rounded-lg shadow transition duration-200"
         >
           <i
             class="fas mr-2"
-            :class="counterStatus === 'disabled' ? 'fa-ban' : (counterStatus === 'active' ? 'fa-pause' : 'fa-play')"
+            :class="counterStatus === 'disabled' ? 'fa-power-off' : (counterStatus === 'idle' ? 'fa-pause' : 'fa-play')"
           ></i>
           <span
-            x-text="counterStatus === 'disabled' ? 'Loket Dinonaktifkan' : (counterStatus === 'active' ? 'Jeda Loket' : 'Lanjutkan Loket')"
+            x-text="counterStatus === 'disabled' ? 'Loket Offline' : (counterStatus === 'idle' ? 'Jeda Loket' : 'Lanjutkan Loket')"
           ></span>
         </button>
       </div>

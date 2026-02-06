@@ -136,8 +136,20 @@ func (s *StaffService) CallNext(ctx context.Context, userID int) (*model.Ticket,
 		return nil, err
 	}
 
-	if counter.Status != "active" {
-		return nil, nil // Counter is not active
+	// Check if counter is offline
+	if counter.Status == model.CounterStatusOffline {
+		return nil, nil // Counter is offline
+	}
+
+	// Business Rule: One ticket at a time - must complete current before calling next
+	currentTicket, _ := s.ticketRepo.GetCurrentForCounter(ctx, counter.ID)
+	if currentTicket != nil {
+		return nil, nil // Already serving a ticket
+	}
+
+	// Check if counter is paused
+	if counter.Status == model.CounterStatusPaused {
+		return nil, nil // Counter is paused
 	}
 
 	// Get category for this counter
@@ -150,13 +162,8 @@ func (s *StaffService) CallNext(ctx context.Context, userID int) (*model.Ticket,
 		return nil, nil // No category assigned
 	}
 
-	// Complete current ticket if exists
-	currentTicket, _ := s.ticketRepo.GetCurrentForCounter(ctx, counter.ID)
-	if currentTicket != nil {
-		if err := s.ticketRepo.UpdateStatus(ctx, currentTicket.ID, "completed"); err != nil {
-			log.Error().Err(err).Msg("Failed to complete current ticket")
-		}
-	}
+	// Update counter status to serving
+	_ = s.counterRepo.UpdateStatus(ctx, counter.ID, model.CounterStatusServing)
 
 	// Get next ticket
 	nextTicket, err := s.ticketRepo.GetNextTicket(ctx, categoryIDs)
@@ -165,7 +172,9 @@ func (s *StaffService) CallNext(ctx context.Context, userID int) (*model.Ticket,
 	}
 
 	if nextTicket == nil {
-		return nil, nil // No tickets in queue
+		// No tickets in queue, set back to idle
+		_ = s.counterRepo.UpdateStatus(ctx, counter.ID, model.CounterStatusIdle)
+		return nil, nil
 	}
 
 	// Assign ticket to counter
@@ -178,7 +187,7 @@ func (s *StaffService) CallNext(ctx context.Context, userID int) (*model.Ticket,
 	return s.ticketRepo.GetWithDetails(ctx, nextTicket.ID)
 }
 
-// CompleteTicket completes the current ticket
+// CompleteTicket completes the current ticket and sets counter to IDLE
 func (s *StaffService) CompleteTicket(ctx context.Context, userID int) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
@@ -189,7 +198,9 @@ func (s *StaffService) CompleteTicket(ctx context.Context, userID int) error {
 		return nil // No counter assigned
 	}
 
-	currentTicket, err := s.ticketRepo.GetCurrentForCounter(ctx, int(user.CounterID.Int64))
+	counterID := int(user.CounterID.Int64)
+
+	currentTicket, err := s.ticketRepo.GetCurrentForCounter(ctx, counterID)
 	if err != nil {
 		return err
 	}
@@ -198,7 +209,14 @@ func (s *StaffService) CompleteTicket(ctx context.Context, userID int) error {
 		return nil // No ticket being served
 	}
 
-	return s.ticketRepo.UpdateStatus(ctx, currentTicket.ID, "completed")
+	// Update ticket to completed
+	err = s.ticketRepo.UpdateStatus(ctx, currentTicket.ID, "completed")
+	if err != nil {
+		return err
+	}
+
+	// Set counter back to IDLE
+	return s.counterRepo.UpdateStatus(ctx, counterID, model.CounterStatusIdle)
 }
 
 // MarkNoShow marks current ticket as no-show
@@ -224,7 +242,7 @@ func (s *StaffService) MarkNoShow(ctx context.Context, userID int) error {
 	return s.ticketRepo.UpdateStatus(ctx, currentTicket.ID, "no_show")
 }
 
-// PauseCounter pauses the counter
+// PauseCounter pauses the counter (staff on break)
 func (s *StaffService) PauseCounter(ctx context.Context, userID int) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
@@ -235,10 +253,10 @@ func (s *StaffService) PauseCounter(ctx context.Context, userID int) error {
 		return nil // No counter assigned
 	}
 
-	return s.counterRepo.UpdateStatus(ctx, int(user.CounterID.Int64), "paused")
+	return s.counterRepo.UpdateStatus(ctx, int(user.CounterID.Int64), model.CounterStatusPaused)
 }
 
-// ResumeCounter resumes the counter
+// ResumeCounter resumes the counter from paused
 func (s *StaffService) ResumeCounter(ctx context.Context, userID int) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
@@ -249,7 +267,7 @@ func (s *StaffService) ResumeCounter(ctx context.Context, userID int) error {
 		return nil // No counter assigned
 	}
 
-	return s.counterRepo.UpdateStatus(ctx, int(user.CounterID.Int64), "active")
+	return s.counterRepo.UpdateStatus(ctx, int(user.CounterID.Int64), model.CounterStatusIdle)
 }
 
 // GetQueueStatus gets queue status for staff

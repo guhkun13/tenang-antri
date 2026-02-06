@@ -49,11 +49,11 @@ func (q *StatsQueries) GetWaitingTicketsCount(ctx context.Context) string {
 }
 
 func (q *StatsQueries) GetActiveCountersCount(ctx context.Context) string {
-	return `SELECT COUNT(*) FROM counters WHERE is_active = true`
+	return `SELECT COUNT(*) FROM counters WHERE status IN ('idle', 'serving')`
 }
 
 func (q *StatsQueries) GetPausedCountersCount(ctx context.Context) string {
-	return `SELECT COUNT(*) FROM counters WHERE status = 'paused' AND is_active = true`
+	return `SELECT COUNT(*) FROM counters WHERE status = 'paused'`
 }
 
 func (q *StatsQueries) GetAvgWaitTimeToday(ctx context.Context) string {

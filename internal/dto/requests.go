@@ -103,7 +103,7 @@ type CreateCounterRequest struct {
 
 // UpdateCounterStatusRequest represents counter status update request
 type UpdateCounterStatusRequest struct {
-	IsActive bool `json:"is_active"`
+	Status string `json:"status"`
 }
 
 // CreateUserRequest represents user creation request
