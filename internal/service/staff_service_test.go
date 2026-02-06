@@ -31,7 +31,7 @@ func TestStaffService_CallNext(t *testing.T) {
 
 	mockCounterRepo.On("GetByID", ctx, counterID).Return(&model.Counter{
 		ID:         counterID,
-		CategoryID: &categoryID,
+		CategoryID: sql.NullInt64{Int64: int64(categoryID), Valid: true},
 		Status:     "active",
 	}, nil)
 
@@ -42,11 +42,12 @@ func TestStaffService_CallNext(t *testing.T) {
 	}, nil)
 
 	mockTicketRepo.On("AssignToCounter", ctx, 10, counterID).Return(nil)
+	mockCounterRepo.On("UpdateStatus", ctx, counterID, "serving").Return(nil)
 	mockTicketRepo.On("GetWithDetails", ctx, 10).Return(&model.Ticket{
 		ID:           10,
 		TicketNumber: "A010",
 		Status:       "serving",
-		CounterID:    &counterID,
+		CounterID:    sql.NullInt64{Int64: int64(counterID), Valid: true},
 	}, nil)
 
 	ticket, err := service.CallNext(ctx, staffID)

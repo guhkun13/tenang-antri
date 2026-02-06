@@ -155,6 +155,7 @@
 
         document.querySelector('input[name="date_from"]').value = dateFrom;
         document.querySelector('input[name="date_to"]').value = dateTo;
+        document.getElementById('filterForm').submit();
     }
 
     function clearFilters() {
@@ -164,4 +165,5 @@
         document.querySelector('select[name="counter_id"]').value = '';
         document.querySelector('input[name="date_from"]').value = '';
         document.querySelector('input[name="date_to"]').value = '';
+        document.getElementById('filterForm').submit();
     }

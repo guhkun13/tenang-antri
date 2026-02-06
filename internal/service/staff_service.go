@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/rs/zerolog/log"
 
@@ -51,13 +52,13 @@ func (s *StaffService) GetDashboardData(ctx context.Context, userID int) (*dto.S
 		return nil, err
 	}
 
-	if counter.CategoryID != nil {
-		category, err := s.categoryRepo.GetByID(ctx, *counter.CategoryID)
+	if counter.CategoryID.Valid {
+		category, err := s.categoryRepo.GetByID(ctx, int(counter.CategoryID.Int64))
 		if err != nil {
 			log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load counter category")
 			return nil, err
 		}
-		counter.Category = category
+		counter.CategoryID = sql.NullInt64{Int64: int64(category.ID), Valid: true}
 	}
 
 	// Get current serving ticket
@@ -68,8 +69,8 @@ func (s *StaffService) GetDashboardData(ctx context.Context, userID int) (*dto.S
 	}
 	log.Info().Interface("currentTicket", currentTicket).Msg("Current ticket")
 
-	if currentTicket != nil && currentTicket.CategoryID != nil {
-		currentCategory, err := s.categoryRepo.GetByID(ctx, *currentTicket.CategoryID)
+	if currentTicket != nil && currentTicket.CategoryID.Valid {
+		currentCategory, err := s.categoryRepo.GetByID(ctx, int(currentTicket.CategoryID.Int64))
 		if err != nil {
 			log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load current ticket category")
 			return nil, err
@@ -81,8 +82,8 @@ func (s *StaffService) GetDashboardData(ctx context.Context, userID int) (*dto.S
 
 	// Get waiting tickets preview
 	var categoryIDs []int
-	if counter.CategoryID != nil {
-		categoryIDs = append(categoryIDs, *counter.CategoryID)
+	if counter.CategoryID.Valid {
+		categoryIDs = append(categoryIDs, int(counter.CategoryID.Int64))
 	}
 
 	waitingTickets, err := s.ticketRepo.GetWaitingPreviewByCategories(ctx, categoryIDs, 5)
@@ -154,8 +155,8 @@ func (s *StaffService) CallNext(ctx context.Context, userID int) (*model.Ticket,
 
 	// Get category for this counter
 	var categoryIDs []int
-	if counter.CategoryID != nil {
-		categoryIDs = append(categoryIDs, *counter.CategoryID)
+	if counter.CategoryID.Valid {
+		categoryIDs = append(categoryIDs, int(counter.CategoryID.Int64))
 	}
 
 	if len(categoryIDs) == 0 {

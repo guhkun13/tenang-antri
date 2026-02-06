@@ -44,9 +44,8 @@ func ScanCounter(row pgx.Row) (*model.Counter, error) {
 // ScanTicket scans a row into a Ticket struct
 func ScanTicket(row pgx.Row) (*model.Ticket, error) {
 	ticket := &model.Ticket{}
-	var catID int
 	err := row.Scan(
-		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
+		&ticket.ID, &ticket.TicketNumber, &ticket.CategoryID, &ticket.CounterID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
 		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
 	)
@@ -55,10 +54,10 @@ func ScanTicket(row pgx.Row) (*model.Ticket, error) {
 
 // ScanTicketWithDetails scans a row into a Ticket struct with related data
 func ScanTicketWithDetails(row pgx.Row) (*model.Ticket, error) {
-	ticket := &model.Ticket{Category: &model.Category{}, Counter: &model.Counter{}}
+	ticket := &model.Ticket{}
 
-	var catID int
-	var catName, catPrefix, catColor *string
+	var catID, catPriority int
+	var catName, catPrefix, catColor, catDescription, catIcon *string
 	var coID *int
 	var coNumber, coName *string
 
@@ -66,21 +65,16 @@ func ScanTicketWithDetails(row pgx.Row) (*model.Ticket, error) {
 		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
 		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.Notes,
-		&catID, &catName, &catPrefix, &catColor,
+		&catID, &catName, &catPrefix, &catPriority, &catColor, &catDescription, &catIcon,
 		&coID, &coNumber, &coName,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	ticket.Category.ID = catID
-	ticket.Category.Name = *catName
-	ticket.Category.Prefix = *catPrefix
-	ticket.Category.ColorCode = *catColor
+	ticket.CategoryID = sql.NullInt64{Int64: int64(catID), Valid: catID > 0}
 	if coID != nil {
-		ticket.Counter.ID = *coID
-		ticket.Counter.Number = *coNumber
-		ticket.Counter.Name = *coName
+		ticket.CounterID = sql.NullInt64{Int64: int64(*coID), Valid: true}
 	}
 
 	return ticket, nil
@@ -96,7 +90,10 @@ func ScanDisplayTicket(row pgx.Row) (*model.DisplayTicket, error) {
 // ScanCategoryQueueStats scans a row into a CategoryQueueStats struct
 func ScanCategoryQueueStats(row pgx.Row) (*model.CategoryQueueStats, error) {
 	stats := &model.CategoryQueueStats{}
-	err := row.Scan(&stats.CategoryID, &stats.CategoryName, &stats.Prefix, &stats.ColorCode, &stats.WaitingCount)
+	err := row.Scan(
+		&stats.CategoryID, &stats.CategoryName, &stats.Prefix, &stats.ColorCode,
+		&stats.WaitingCount, &stats.LastTicketNumber, &stats.CounterNumber,
+	)
 	return stats, err
 }
 

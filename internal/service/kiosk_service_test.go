@@ -40,7 +40,6 @@ func TestKioskService_GenerateTicket(t *testing.T) {
 	mockTicketRepo.On("GetWithDetails", ctx, 1).Return(&model.Ticket{
 		ID:           1,
 		TicketNumber: "A001",
-		Category:     category,
 	}, nil)
 	mockTicketRepo.On("GetTodayCountByCategory", ctx, catID).Return(5, nil)
 	mockStatsRepo.On("GetDashboardStats", ctx).Return(&model.DashboardStats{

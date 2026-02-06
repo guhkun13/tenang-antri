@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -65,16 +66,16 @@ func TestTicketRepository_Create(t *testing.T) {
 
 	ticket := &model.Ticket{
 		TicketNumber:  "A001",
-		Category:      &model.Category{ID: 1},
+		CategoryID:    sql.NullInt64{Int64: 1, Valid: true},
 		Status:        "waiting",
 		Priority:      1,
-		Notes:         "test notes",
+		Notes:         sql.NullString{String: "test notes", Valid: true},
 		DailySequence: 1,
 		QueueDate:     queueDate,
 	}
 
 	mock.ExpectQuery("INSERT INTO tickets").
-		WithArgs(ticket.TicketNumber, ticket.Category.ID, ticket.Status, ticket.Priority, ticket.Notes, ticket.DailySequence, ticket.QueueDate).
+		WithArgs(ticket.TicketNumber, ticket.CategoryID, ticket.Status, ticket.Priority, ticket.Notes, ticket.DailySequence, ticket.QueueDate).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "created_at"}).AddRow(1, now))
 
 	ctx := context.Background()

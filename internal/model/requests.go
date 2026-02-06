@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"encoding/json"
 	"strconv"
 )
@@ -48,7 +49,6 @@ func (r *CreateCategoryRequest) UnmarshalJSON(data []byte) error {
 	r.Description = aux.Description
 	r.Icon = aux.Icon
 
-	// Handle priority conversion
 	switch v := aux.Priority.(type) {
 	case int:
 		r.Priority = v
@@ -73,8 +73,8 @@ func (r *CreateCategoryRequest) UnmarshalJSON(data []byte) error {
 
 // CreateCounterRequest represents counter creation request
 type CreateCounterRequest struct {
-	Number     string `json:"number" form:"number" validate:"required"`
-	Name       string `json:"name" form:"name" validate:"required"`
-	Location   string `json:"location" form:"location"`
-	CategoryID *int   `json:"category_id" form:"category_id"`
+	Number     string        `json:"number" form:"number" validate:"required"`
+	Name       string        `json:"name" form:"name" validate:"required"`
+	Location   string        `json:"location" form:"location"`
+	CategoryID sql.NullInt64 `json:"category_id" form:"category_id"`
 }

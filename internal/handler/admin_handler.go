@@ -644,27 +644,27 @@ func (h *AdminHandler) ExportTickets(c *gin.Context) {
 
 	for _, ticket := range tickets {
 		waitTime := "0m 0s"
-		if ticket.WaitTime != nil {
-			minutes := *ticket.WaitTime / 60
-			seconds := *ticket.WaitTime % 60
+		if ticket.WaitTime.Valid {
+			minutes := ticket.WaitTime.Int64 / 60
+			seconds := ticket.WaitTime.Int64 % 60
 			waitTime = fmt.Sprintf("%dm %ds", minutes, seconds)
 		}
 
 		serviceTime := "0m"
-		if ticket.ServiceTime != nil {
-			minutes := *ticket.ServiceTime / 60
+		if ticket.ServiceTime.Valid {
+			minutes := ticket.ServiceTime.Int64 / 60
 			serviceTime = fmt.Sprintf("%dm", minutes)
 		}
 
 		csvContent.WriteString(fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s,%s\n",
 			ticket.TicketNumber,
-			ticket.Category.Name,
+			fmt.Sprintf("%d", ticket.CategoryID.Int64),
 			ticket.Status,
 			ticket.CreatedAt.Format("2006-01-02 15:04:05"),
 			fmt.Sprintf("%d", ticket.Priority),
 			waitTime,
 			serviceTime,
-			ticket.Notes,
+			ticket.Notes.String,
 		))
 	}
 
@@ -759,11 +759,11 @@ func calculateAverageWaitTime(tickets []model.Ticket) float64 {
 		return 0
 	}
 
-	total := 0
+	total := int64(0)
 	count := 0
 	for _, ticket := range tickets {
-		if ticket.WaitTime != nil {
-			total += *ticket.WaitTime
+		if ticket.WaitTime.Valid {
+			total += ticket.WaitTime.Int64
 			count++
 		}
 	}
@@ -779,11 +779,11 @@ func calculateAverageServiceTime(tickets []model.Ticket) float64 {
 		return 0
 	}
 
-	total := 0
+	total := int64(0)
 	count := 0
 	for _, ticket := range tickets {
-		if ticket.ServiceTime != nil {
-			total += *ticket.ServiceTime
+		if ticket.ServiceTime.Valid {
+			total += ticket.ServiceTime.Int64
 			count++
 		}
 	}
@@ -807,8 +807,10 @@ func getCategoryBreakdown(tickets []model.Ticket) []gin.H {
 	categoryMap := make(map[string]int)
 
 	for _, ticket := range tickets {
-		categoryName := ticket.Category.Name
-		categoryMap[categoryName]++
+		if ticket.CategoryID.Valid {
+			key := fmt.Sprintf("%d", ticket.CategoryID.Int64)
+			categoryMap[key]++
+		}
 	}
 
 	var result []gin.H
@@ -826,9 +828,9 @@ func getCounterBreakdown(tickets []model.Ticket) []gin.H {
 	counterMap := make(map[string]int)
 
 	for _, ticket := range tickets {
-		if ticket.Counter != nil {
-			counterName := ticket.Counter.Name
-			counterMap[counterName]++
+		if ticket.CounterID.Valid {
+			key := fmt.Sprintf("%d", ticket.CounterID.Int64)
+			counterMap[key]++
 		}
 	}
 

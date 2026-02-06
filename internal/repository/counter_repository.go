@@ -54,12 +54,10 @@ func (r *counterRepository) GetByID(ctx context.Context, id int) (*model.Counter
 	}
 
 	if catID.Valid {
-		val := int(catID.Int64)
-		counter.CategoryID = &val
+		counter.CategoryID = sql.NullInt64{Int64: catID.Int64, Valid: true}
 	}
 	if staffID.Valid {
-		val := int(staffID.Int64)
-		counter.CurrentStaffID = &val
+		counter.CurrentStaffID = sql.NullInt64{Int64: staffID.Int64, Valid: true}
 	}
 
 	return counter, nil

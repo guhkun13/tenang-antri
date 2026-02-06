@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -44,7 +45,7 @@ func (s *TicketService) CreateTicket(ctx context.Context, req *dto.CreateTicketR
 		TicketNumber:  ticketNumber,
 		DailySequence: dailySequence,
 		QueueDate:     time.Now(),
-		Category:      &model.Category{ID: req.CategoryID},
+		CategoryID:    sql.NullInt64{Int64: int64(req.CategoryID), Valid: true},
 		Status:        "waiting",
 		Priority:      req.Priority,
 	}
@@ -105,12 +106,10 @@ func (s *TicketService) GetCurrentTicketForCounter(ctx context.Context, counterI
 	}
 
 	// Load category details
-	if ticket.Category != nil {
-		category, err := s.categoryRepo.GetByID(ctx, ticket.Category.ID)
+	if ticket.CategoryID.Valid {
+		_, err := s.categoryRepo.GetByID(ctx, int(ticket.CategoryID.Int64))
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to load ticket category")
-		} else {
-			ticket.Category = category
 		}
 	}
 

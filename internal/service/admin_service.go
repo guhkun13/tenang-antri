@@ -165,8 +165,8 @@ func (s *AdminService) CreateCategory(ctx context.Context, req *dto.CreateCatego
 		Prefix:      req.Prefix,
 		Priority:    getPriorityFromInterface(req.Priority),
 		ColorCode:   req.ColorCode,
-		Description: req.Description,
-		Icon:        req.Icon,
+		Description: sql.NullString{String: req.Description, Valid: req.Description != ""},
+		Icon:        sql.NullString{String: req.Icon, Valid: req.Icon != ""},
 		IsActive:    true,
 	}
 
@@ -184,8 +184,8 @@ func (s *AdminService) UpdateCategory(ctx context.Context, id int, req *dto.Crea
 	category.Prefix = req.Prefix
 	category.Priority = getPriorityFromInterface(req.Priority)
 	category.ColorCode = req.ColorCode
-	category.Description = req.Description
-	category.Icon = req.Icon
+	category.Description = sql.NullString{String: req.Description, Valid: req.Description != ""}
+	category.Icon = sql.NullString{String: req.Icon, Valid: req.Icon != ""}
 
 	return s.categoryRepo.Update(ctx, category)
 }
@@ -222,8 +222,8 @@ func (s *AdminService) ListCategories(ctx context.Context, activeOnly bool) ([]m
 func (s *AdminService) CreateCounter(ctx context.Context, req *model.CreateCounterRequest) (*model.Counter, error) {
 	counter := &model.Counter{
 		Number:     req.Number,
-		Name:       req.Name,
-		Location:   req.Location,
+		Name:       sql.NullString{String: req.Name, Valid: req.Name != ""},
+		Location:   sql.NullString{String: req.Location, Valid: req.Location != ""},
 		Status:     model.CounterStatusOffline,
 		CategoryID: req.CategoryID,
 	}
@@ -231,11 +231,6 @@ func (s *AdminService) CreateCounter(ctx context.Context, req *model.CreateCount
 	createdCounter, err := s.counterRepo.Create(ctx, counter)
 	if err != nil {
 		return nil, err
-	}
-
-	if createdCounter.CategoryID != nil {
-		category, _ := s.categoryRepo.GetByID(ctx, *createdCounter.CategoryID)
-		createdCounter.Category = category
 	}
 
 	return createdCounter, nil
@@ -249,18 +244,13 @@ func (s *AdminService) UpdateCounter(ctx context.Context, id int, req *model.Cre
 	}
 
 	counter.Number = req.Number
-	counter.Name = req.Name
-	counter.Location = req.Location
+	counter.Name = sql.NullString{String: req.Name, Valid: req.Name != ""}
+	counter.Location = sql.NullString{String: req.Location, Valid: req.Location != ""}
 	counter.CategoryID = req.CategoryID
 
 	updatedCounter, err := s.counterRepo.Update(ctx, counter)
 	if err != nil {
 		return nil, err
-	}
-
-	if updatedCounter.CategoryID != nil {
-		category, _ := s.categoryRepo.GetByID(ctx, *updatedCounter.CategoryID)
-		updatedCounter.Category = category
 	}
 
 	return updatedCounter, nil
@@ -282,12 +272,13 @@ func (s *AdminService) ListCounters(ctx context.Context) ([]model.Counter, error
 	log.Info().Interface("counters", counters).Msg("Counters loaded successfully")
 
 	for i := range counters {
-		if counters[i].CategoryID != nil {
-			category, err := s.categoryRepo.GetByID(ctx, *counters[i].CategoryID)
+		if counters[i].CategoryID.Valid {
+			category, err := s.categoryRepo.GetByID(ctx, int(counters[i].CategoryID.Int64))
 			if err != nil {
 				log.Error().Err(err).Msg("Failed to load counter category")
+			} else {
+				counters[i].Category = category
 			}
-			counters[i].Category = category
 		}
 	}
 
@@ -316,9 +307,8 @@ func (s *AdminService) GetCounter(ctx context.Context, id int) (*model.Counter, 
 		return nil, err
 	}
 
-	if counter.CategoryID != nil {
-		category, _ := s.categoryRepo.GetByID(ctx, *counter.CategoryID)
-		counter.Category = category
+	if counter.CategoryID.Valid {
+		_, _ = s.categoryRepo.GetByID(ctx, int(counter.CategoryID.Int64))
 	}
 
 	return counter, nil
@@ -352,7 +342,7 @@ func (s *AdminService) CreateTicket(ctx context.Context, req *dto.CreateTicketRe
 		TicketNumber:  ticketNumber,
 		DailySequence: dailySequence,
 		QueueDate:     time.Now(),
-		Category:      &model.Category{ID: req.CategoryID},
+		CategoryID:    sql.NullInt64{Int64: int64(req.CategoryID), Valid: true},
 		Status:        "waiting",
 		Priority:      req.Priority,
 	}

@@ -63,24 +63,21 @@ func (r *ticketRepository) GetByID(ctx context.Context, id int) (*model.Ticket, 
 		return nil, err
 	}
 
-	ticket.CategoryID = &catID
+	ticket.CategoryID = sql.NullInt64{Int64: int64(catID), Valid: catID > 0}
 	if coID.Valid {
-		val := int(coID.Int64)
-		ticket.CounterID = &val
+		ticket.CounterID = sql.NullInt64{Int64: coID.Int64, Valid: true}
 	}
 	if calledAt.Valid {
-		ticket.CalledAt = &calledAt.Time
+		ticket.CalledAt = calledAt
 	}
 	if completedAt.Valid {
-		ticket.CompletedAt = &completedAt.Time
+		ticket.CompletedAt = completedAt
 	}
 	if waitTime.Valid {
-		val := int(waitTime.Int64)
-		ticket.WaitTime = &val
+		ticket.WaitTime = waitTime
 	}
 	if serviceTime.Valid {
-		val := int(serviceTime.Int64)
-		ticket.ServiceTime = &val
+		ticket.ServiceTime = serviceTime
 	}
 
 	return ticket, nil
@@ -90,35 +87,54 @@ func (r *ticketRepository) GetWithDetails(ctx context.Context, id int) (*model.T
 	queryStr := r.ticketQry.GetTicketWithDetails(ctx)
 	row := r.pool.QueryRow(ctx, queryStr, id)
 
-	ticket := &model.Ticket{Category: &model.Category{}, Counter: &model.Counter{}}
-	var catID, catIDFromJoin int
-	var catName, catPrefix, catColor string
-	var coID *int
-	var coNumber, coName *string
+	ticket := &model.Ticket{}
+
+	var catID int
+	var catName, catPrefix, catColor sql.NullString
+	var coID sql.NullInt64
+	var coNumber, coName sql.NullString
+	var waitTime, serviceTime sql.NullInt64
+	var calledAt, completedAt sql.NullTime
 
 	err := row.Scan(
-		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
-		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
-		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.DailySequence, &ticket.QueueDate, &ticket.Notes,
-		&catIDFromJoin, &catName, &catPrefix, &catColor,
+		&ticket.ID, &ticket.TicketNumber, &catID, &coID,
+		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &calledAt,
+		&completedAt, &waitTime, &serviceTime, &ticket.DailySequence, &ticket.QueueDate, &ticket.Notes,
+		&catID, &catName, &catPrefix, &catColor,
 		&coID, &coNumber, &coName,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	ticket.Category.ID = catIDFromJoin
-	ticket.Category.Name = catName
-	ticket.Category.Prefix = catPrefix
-	ticket.Category.ColorCode = catColor
-	if coID != nil {
-		ticket.Counter.ID = *coID
-		if coNumber != nil {
-			ticket.Counter.Number = *coNumber
+	ticket.CategoryID = sql.NullInt64{Int64: int64(catID), Valid: catID > 0}
+	if catID > 0 {
+		ticket.Category = &model.Category{
+			ID:        catID,
+			Name:      catName.String,
+			Prefix:    catPrefix.String,
+			ColorCode: catColor.String,
 		}
-		if coName != nil {
-			ticket.Counter.Name = *coName
+	}
+	if coID.Valid {
+		ticket.CounterID = sql.NullInt64{Int64: coID.Int64, Valid: true}
+		ticket.Counter = &model.Counter{
+			ID:     int(coID.Int64),
+			Number: coNumber.String,
+			Name:   sql.NullString{String: coName.String, Valid: coName.Valid},
 		}
+	}
+	if calledAt.Valid {
+		ticket.CalledAt = calledAt
+	}
+	if completedAt.Valid {
+		ticket.CompletedAt = completedAt
+	}
+	if waitTime.Valid {
+		ticket.WaitTime = waitTime
+	}
+	if serviceTime.Valid {
+		ticket.ServiceTime = serviceTime
 	}
 
 	return ticket, nil
@@ -128,35 +144,54 @@ func (r *ticketRepository) GetByTicketNumber(ctx context.Context, ticketNumber s
 	queryStr := r.ticketQry.GetTicketByNumber(ctx)
 	row := r.pool.QueryRow(ctx, queryStr, ticketNumber)
 
-	ticket := &model.Ticket{Category: &model.Category{}, Counter: &model.Counter{}}
-	var catID, catIDFromJoin int
-	var catName, catPrefix, catColor string
-	var coID *int
-	var coNumber, coName *string
+	ticket := &model.Ticket{}
+
+	var catID int
+	var catName, catPrefix, catColor sql.NullString
+	var coID sql.NullInt64
+	var coNumber, coName sql.NullString
+	var waitTime, serviceTime sql.NullInt64
+	var calledAt, completedAt sql.NullTime
 
 	err := row.Scan(
-		&ticket.ID, &ticket.TicketNumber, &catID, &ticket.CounterID,
-		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.CalledAt,
-		&ticket.CompletedAt, &ticket.WaitTime, &ticket.ServiceTime, &ticket.DailySequence, &ticket.QueueDate, &ticket.Notes,
-		&catIDFromJoin, &catName, &catPrefix, &catColor,
+		&ticket.ID, &ticket.TicketNumber, &catID, &coID,
+		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &calledAt,
+		&completedAt, &waitTime, &serviceTime, &ticket.DailySequence, &ticket.QueueDate, &ticket.Notes,
+		&catID, &catName, &catPrefix, &catColor,
 		&coID, &coNumber, &coName,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	ticket.Category.ID = catIDFromJoin
-	ticket.Category.Name = catName
-	ticket.Category.Prefix = catPrefix
-	ticket.Category.ColorCode = catColor
-	if coID != nil {
-		ticket.Counter.ID = *coID
-		if coNumber != nil {
-			ticket.Counter.Number = *coNumber
+	ticket.CategoryID = sql.NullInt64{Int64: int64(catID), Valid: catID > 0}
+	if catID > 0 {
+		ticket.Category = &model.Category{
+			ID:        catID,
+			Name:      catName.String,
+			Prefix:    catPrefix.String,
+			ColorCode: catColor.String,
 		}
-		if coName != nil {
-			ticket.Counter.Name = *coName
+	}
+	if coID.Valid {
+		ticket.CounterID = sql.NullInt64{Int64: coID.Int64, Valid: true}
+		ticket.Counter = &model.Counter{
+			ID:     int(coID.Int64),
+			Number: coNumber.String,
+			Name:   sql.NullString{String: coName.String, Valid: coName.Valid},
 		}
+	}
+	if calledAt.Valid {
+		ticket.CalledAt = calledAt
+	}
+	if completedAt.Valid {
+		ticket.CompletedAt = completedAt
+	}
+	if waitTime.Valid {
+		ticket.WaitTime = waitTime
+	}
+	if serviceTime.Valid {
+		ticket.ServiceTime = serviceTime
 	}
 
 	return ticket, nil
@@ -166,7 +201,7 @@ func (r *ticketRepository) Create(ctx context.Context, ticket *model.Ticket) (*m
 	queryStr := r.ticketQry.CreateTicket(ctx)
 	var id int
 	var createdAt time.Time
-	err := r.pool.QueryRow(ctx, queryStr, ticket.TicketNumber, ticket.Category.ID, ticket.Status, ticket.Priority, ticket.Notes, ticket.DailySequence, ticket.QueueDate).Scan(&id, &createdAt)
+	err := r.pool.QueryRow(ctx, queryStr, ticket.TicketNumber, ticket.CategoryID, ticket.Status, ticket.Priority, ticket.Notes, ticket.DailySequence, ticket.QueueDate).Scan(&id, &createdAt)
 	if err != nil {
 		return nil, err
 	}
@@ -197,9 +232,8 @@ func (r *ticketRepository) GetNextTicket(ctx context.Context, categoryIDs []int)
 	row := r.pool.QueryRow(ctx, sql, categoryIDs)
 
 	ticket := &model.Ticket{}
-	var catID int
 	err := row.Scan(
-		&ticket.ID, &ticket.TicketNumber, &catID,
+		&ticket.ID, &ticket.TicketNumber, &ticket.CategoryID,
 		&ticket.Status, &ticket.Priority, &ticket.CreatedAt, &ticket.DailySequence, &ticket.QueueDate, &ticket.Notes,
 	)
 	if err != nil {
@@ -242,36 +276,18 @@ func (r *ticketRepository) List(ctx context.Context, filters map[string]interfac
 
 	tickets, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (model.Ticket, error) {
 		var t model.Ticket
-		t.Category = &model.Category{}
-		t.Counter = &model.Counter{}
-
-		var catID int
-		var catName, catPrefix, catColor string
-		var coNumber, coName *string
-		var notes *string
+		var notes sql.NullString
 
 		err := row.Scan(
-			&t.ID, &t.TicketNumber, &catID, &t.CounterID, &t.Status, &t.Priority,
+			&t.ID, &t.TicketNumber, &t.CategoryID, &t.CounterID, &t.Status, &t.Priority,
 			&t.CreatedAt, &t.CalledAt, &t.CompletedAt, &t.WaitTime, &t.ServiceTime, &t.DailySequence, &t.QueueDate, &notes,
-			&catName, &catPrefix, &catColor,
-			&coNumber, &coName,
 		)
 		if err != nil {
 			return model.Ticket{}, err
 		}
 
-		t.Category.ID = catID
-		t.Category.Name = catName
-		t.Category.Prefix = catPrefix
-		t.Category.ColorCode = catColor
-		if notes != nil {
-			t.Notes = *notes
-		}
-		if coNumber != nil && *coNumber != "" {
-			t.Counter.Number = *coNumber
-			t.Counter.Name = *coName
-		} else {
-			t.Counter = nil
+		if notes.Valid {
+			t.Notes = notes
 		}
 
 		return t, nil
@@ -355,12 +371,12 @@ func (r *ticketRepository) GetTodayCompletedByCategories(ctx context.Context, ca
 	if len(categoryIDs) == 0 {
 		return []model.Ticket{}, nil
 	}
-	sql := r.ticketQry.GetTodayCompletedTicketsByCategories(ctx, categoryIDs)
+	queryStr := r.ticketQry.GetTodayCompletedTicketsByCategories(ctx, categoryIDs)
 	args := make([]any, len(categoryIDs))
 	for i, id := range categoryIDs {
 		args[i] = id
 	}
-	rows, err := r.pool.Query(ctx, sql, args...)
+	rows, err := r.pool.Query(ctx, queryStr, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -368,37 +384,52 @@ func (r *ticketRepository) GetTodayCompletedByCategories(ctx context.Context, ca
 
 	tickets, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (model.Ticket, error) {
 		var t model.Ticket
-		t.Category = &model.Category{}
-		t.Counter = &model.Counter{}
-
-		var catID, catIDFromJoin int
-		var catName, catPrefix, catColor string
-		var coID *int
-		var coNumber, coName *string
+		var catID int
+		var catName, catPrefix, catColor sql.NullString
+		var coID sql.NullInt64
+		var coNumber, coName sql.NullString
+		var waitTime, serviceTime sql.NullInt64
+		var calledAt, completedAt sql.NullTime
 
 		err := row.Scan(
-			&t.ID, &t.TicketNumber, &catID, &t.CounterID,
-			&t.Status, &t.Priority, &t.CreatedAt, &t.CalledAt,
-			&t.CompletedAt, &t.WaitTime, &t.ServiceTime, &t.DailySequence, &t.QueueDate, &t.Notes,
-			&catIDFromJoin, &catName, &catPrefix, &catColor,
+			&t.ID, &t.TicketNumber, &catID, &coID,
+			&t.Status, &t.Priority, &t.CreatedAt, &calledAt,
+			&completedAt, &waitTime, &serviceTime, &t.DailySequence, &t.QueueDate, &t.Notes,
+			&catID, &catName, &catPrefix, &catColor,
 			&coID, &coNumber, &coName,
 		)
 		if err != nil {
 			return model.Ticket{}, err
 		}
 
-		t.Category.ID = catIDFromJoin
-		t.Category.Name = catName
-		t.Category.Prefix = catPrefix
-		t.Category.ColorCode = catColor
-		if coID != nil {
-			t.Counter.ID = *coID
-			if coNumber != nil {
-				t.Counter.Number = *coNumber
+		t.CategoryID = sql.NullInt64{Int64: int64(catID), Valid: catID > 0}
+		if catID > 0 {
+			t.Category = &model.Category{
+				ID:        catID,
+				Name:      catName.String,
+				Prefix:    catPrefix.String,
+				ColorCode: catColor.String,
 			}
-			if coName != nil {
-				t.Counter.Name = *coName
+		}
+		if coID.Valid {
+			t.CounterID = sql.NullInt64{Int64: coID.Int64, Valid: true}
+			t.Counter = &model.Counter{
+				ID:     int(coID.Int64),
+				Number: coNumber.String,
+				Name:   sql.NullString{String: coName.String, Valid: coName.Valid},
 			}
+		}
+		if calledAt.Valid {
+			t.CalledAt = calledAt
+		}
+		if completedAt.Valid {
+			t.CompletedAt = completedAt
+		}
+		if waitTime.Valid {
+			t.WaitTime = waitTime
+		}
+		if serviceTime.Valid {
+			t.ServiceTime = serviceTime
 		}
 
 		return t, nil

@@ -53,28 +53,31 @@ func (s *TrackingService) GetTicketTrackingInfo(ctx context.Context, ticketNumbe
 	}
 
 	// Add category information
-	if ticket.Category != nil {
-		trackingInfo.CategoryName = ticket.Category.Name
-		trackingInfo.CategoryColor = ticket.Category.ColorCode
+	if ticket.CategoryID.Valid {
+		catID := int(ticket.CategoryID.Int64)
+		category, err := s.categoryRepo.GetByID(ctx, catID)
+		if err == nil && category != nil {
+			trackingInfo.CategoryName = category.Name
+			trackingInfo.CategoryColor = category.ColorCode
+		}
 
-		// Show last queue number called for this category
-		lastCalled, err := s.ticketRepo.GetLastCalledByCategoryID(ctx, ticket.Category.ID)
+		lastCalled, err := s.ticketRepo.GetLastCalledByCategoryID(ctx, catID)
 		if err != nil {
-			log.Error().Err(err).Int("category_id", ticket.Category.ID).Msg("Failed to get last called ticket")
+			log.Error().Err(err).Int("category_id", catID).Msg("Failed to get last called ticket")
 		} else {
 			trackingInfo.LastCalledTicketNumber = lastCalled
 		}
 	}
 
-	// Add counter information if assigned
-	if ticket.Counter != nil && ticket.Counter.ID != 0 {
-		trackingInfo.CounterNumber = ticket.Counter.Number
-		trackingInfo.CounterName = ticket.Counter.Name
+	if ticket.CounterID.Valid {
+		counterID := int(ticket.CounterID.Int64)
+		counter, err := s.counterRepo.GetByID(ctx, counterID)
+		if err == nil && counter != nil {
+			trackingInfo.CounterNumber = counter.Number
+			if counter.Name.Valid {
+				trackingInfo.CounterName = counter.Name.String
+			}
 
-		// Get full counter details for status and current serving
-		counter, err := s.counterRepo.GetByID(ctx, ticket.Counter.ID)
-		if err == nil {
-			// Map status for better user experience
 			switch counter.Status {
 			case "active":
 				trackingInfo.CounterStatus = "Open"
@@ -84,7 +87,6 @@ func (s *TrackingService) GetTicketTrackingInfo(ctx context.Context, ticketNumbe
 				trackingInfo.CounterStatus = "Closed"
 			}
 
-			// Check what this counter is currently serving
 			currentServing, err := s.ticketRepo.GetCurrentForCounter(ctx, counter.ID)
 			if err == nil && currentServing != nil {
 				trackingInfo.IsCounterServing = true
@@ -115,7 +117,7 @@ func (s *TrackingService) CalculateQueuePosition(ctx context.Context, ticket *mo
 	// Count tickets with same category that are waiting and were created before this ticket
 	filters := map[string]interface{}{
 		"status":      "waiting",
-		"category_id": ticket.Category.ID,
+		"category_id": int(ticket.CategoryID.Int64),
 	}
 
 	tickets, err := s.ticketRepo.List(ctx, filters)

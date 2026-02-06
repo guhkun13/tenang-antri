@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/rs/zerolog/log"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"tenangantri/internal/model"
 	"tenangantri/internal/query"
@@ -112,17 +112,27 @@ func (r *statsRepository) GetQueueLengthByCategory(ctx context.Context) ([]model
 	}
 	defer rows.Close()
 
-	ptrResult, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByPos[model.CategoryQueueStats])
-	if err != nil {
-		return []model.CategoryQueueStats{}, err
+	var results []model.CategoryQueueStats
+	for rows.Next() {
+		var stats model.CategoryQueueStats
+		var lastTicketNumber, counterNumber pgtype.Text
+		err := rows.Scan(
+			&stats.CategoryID, &stats.CategoryName, &stats.Prefix, &stats.ColorCode, &stats.WaitingCount,
+			&lastTicketNumber, &counterNumber,
+		)
+		if err != nil {
+			return []model.CategoryQueueStats{}, err
+		}
+		if lastTicketNumber.Valid {
+			stats.LastTicketNumber = lastTicketNumber.String
+		}
+		if counterNumber.Valid {
+			stats.CounterNumber = counterNumber.String
+		}
+		results = append(results, stats)
 	}
 
-	result := make([]model.CategoryQueueStats, len(ptrResult))
-	for i, ptr := range ptrResult {
-		result[i] = *ptr
-	}
-
-	return result, nil
+	return results, nil
 }
 
 func (r *statsRepository) GetQueueLengthByCategories(ctx context.Context, categoryIDs []int) ([]model.CategoryQueueStats, error) {
@@ -141,18 +151,27 @@ func (r *statsRepository) GetQueueLengthByCategories(ctx context.Context, catego
 	}
 	defer rows.Close()
 
-	ptrResult, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByPos[model.CategoryQueueStats])
-	if err != nil {
-		log.Error().Err(err).Str("layer", "repository").Str("func", "GetQueueLengthByCategories").Msg("Failed to collect rows")
-		return nil, err
+	var results []model.CategoryQueueStats
+	for rows.Next() {
+		var stats model.CategoryQueueStats
+		var lastTicketNumber, counterNumber pgtype.Text
+		err := rows.Scan(
+			&stats.CategoryID, &stats.CategoryName, &stats.Prefix, &stats.ColorCode, &stats.WaitingCount,
+			&lastTicketNumber, &counterNumber,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if lastTicketNumber.Valid {
+			stats.LastTicketNumber = lastTicketNumber.String
+		}
+		if counterNumber.Valid {
+			stats.CounterNumber = counterNumber.String
+		}
+		results = append(results, stats)
 	}
 
-	result := make([]model.CategoryQueueStats, len(ptrResult))
-	for i, ptr := range ptrResult {
-		result[i] = *ptr
-	}
-
-	return result, nil
+	return results, nil
 }
 
 func (r *statsRepository) GetHourlyDistribution(ctx context.Context) ([]model.HourlyStats, error) {

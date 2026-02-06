@@ -192,6 +192,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool) *gin.Engine {
 
 	// Static files
 	r.Static("/static", "./web/static")
+	r.Static("/templates", "./web/templates")
 
 	// Public routes
 	r.GET("/", func(c *gin.Context) {

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -57,7 +58,7 @@ func (s *KioskService) GenerateTicket(ctx context.Context, req *dto.CreateTicket
 		TicketNumber:  ticketNumber,
 		DailySequence: dailySequence,
 		QueueDate:     time.Now(),
-		Category:      &model.Category{ID: req.CategoryID},
+		CategoryID:    sql.NullInt64{Int64: int64(req.CategoryID), Valid: true},
 		Status:        "waiting",
 		Priority:      req.Priority,
 	}

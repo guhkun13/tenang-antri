@@ -1,19 +1,20 @@
 package model
 
 import (
+	"database/sql"
 	"time"
 )
 
 // DailyStats represents daily statistics
 type DailyStats struct {
-	Date             time.Time `json:"date" db:"date"`
-	TotalTickets     int       `json:"total_tickets" db:"total_tickets"`
-	CompletedTickets int       `json:"completed_tickets" db:"completed_tickets"`
-	NoShowTickets    int       `json:"no_show_tickets" db:"no_show_tickets"`
-	CancelledTickets int       `json:"cancelled_tickets" db:"cancelled_tickets"`
-	AvgWaitTime      *int      `json:"avg_wait_time,omitempty" db:"avg_wait_time"`
-	AvgServiceTime   *int      `json:"avg_service_time,omitempty" db:"avg_service_time"`
-	PeakHour         *int      `json:"peak_hour,omitempty" db:"peak_hour"`
+	Date             time.Time     `json:"date" db:"date"`
+	TotalTickets     int           `json:"total_tickets" db:"total_tickets"`
+	CompletedTickets int           `json:"completed_tickets" db:"completed_tickets"`
+	NoShowTickets    int           `json:"no_show_tickets" db:"no_show_tickets"`
+	CancelledTickets int           `json:"cancelled_tickets" db:"cancelled_tickets"`
+	AvgWaitTime      sql.NullInt64 `json:"avg_wait_time,omitempty" db:"avg_wait_time"`
+	AvgServiceTime   sql.NullInt64 `json:"avg_service_time,omitempty" db:"avg_service_time"`
+	PeakHour         sql.NullInt64 `json:"peak_hour,omitempty" db:"peak_hour"`
 }
 
 // DashboardStats represents dashboard statistics
@@ -32,11 +33,13 @@ type DashboardStats struct {
 
 // CategoryQueueStats represents queue stats for a category
 type CategoryQueueStats struct {
-	CategoryID   int    `json:"category_id"`
-	CategoryName string `json:"category_name"`
-	Prefix       string `json:"prefix"`
-	ColorCode    string `json:"color_code"`
-	WaitingCount int    `json:"waiting_count"`
+	CategoryID       int    `json:"category_id"`
+	CategoryName     string `json:"category_name"`
+	Prefix           string `json:"prefix"`
+	ColorCode        string `json:"color_code"`
+	WaitingCount     int    `json:"waiting_count"`
+	LastTicketNumber string `json:"last_ticket_number"`
+	CounterNumber    string `json:"counter_number"`
 }
 
 // HourlyStats represents hourly ticket statistics

@@ -24,8 +24,8 @@ func TestCounterRepository_GetByID(t *testing.T) {
 
 	counterID := 1
 	now := time.Now()
-	rows := pgxmock.NewRows([]string{"id", "number", "name", "location", "status", "is_active", "category_id", "created_at", "updated_at", "current_staff_id"}).
-		AddRow(counterID, "1", "Counter 1", "Main Hall", "active", true, 1, now, now, nil)
+	rows := pgxmock.NewRows([]string{"id", "number", "name", "location", "status", "category_id", "current_staff_id", "created_at", "updated_at"}).
+		AddRow(counterID, "1", "Counter 1", "Main Hall", "active", 1, nil, now, now)
 
 	mock.ExpectQuery("SELECT id, number, name").
 		WithArgs(counterID).
