@@ -52,13 +52,7 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-gray-900">
-                                    {{if .CounterID}}
-                                        {{range $.Counters}}
-                                            {{if eq .ID $.CounterID}}{{.Name}}{{end}}
-                                        {{end}}
-                                    {{else}}
-                                        <span class="text-gray-400">-</span>
-                                    {{end}}
+                                    {{ .CounterID.Value }}
                                 </td>
                                 <td class="px-6 py-4">
                                     <span class="px-2 py-1 rounded-full text-xs font-medium
@@ -68,7 +62,7 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-gray-500">
-                                    {{if .LastLogin}}{{.LastLogin.Format "2006-01-02 15:04"}}{{else}}Never{{end}}
+                                    {{if .LastLogin}}{{.LastLogin.Value.Format "2006-01-02 15:04"}}{{else}}Belum Pernah Login{{end}}
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex space-x-2">
@@ -137,7 +131,7 @@
                     <select name="counter_id" class="w-full border rounded-lg px-3 py-2">
                         <option value="">Tidak ada</option>
                         {{range .Counters}}
-                        <option value="{{.ID}}">{{.Name}}</option>
+                        <option value="{{.ID}}">{{.Name.Value}}</option>
                         {{end}}
                     </select>
                 </div>
@@ -198,7 +192,7 @@
                     <select name="counter_id" id="editCounterId" class="w-full border rounded-lg px-3 py-2">
                         <option value="">Tidak ada</option>
                         {{range .Counters}}
-                        <option value="{{.ID}}">{{.Name}}</option>
+                        <option value="{{.ID}}">{{.Name.Value}}</option>
                         {{end}}
                     </select>
                 </div>

@@ -277,10 +277,14 @@ func (r *ticketRepository) List(ctx context.Context, filters map[string]interfac
 	tickets, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (model.Ticket, error) {
 		var t model.Ticket
 		var notes sql.NullString
+		var catID int
+		var catName, catPrefix, catColor sql.NullString
+		var coNumber, coName sql.NullString
 
 		err := row.Scan(
 			&t.ID, &t.TicketNumber, &t.CategoryID, &t.CounterID, &t.Status, &t.Priority,
 			&t.CreatedAt, &t.CalledAt, &t.CompletedAt, &t.WaitTime, &t.ServiceTime, &t.DailySequence, &t.QueueDate, &notes,
+			&catName, &catPrefix, &catColor, &coNumber, &coName,
 		)
 		if err != nil {
 			return model.Ticket{}, err
@@ -288,6 +292,26 @@ func (r *ticketRepository) List(ctx context.Context, filters map[string]interfac
 
 		if notes.Valid {
 			t.Notes = notes
+		}
+
+		if t.CategoryID.Valid {
+			catID = int(t.CategoryID.Int64)
+		}
+
+		if catID > 0 {
+			t.Category = &model.Category{
+				ID:        catID,
+				Name:      catName.String,
+				Prefix:    catPrefix.String,
+				ColorCode: catColor.String,
+			}
+		}
+
+		if coNumber.Valid {
+			t.Counter = &model.Counter{
+				Number: coNumber.String,
+				Name:   sql.NullString{String: coName.String, Valid: coName.Valid},
+			}
 		}
 
 		return t, nil

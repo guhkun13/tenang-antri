@@ -68,7 +68,14 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 		return
 	}
 
-	counters, _ := h.adminService.ListCounters(c.Request.Context())
+	counters, err := h.adminService.ListCounters(c.Request.Context())
+	if err != nil {
+		log.Error().Err(err).Str("layer", "handler").Str("func", "ListUsers").Msg("Failed to load counters")
+		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"Error": "Failed to load counters"})
+		return
+	}
+
+	log.Info().Interface("counters", counters).Msg("Counters loaded successfully")
 
 	c.HTML(http.StatusOK, "pages/admin/users.html", gin.H{
 		"Users":     users,
