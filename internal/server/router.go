@@ -1,187 +1,32 @@
 package server
 
 import (
-	"errors"
-	"html/template"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
-	"tenangantri/internal/config"
-	"tenangantri/internal/handler"
 	"tenangantri/internal/middleware"
-	"tenangantri/internal/model"
-	"tenangantri/internal/repository"
-	"tenangantri/internal/service"
 	"tenangantri/internal/websocket"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 )
 
-func NewRouter(cfg *config.Config, pool *pgxpool.Pool) *gin.Engine {
-	// Initialize repositories
-	userRepo := repository.NewUserRepository(pool)
-	counterRepo := repository.NewCounterRepository(pool)
-	categoryRepo := repository.NewCategoryRepository(pool)
-	ticketRepo := repository.NewTicketRepository(pool)
-	statsRepo := repository.NewStatsRepository(pool)
+func NewRouter(handlers *Handlers) *gin.Engine {
+	authHandler := handlers.AuthHandler
+	adminHandler := handlers.AdminHandler
+	staffHandler := handlers.StaffHandler
+	kioskHandler := handlers.KioskHandler
+	displayHandler := handlers.DisplayHandler
+	trackingHandler := handlers.TrackingHandler
+	hub := handlers.Hub
 
-	// Initialize services
-	userService := service.NewUserService(userRepo)
-	adminService := service.NewAdminService(userRepo, counterRepo, categoryRepo, ticketRepo, statsRepo)
-	staffService := service.NewStaffService(userRepo, counterRepo, ticketRepo, statsRepo, categoryRepo)
-	kioskService := service.NewKioskService(categoryRepo, ticketRepo, statsRepo)
-	displayService := service.NewDisplayService(statsRepo, categoryRepo, counterRepo)
-	trackingService := service.NewTrackingService(ticketRepo, categoryRepo, counterRepo)
-
-	// Initialize JWT middleware
-	middleware.InitAuth(&cfg.JWT)
-
-	// Initialize WebSocket hub
-	hub := websocket.NewHub()
-	go hub.Run()
-
-	// Initialize handlers
-	authHandler := handler.NewAuthHandler(userService, &cfg.JWT)
-	adminHandler := handler.NewAdminHandler(adminService, hub)
-	staffHandler := handler.NewStaffHandler(staffService, hub)
-	kioskHandler := handler.NewKioskHandler(kioskService, hub)
-	displayHandler := handler.NewDisplayHandler(displayService)
-	trackingHandler := handler.NewTrackingHandler(trackingService)
-
-	// Setup router
 	r := gin.New()
 	r.Use(gin.Recovery())
-	r.Use(loggerMiddleware())
+	r.Use(middleware.LoggerMiddleware())
 
 	// Add custom template functions
-	funcMap := template.FuncMap{
-		"formatDate": func(t time.Time) string {
-			return t.Format("2006-01-02 15:04:05")
-		},
-		"formatDuration": func(seconds int) string {
-			if seconds < 60 {
-				return "< 1 min"
-			}
-			minutes := seconds / 60
-			if minutes < 60 {
-				return "{{ . }} min"
-			}
-			// hours := minutes / 60
-			// mins := minutes % 60
-			return "{{ . }}h {{ . }}m"
-		},
-		"add": func(a, b int) int {
-			return a + b
-		},
-		"sub": func(a, b int) int {
-			return a - b
-		},
-		"mul": func(a, b int) int {
-			return a * b
-		},
-		"div": func(a, b int) int {
-			if b == 0 {
-				return 0
-			}
-			return a / b
-		},
-		"mod": func(a, b int) int {
-			return a % b
-		},
-		"sum": func(items interface{}, field string) int {
-			total := 0
-			switch v := items.(type) {
-			case []model.Category:
-				for _, item := range v {
-					if field == "Priority" {
-						total += item.Priority
-					}
-				}
-			}
-			return total
-		},
-		"countActive": func(items []model.Category) int {
-			count := 0
-			for _, item := range items {
-				if item.IsActive {
-					count++
-				}
-			}
-			return count
-		},
-		"countInactive": func(items []model.Category) int {
-			count := 0
-			for _, item := range items {
-				if !item.IsActive {
-					count++
-				}
-			}
-			return count
-		},
-		"dict": func(values ...interface{}) (map[string]interface{}, error) {
-			if len(values)%2 != 0 {
-				return nil, errors.New("invalid dict call: even number of arguments required")
-			}
-			dict := make(map[string]interface{}, len(values)/2)
-			for i := 0; i < len(values); i += 2 {
-				key, ok := values[i].(string)
-				if !ok {
-					return nil, errors.New("dict keys must be strings")
-				}
-				dict[key] = values[i+1]
-			}
-			return dict, nil
-		},
-		"js": func(s string) template.JS {
-			return template.JS(s)
-		},
-		"uppercase": func(s string) string {
-			return strings.ToUpper(s)
-		},
-		"upper": func(s string) string {
-			return strings.ToUpper(s)
-		},
-		"now": func() time.Time {
-			return time.Now()
-		},
-		"gt": func(a, b int) bool {
-			return a > b
-		},
-	}
-
-	// Create a new template set
-	tmpl := template.New("").Funcs(funcMap)
+	funcMap := BuildFuncMap()
 
 	// Load templates manually to preserve relative paths
-	err := filepath.Walk("web/templates", func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() && strings.HasSuffix(path, ".html") {
-			// Get relative path as template name (e.g., "customer/index.html")
-			name, err := filepath.Rel("web/templates", path)
-			if err != nil {
-				return err
-			}
-			// Normalise path separators to /
-			name = filepath.ToSlash(name)
-
-			content, err := os.ReadFile(path)
-			if err != nil {
-				return err
-			}
-
-			_, err = tmpl.New(name).Parse(string(content))
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	tmpl, err := LoadTemplate(funcMap)
 
 	if err != nil {
 		log.Fatal().Err(err).Msg("Failed to load templates")
@@ -247,7 +92,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool) *gin.Engine {
 
 		// Staff routes
 		staff := protected.Group("/staff")
-		// staff.Use(middleware.RoleMiddleware("staff", "admin"))
+		staff.Use(middleware.RoleMiddleware("staff", "admin"))
 		{
 			staff.GET("/dashboard", staffHandler.Dashboard)
 			staff.POST("/call-next", staffHandler.CallNext)
@@ -262,7 +107,7 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool) *gin.Engine {
 
 		// Admin routes
 		admin := protected.Group("/admin")
-		// admin.Use(middleware.RoleMiddleware("admin"))
+		admin.Use(middleware.RoleMiddleware("admin"))
 		{
 			// Dashboard
 			admin.GET("/dashboard", adminHandler.Dashboard)
@@ -308,31 +153,4 @@ func NewRouter(cfg *config.Config, pool *pgxpool.Pool) *gin.Engine {
 	}
 
 	return r
-}
-
-func loggerMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now()
-		path := c.Request.URL.Path
-		raw := c.Request.URL.RawQuery
-
-		c.Next()
-
-		latency := time.Since(start)
-		clientIP := c.ClientIP()
-		method := c.Request.Method
-		statusCode := c.Writer.Status()
-
-		if raw != "" {
-			path = path + "?" + raw
-		}
-
-		log.Info().
-			Str("client_ip", clientIP).
-			Str("method", method).
-			Str("path", path).
-			Int("status", statusCode).
-			Dur("latency", latency).
-			Msg("Request")
-	}
 }

@@ -73,7 +73,9 @@ func main() {
 	}
 	log.Info().Msg("Connected to database")
 
-	r := server.NewRouter(cfg, pool)
+	handlers := server.BuildHandlers(cfg, pool)
+
+	r := server.NewRouter(handlers)
 
 	// Create HTTP server
 	srv := &http.Server{
