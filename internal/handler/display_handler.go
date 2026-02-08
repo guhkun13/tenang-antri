@@ -69,6 +69,11 @@ func (h *DisplayHandler) GetWaitingByCategory(c *gin.Context) {
 		return
 	}
 
+	log.Info().Interface("queueStats", queueStats).Msg("GetWaitingByCategory")
+	for _, cat := range queueStats {
+		log.Info().Interface("cat", cat).Msg("GetWaitingByCategory")
+	}
+
 	c.JSON(http.StatusOK, queueStats)
 }
 

@@ -1,0 +1,51 @@
+<!-- Header -->
+<header class="bg-white shadow-sm border-b px-6 py-4">
+  <div class="flex justify-between items-center">
+    <div class="flex items-center space-x-4">
+      <h1 class="text-xl font-bold text-gray-800">
+        <i class="fas fa-headset mr-2 text-blue-600"></i>Portal Staf
+      </h1>
+      <span class="text-gray-300">|</span>
+      <span class="text-gray-600"
+        >{{.Counter.Name.String}} - {{.Counter.Location.String}}</span
+      >
+    </div>
+    <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-2">
+        <span
+          class="w-3 h-3 rounded-full"
+          :class="counterStatus === 'serving' ? 'bg-green-500 animate-pulse' : (counterStatus === 'paused' ? 'bg-orange-500' : (counterStatus === 'idle' ? 'bg-blue-500' : 'bg-red-500'))"
+        ></span>
+        <span
+          class="text-sm font-medium"
+          x-text="counterStatus === 'serving' ? 'Melayani' : (counterStatus === 'paused' ? 'Dijeda' : (counterStatus === 'idle' ? 'Siap' : 'Offline'))"
+        ></span>
+      </div>
+      <div class="relative" x-data="{ open: false }">
+        <button
+          @click="open = !open"
+          class="flex items-center space-x-2 text-gray-700 hover:text-gray-900"
+        >
+          <i class="fas fa-user-circle text-2xl"></i>
+          <span>{{.User.FullName.String}}</span>
+          <i class="fas fa-chevron-down text-sm"></i>
+        </button>
+        <div
+          x-show="open"
+          @click.away="open = false"
+          x-cloak
+          class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50"
+        >
+          <a href="/profile" class="block px-4 py-2 hover:bg-gray-100"
+            ><i class="fas fa-user mr-2"></i>Profil</a
+          >
+          <a
+            href="/logout"
+            class="block px-4 py-2 hover:bg-gray-100 text-red-600"
+            ><i class="fas fa-sign-out-alt mr-2"></i>Keluar</a
+          >
+        </div>
+      </div>
+    </div>
+  </div>
+</header>

@@ -39,7 +39,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	user, err := h.userService.GetUserByUsername(c.Request.Context(), req.Username)
-	if err != nil {
+	if err != nil || user == nil {
 		log.Error().Err(err).Str("layer", "handler").Msg("Failed to get user by username")
 		c.HTML(http.StatusUnauthorized, "pages/login.html", gin.H{
 			"Error": "Invalid username or password",

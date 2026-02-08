@@ -47,7 +47,7 @@ func (r *userRepository) GetByUsername(ctx context.Context, username string) (*m
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, nil
+			return nil, pgx.ErrNoRows
 		}
 		log.Error().Err(err).Str("layer", "repository").Str("username", username).Msg("Failed to scan user")
 		return nil, err

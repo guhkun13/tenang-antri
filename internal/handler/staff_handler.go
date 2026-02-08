@@ -61,12 +61,10 @@ func (h *StaffHandler) CallNext(c *gin.Context) {
 	}
 
 	if ticket == nil {
-		c.JSON(http.StatusOK, gin.H{"message": "No tickets in queue"})
+		c.JSON(http.StatusConflict, gin.H{"error": "Selesaikan tiket saat ini sebelum memanggil berikutnya"})
 		return
 	}
 
-	// Broadcast updates would require stats service
-	// For now, broadcast ticket update
 	h.hub.BroadcastTicketUpdate(ticket)
 
 	c.JSON(http.StatusOK, ticket)

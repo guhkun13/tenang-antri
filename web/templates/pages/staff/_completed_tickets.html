@@ -1,0 +1,93 @@
+<div class="bg-white rounded-lg shadow mt-6">
+  <div class="px-6 py-4 border-b border-gray-200">
+    <h3 class="text-lg font-semibold text-gray-800">
+      <i class="fas fa-check-circle mr-2 text-green-600"></i>Tiket Selesai Hari
+      Ini
+    </h3>
+  </div>
+  <div class="p-6">
+    {{if .CompletedTickets}}
+    <div class="overflow-x-auto">
+      <table class="min-w-full">
+        <thead>
+          <tr class="border-b">
+            <th class="text-left py-2 px-2 text-sm font-medium text-gray-700">
+              Tiket
+            </th>
+            <th class="text-left py-2 px-2 text-sm font-medium text-gray-700">
+              Kategori
+            </th>
+            <th class="text-left py-2 px-2 text-sm font-medium text-gray-700">
+              Loket
+            </th>
+            <th class="text-left py-2 px-2 text-sm font-medium text-gray-700">
+              Dimulai
+            </th>
+            <th class="text-left py-2 px-2 text-sm font-medium text-gray-700">
+              Dipanggil
+            </th>
+            <th class="text-left py-2 px-2 text-sm font-medium text-gray-700">
+              Selesai
+            </th>
+            <th class="text-left py-2 px-2 text-sm font-medium text-gray-700">
+              Waktu Tunggu
+            </th>
+            <th class="text-left py-2 px-2 text-sm font-medium text-gray-700">
+              Waktu Layanan
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {{range .CompletedTickets}}
+          <tr class="border-b hover:bg-gray-50">
+            <td class="py-2 px-2">
+              <span class="inline-flex items-center">
+                <span
+                  class="w-6 h-6 rounded-md px-6 py-2 flex items-center justify-center text-white text-xs font-bold mr-2"
+                  style="background-color: {{.Category.ColorCode}}"
+                >
+                  {{.TicketNumber}}
+                </span>
+              </span>
+            </td>
+            <td class="py-2 px-2 text-sm text-gray-700">{{.Category.Name}}</td>
+            <td class="py-2 px-2 text-sm text-gray-700">{{.Counter.Name}}</td>
+            <td class="py-2 px-2 text-sm text-gray-700">
+              {{.CreatedAt.Format "15:04"}}
+            </td>
+            <td class="py-2 px-2 text-sm text-gray-700">
+              {{.CalledAt.Format "15:04"}}
+            </td>
+            <td class="py-2 px-2 text-sm text-gray-700">
+              {{.CompletedAt.Format "15:04"}}
+            </td>
+            <td class="py-2 px-2 text-sm text-gray-700">
+              {{if .WaitTime}}
+              <span class="text-blue-600"
+                >{{div .WaitTime 60}}m {{mod .WaitTime 60}}s</span
+              >
+              {{else}}
+              <span class="text-gray-400">-</span>
+              {{end}}
+            </td>
+            <td class="py-2 px-2 text-sm text-gray-700">
+              {{if .ServiceTime}}
+              <span class="text-green-600"
+                >{{div .ServiceTime 60}}m {{mod .ServiceTime 60}}s</span
+              >
+              {{else}}
+              <span class="text-gray-400">-</span>
+              {{end}}
+            </td>
+          </tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <p class="text-center text-gray-500 py-4">
+      Tidak ada tiket selesai hari ini
+    </p>
+    {{end}}
+  </div>
+</div>

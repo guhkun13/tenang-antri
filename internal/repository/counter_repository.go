@@ -42,8 +42,8 @@ func (r *counterRepository) GetByID(ctx context.Context, id int) (*model.Counter
 	var catID, staffID sql.NullInt64
 	err := row.Scan(
 		&counter.ID, &counter.Number, &counter.Name, &counter.Location,
-		&counter.Status, &catID,
-		&counter.CreatedAt, &counter.UpdatedAt, &staffID,
+		&counter.Status, &catID, &staffID,
+		&counter.CreatedAt, &counter.UpdatedAt,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
