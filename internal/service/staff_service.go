@@ -338,3 +338,76 @@ func (s *StaffService) TransferTicket(ctx context.Context, ticketID, counterID i
 
 	return s.ticketRepo.GetWithDetails(ctx, ticketID)
 }
+
+// GetAllTickets gets all tickets for staff view based on their counter's categories
+func (s *StaffService) GetAllTickets(ctx context.Context, userID int) ([]model.Ticket, map[string]int, error) {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if user.CounterID.Int64 == 0 {
+		return []model.Ticket{}, map[string]int{}, nil
+	}
+
+	counter, err := s.counterRepo.GetByID(ctx, int(user.CounterID.Int64))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var categoryIDs []int
+	if counter.CategoryID.Valid {
+		categoryIDs = append(categoryIDs, int(counter.CategoryID.Int64))
+	}
+
+	var tickets []model.Ticket
+	var todayTickets []model.Ticket
+
+	if len(categoryIDs) > 0 {
+		tickets, err = s.ticketRepo.GetAllTicketsByCategories(ctx, categoryIDs)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		todayTickets, err = s.ticketRepo.GetTodayByCategories(ctx, categoryIDs)
+		if err != nil {
+			return nil, nil, err
+		}
+	} else {
+		tickets, err = s.ticketRepo.GetAllTodayTickets(ctx)
+		if err != nil {
+			return nil, nil, err
+		}
+		todayTickets = tickets
+	}
+
+	stats := map[string]int{
+		"Total":     len(todayTickets),
+		"Waiting":   0,
+		"Serving":   0,
+		"Completed": 0,
+	}
+
+	for _, t := range todayTickets {
+		switch t.Status {
+		case "waiting":
+			stats["Waiting"]++
+		case "serving":
+			stats["Serving"]++
+		case "completed":
+			stats["Completed"]++
+		}
+	}
+
+	return tickets, stats, nil
+}
+
+// CancelTicket cancels a ticket
+func (s *StaffService) CancelTicket(ctx context.Context, ticketID int) error {
+	return s.ticketRepo.UpdateStatus(ctx, ticketID, "cancelled")
+}
+
+// ResetYesterdayTickets resets all yesterday's waiting tickets
+func (s *StaffService) ResetYesterdayTickets(ctx context.Context) (int, error) {
+	return s.ticketRepo.CancelYesterdayWaiting(ctx)
+}

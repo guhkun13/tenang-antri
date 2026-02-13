@@ -111,6 +111,26 @@ func (m *MockTicketRepository) GetLastCalledByCategoryID(ctx context.Context, ca
 	return args.String(0), args.Error(1)
 }
 
+func (m *MockTicketRepository) GetTodayByCategories(ctx context.Context, categoryIDs []int) ([]model.Ticket, error) {
+	args := m.Called(ctx, categoryIDs)
+	return args.Get(0).([]model.Ticket), args.Error(1)
+}
+
+func (m *MockTicketRepository) GetAllTodayTickets(ctx context.Context) ([]model.Ticket, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]model.Ticket), args.Error(1)
+}
+
+func (m *MockTicketRepository) GetAllTicketsByCategories(ctx context.Context, categoryIDs []int) ([]model.Ticket, error) {
+	args := m.Called(ctx, categoryIDs)
+	return args.Get(0).([]model.Ticket), args.Error(1)
+}
+
+func (m *MockTicketRepository) CancelYesterdayWaiting(ctx context.Context) (int, error) {
+	args := m.Called(ctx)
+	return args.Int(0), args.Error(1)
+}
+
 type MockCategoryRepository struct {
 	mock.Mock
 }

@@ -1,0 +1,14 @@
+<nav class="space-y-1">
+    <a href="/staff/dashboard" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors {{if eq .ActiveMenu "dashboard"}}bg-blue-50 text-blue-600{{end}}">
+        <i class="fas fa-tachometer-alt w-6"></i>
+        <span>Dasbor</span>
+    </a>
+    <a href="/staff/tickets" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors {{if eq .ActiveMenu "tickets"}}bg-blue-50 text-blue-600{{end}}">
+        <i class="fas fa-ticket-alt w-6"></i>
+        <span>Kelola Tiket</span>
+    </a>
+    <a href="/profile" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors {{if eq .ActiveMenu "profile"}}bg-blue-50 text-blue-600{{end}}">
+        <i class="fas fa-user w-6"></i>
+        <span>Profil</span>
+    </a>
+</nav>

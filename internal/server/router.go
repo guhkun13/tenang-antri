@@ -95,6 +95,7 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 		staff.Use(middleware.RoleMiddleware("staff", "admin"))
 		{
 			staff.GET("/dashboard", staffHandler.Dashboard)
+			staff.GET("/tickets", staffHandler.TicketsPage)
 			staff.POST("/call-next", staffHandler.CallNext)
 			staff.POST("/complete", staffHandler.CompleteTicket)
 			staff.POST("/no-show", staffHandler.MarkNoShow)
@@ -103,6 +104,8 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 			staff.GET("/queue-status", staffHandler.GetQueueStatus)
 			staff.GET("/current-ticket", staffHandler.GetCurrentTicket)
 			staff.POST("/transfer/:id", staffHandler.TransferTicket)
+			staff.POST("/api/tickets/:id/cancel", staffHandler.CancelTicket)
+			staff.POST("/api/tickets/reset-yesterday", staffHandler.ResetYesterdayTickets)
 		}
 
 		// Admin routes

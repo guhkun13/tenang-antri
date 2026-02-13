@@ -150,3 +150,27 @@ func (q *TicketQueries) GetTodayCompletedTicketsByCategories(ctx context.Context
 func (q *TicketQueries) GetLastCalledTicketByCategory(ctx context.Context) string {
 	return `SELECT ticket_number FROM tickets WHERE category_id = $1 AND status IN ('serving', 'completed') ORDER BY called_at DESC LIMIT 1`
 }
+
+func (q *TicketQueries) GetTodayTicketsByCategories(ctx context.Context, categoryIDs []int) string {
+	placeholders := make([]string, len(categoryIDs))
+	for i := range categoryIDs {
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
+	}
+	return fmt.Sprintf(`SELECT t.id, t.ticket_number, t.category_id, t.counter_id, t.status, t.priority, t.created_at, t.called_at, t.completed_at, t.wait_time, t.service_time, t.daily_sequence, t.queue_date, t.notes, c.id, c.name, c.prefix, c.color_code, co.id, co.number, co.name FROM tickets t LEFT JOIN categories c ON t.category_id = c.id LEFT JOIN counters co ON t.counter_id = co.id WHERE t.queue_date = CURRENT_DATE AND t.category_id IN (%s) ORDER BY t.created_at DESC`, strings.Join(placeholders, ","))
+}
+
+func (q *TicketQueries) GetAllTodayTickets(ctx context.Context) string {
+	return `SELECT t.id, t.ticket_number, t.category_id, t.counter_id, t.status, t.priority, t.created_at, t.called_at, t.completed_at, t.wait_time, t.service_time, t.daily_sequence, t.queue_date, t.notes, c.id, c.name, c.prefix, c.color_code, co.id, co.number, co.name FROM tickets t LEFT JOIN categories c ON t.category_id = c.id LEFT JOIN counters co ON t.counter_id = co.id WHERE t.queue_date = CURRENT_DATE ORDER BY t.created_at DESC`
+}
+
+func (q *TicketQueries) GetAllTicketsByCategories(ctx context.Context, categoryIDs []int) string {
+	placeholders := make([]string, len(categoryIDs))
+	for i := range categoryIDs {
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
+	}
+	return fmt.Sprintf(`SELECT t.id, t.ticket_number, t.category_id, t.counter_id, t.status, t.priority, t.created_at, t.called_at, t.completed_at, t.wait_time, t.service_time, t.daily_sequence, t.queue_date, t.notes, c.id, c.name, c.prefix, c.color_code, co.id, co.number, co.name FROM tickets t LEFT JOIN categories c ON t.category_id = c.id LEFT JOIN counters co ON t.counter_id = co.id WHERE t.category_id IN (%s) ORDER BY t.created_at DESC`, strings.Join(placeholders, ","))
+}
+
+func (q *TicketQueries) CancelYesterdayWaiting() string {
+	return `UPDATE tickets SET status = 'cancelled' WHERE queue_date = CURRENT_DATE - INTERVAL '1 day' AND status = 'waiting'`
+}

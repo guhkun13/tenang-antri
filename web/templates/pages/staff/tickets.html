@@ -1,0 +1,251 @@
+{{ template "layouts/_header.html" }}
+
+<div class="flex h-screen bg-gray-100">
+    <aside class="w-64 bg-white shadow-lg flex-shrink-0">
+        <div class="p-4 border-b">
+            <h2 class="text-lg font-bold text-gray-800">Menu Staff</h2>
+        </div>
+        {{template "layouts/_staff_sidebar.html" (dict "ActiveMenu" "tickets")}}
+    </aside>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <header class="bg-white shadow-sm border-b px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800">Kelola Tiket</h2>
+                    <p class="text-sm text-gray-600 mt-1">Lihat dan kelola semua tiket antrian</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button onclick="openResetModal()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-trash-alt mr-2"></i>
+                        Reset Tiket Kemarin
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-ticket-alt text-blue-600"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-500">Total Tiket</p>
+                            <p class="text-xl font-bold text-gray-800">{{.Stats.Total}}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-clock text-yellow-600"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-500">Menunggu</p>
+                            <p class="text-xl font-bold text-gray-800">{{.Stats.Waiting}}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-play text-green-600"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-500">Melayani</p>
+                            <p class="text-xl font-bold text-gray-800">{{.Stats.Serving}}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-4">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-check text-purple-600"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-500">Selesai Hari Ini</p>
+                            <p class="text-xl font-bold text-gray-800">{{.Stats.Completed}}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-4 border-b">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-800">Daftar Tiket</h3>
+                        <span class="text-sm text-gray-500">
+                            Menampilkan {{len .Tickets}} tiket
+                        </span>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tiket #</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loket</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prioritas</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dibuat</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {{range .Tickets}}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 font-medium text-gray-900">{{.TicketNumber}}</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <span class="px-2 py-1 rounded text-xs text-white font-medium" style="background-color: {{if .Category.ColorCode}}{{.Category.ColorCode}}{{else}}#3b82f6{{end}}">
+                                            {{.Category.Prefix}}
+                                        </span>
+                                        <span class="ml-2">{{.Category.Name}}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-gray-900">
+                                    {{if .Counter}}
+                                        {{.Counter.Number}} - {{.Counter.Name.String}}
+                                    {{else}}
+                                        <span class="text-gray-400">-</span>
+                                    {{end}}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 rounded-full text-xs font-medium
+                                          {{if eq .Status "waiting"}} bg-yellow-100 text-yellow-800
+                                          {{else if eq .Status "serving"}} bg-blue-100 text-blue-800
+                                          {{else if eq .Status "completed"}} bg-green-100 text-green-800
+                                          {{else if eq .Status "no_show"}} bg-orange-100 text-orange-800
+                                          {{else}} bg-red-100 text-red-800{{end}}">
+                                        {{if eq .Status "waiting"}}Menunggu
+                                        {{else if eq .Status "serving"}}Melayani
+                                        {{else if eq .Status "completed"}}Selesai
+                                        {{else if eq .Status "no_show"}}Tidak Hadir
+                                        {{else if eq .Status "cancelled"}}Dibatalkan
+                                        {{else}}{{.Status}}{{end}}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                                        {{if eq .Priority 0}}Normal
+                                        {{else if eq .Priority 1}}Tinggi
+                                        {{else if eq .Priority 2}}Segera
+                                        {{else}}{{.Priority}}{{end}}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-500">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex space-x-2">
+                                        {{if eq .Status "waiting"}}
+                                        <button onclick="cancelTicket('{{.ID}}')"
+                                                class="text-red-600 hover:text-red-800" title="Batalkan">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        {{end}}
+                                    </div>
+                                </td>
+                            </tr>
+                            {{end}}
+                            {{if not .Tickets}}
+                            <tr>
+                                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                    <i class="fas fa-inbox text-4xl mb-2"></i>
+                                    <p class="text-lg">Tidak ada tiket ditemukan</p>
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<div id="resetModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-red-600">Reset Tiket Kemarin</h3>
+            <button onclick="closeResetModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="mb-4">
+            <p class="text-gray-600">Apakah Anda yakin ingin membatalkan semua tiket kemarin?</p>
+            <p class="text-sm text-gray-500 mt-2">Tiket dengan status "waiting" akan dibatalkan. Tiket yang sudah selesai tidak akan diubah.</p>
+            <p class="text-sm text-red-500 mt-2 font-semibold">Tindakan ini tidak dapat dibatalkan!</p>
+        </div>
+        <div class="flex justify-end space-x-3">
+            <button onclick="closeResetModal()"
+                    class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                Batal
+            </button>
+            <button onclick="resetYesterdayTickets()"
+                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg">
+                Ya, Reset Tiket Kemarin
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openResetModal() {
+    document.getElementById('resetModal').classList.remove('hidden');
+    document.getElementById('resetModal').classList.add('flex');
+}
+
+function closeResetModal() {
+    document.getElementById('resetModal').classList.add('hidden');
+    document.getElementById('resetModal').classList.remove('flex');
+}
+
+function cancelTicket(ticketId) {
+    if (!confirm('Apakah Anda yakin ingin membatalkan tiket ini?')) return;
+
+    fetch('/staff/api/tickets/' + ticketId + '/cancel', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert('Gagal membatalkan tiket: ' + data.error);
+        } else {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        alert('Terjadi kesalahan: ' + error);
+    });
+}
+
+function resetYesterdayTickets() {
+    fetch('/staff/api/tickets/reset-yesterday', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        closeResetModal();
+        if (data.error) {
+            alert('Gagal mereset tiket: ' + data.error);
+        } else {
+            alert(data.message);
+            location.reload();
+        }
+    })
+    .catch(error => {
+        closeResetModal();
+        alert('Terjadi kesalahan: ' + error);
+    });
+}
+</script>
+
+{{ template "layouts/_footer.html" }}

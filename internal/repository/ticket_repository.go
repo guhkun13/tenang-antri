@@ -30,6 +30,10 @@ type TicketRepository interface {
 	GetWaitingPreviewByCategories(ctx context.Context, categoryIDs []int, limit int) ([]model.Ticket, error)
 	GetTodayCompletedByCategories(ctx context.Context, categoryIDs []int) ([]model.Ticket, error)
 	GetLastCalledByCategoryID(ctx context.Context, categoryID int) (string, error)
+	GetTodayByCategories(ctx context.Context, categoryIDs []int) ([]model.Ticket, error)
+	GetAllTodayTickets(ctx context.Context) ([]model.Ticket, error)
+	GetAllTicketsByCategories(ctx context.Context, categoryIDs []int) ([]model.Ticket, error)
+	CancelYesterdayWaiting(ctx context.Context) (int, error)
 }
 
 type ticketRepository struct {
@@ -478,4 +482,243 @@ func (r *ticketRepository) GetLastCalledByCategoryID(ctx context.Context, catego
 		return "", err
 	}
 	return ticketNumber, nil
+}
+
+func (r *ticketRepository) GetTodayByCategories(ctx context.Context, categoryIDs []int) ([]model.Ticket, error) {
+	if len(categoryIDs) == 0 {
+		return []model.Ticket{}, nil
+	}
+	queryStr := r.ticketQry.GetTodayTicketsByCategories(ctx, categoryIDs)
+	args := make([]any, len(categoryIDs))
+	for i, id := range categoryIDs {
+		args[i] = id
+	}
+	rows, err := r.pool.Query(ctx, queryStr, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	tickets, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (model.Ticket, error) {
+		var t model.Ticket
+		var catID int
+		var catName, catPrefix, catColor sql.NullString
+		var coID sql.NullInt64
+		var coNumber, coName sql.NullString
+		var waitTime, serviceTime sql.NullInt64
+		var calledAt, completedAt sql.NullTime
+		var notes sql.NullString
+
+		err := row.Scan(
+			&t.ID, &t.TicketNumber, &catID, &coID,
+			&t.Status, &t.Priority, &t.CreatedAt, &calledAt,
+			&completedAt, &waitTime, &serviceTime, &t.DailySequence, &t.QueueDate, &notes,
+			&catID, &catName, &catPrefix, &catColor,
+			&coID, &coNumber, &coName,
+		)
+		if err != nil {
+			return model.Ticket{}, err
+		}
+
+		t.CategoryID = sql.NullInt64{Int64: int64(catID), Valid: catID > 0}
+		if catID > 0 {
+			t.Category = &model.Category{
+				ID:        catID,
+				Name:      catName.String,
+				Prefix:    catPrefix.String,
+				ColorCode: catColor.String,
+			}
+		}
+		if coID.Valid {
+			t.CounterID = sql.NullInt64{Int64: coID.Int64, Valid: true}
+			t.Counter = &model.Counter{
+				ID:     int(coID.Int64),
+				Number: coNumber.String,
+				Name:   sql.NullString{String: coName.String, Valid: coName.Valid},
+			}
+		}
+		if calledAt.Valid {
+			t.CalledAt = calledAt
+		}
+		if completedAt.Valid {
+			t.CompletedAt = completedAt
+		}
+		if waitTime.Valid {
+			t.WaitTime = waitTime
+		}
+		if serviceTime.Valid {
+			t.ServiceTime = serviceTime
+		}
+		if notes.Valid {
+			t.Notes = notes
+		}
+
+		return t, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return tickets, nil
+}
+
+func (r *ticketRepository) CancelYesterdayWaiting(ctx context.Context) (int, error) {
+	queryStr := r.ticketQry.CancelYesterdayWaiting()
+	result, err := r.pool.Exec(ctx, queryStr)
+	if err != nil {
+		return 0, err
+	}
+	return int(result.RowsAffected()), nil
+}
+
+func (r *ticketRepository) GetAllTodayTickets(ctx context.Context) ([]model.Ticket, error) {
+	queryStr := r.ticketQry.GetAllTodayTickets(ctx)
+	rows, err := r.pool.Query(ctx, queryStr)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	tickets, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (model.Ticket, error) {
+		var t model.Ticket
+		var catID int
+		var catName, catPrefix, catColor sql.NullString
+		var coID sql.NullInt64
+		var coNumber, coName sql.NullString
+		var waitTime, serviceTime sql.NullInt64
+		var calledAt, completedAt sql.NullTime
+		var notes sql.NullString
+
+		err := row.Scan(
+			&t.ID, &t.TicketNumber, &catID, &coID,
+			&t.Status, &t.Priority, &t.CreatedAt, &calledAt,
+			&completedAt, &waitTime, &serviceTime, &t.DailySequence, &t.QueueDate, &notes,
+			&catID, &catName, &catPrefix, &catColor,
+			&coID, &coNumber, &coName,
+		)
+		if err != nil {
+			return model.Ticket{}, err
+		}
+
+		t.CategoryID = sql.NullInt64{Int64: int64(catID), Valid: catID > 0}
+		if catID > 0 {
+			t.Category = &model.Category{
+				ID:        catID,
+				Name:      catName.String,
+				Prefix:    catPrefix.String,
+				ColorCode: catColor.String,
+			}
+		}
+		if coID.Valid {
+			t.CounterID = sql.NullInt64{Int64: coID.Int64, Valid: true}
+			t.Counter = &model.Counter{
+				ID:     int(coID.Int64),
+				Number: coNumber.String,
+				Name:   sql.NullString{String: coName.String, Valid: coName.Valid},
+			}
+		}
+		if calledAt.Valid {
+			t.CalledAt = calledAt
+		}
+		if completedAt.Valid {
+			t.CompletedAt = completedAt
+		}
+		if waitTime.Valid {
+			t.WaitTime = waitTime
+		}
+		if serviceTime.Valid {
+			t.ServiceTime = serviceTime
+		}
+		if notes.Valid {
+			t.Notes = notes
+		}
+
+		return t, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return tickets, nil
+}
+
+func (r *ticketRepository) GetAllTicketsByCategories(ctx context.Context, categoryIDs []int) ([]model.Ticket, error) {
+	if len(categoryIDs) == 0 {
+		return []model.Ticket{}, nil
+	}
+	queryStr := r.ticketQry.GetAllTicketsByCategories(ctx, categoryIDs)
+	args := make([]any, len(categoryIDs))
+	for i, id := range categoryIDs {
+		args[i] = id
+	}
+	rows, err := r.pool.Query(ctx, queryStr, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	tickets, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (model.Ticket, error) {
+		var t model.Ticket
+		var catID int
+		var catName, catPrefix, catColor sql.NullString
+		var coID sql.NullInt64
+		var coNumber, coName sql.NullString
+		var waitTime, serviceTime sql.NullInt64
+		var calledAt, completedAt sql.NullTime
+		var notes sql.NullString
+
+		err := row.Scan(
+			&t.ID, &t.TicketNumber, &catID, &coID,
+			&t.Status, &t.Priority, &t.CreatedAt, &calledAt,
+			&completedAt, &waitTime, &serviceTime, &t.DailySequence, &t.QueueDate, &notes,
+			&catID, &catName, &catPrefix, &catColor,
+			&coID, &coNumber, &coName,
+		)
+		if err != nil {
+			return model.Ticket{}, err
+		}
+
+		t.CategoryID = sql.NullInt64{Int64: int64(catID), Valid: catID > 0}
+		if catID > 0 {
+			t.Category = &model.Category{
+				ID:        catID,
+				Name:      catName.String,
+				Prefix:    catPrefix.String,
+				ColorCode: catColor.String,
+			}
+		}
+		if coID.Valid {
+			t.CounterID = sql.NullInt64{Int64: coID.Int64, Valid: true}
+			t.Counter = &model.Counter{
+				ID:     int(coID.Int64),
+				Number: coNumber.String,
+				Name:   sql.NullString{String: coName.String, Valid: coName.Valid},
+			}
+		}
+		if calledAt.Valid {
+			t.CalledAt = calledAt
+		}
+		if completedAt.Valid {
+			t.CompletedAt = completedAt
+		}
+		if waitTime.Valid {
+			t.WaitTime = waitTime
+		}
+		if serviceTime.Valid {
+			t.ServiceTime = serviceTime
+		}
+		if notes.Valid {
+			t.Notes = notes
+		}
+
+		return t, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return tickets, nil
 }

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -195,4 +196,53 @@ func (h *StaffHandler) TransferTicket(c *gin.Context) {
 	h.hub.BroadcastTicketUpdate(ticket)
 
 	c.JSON(http.StatusOK, ticket)
+}
+
+// TicketsPage shows the tickets management page for staff
+func (h *StaffHandler) TicketsPage(c *gin.Context) {
+	userID := middleware.GetCurrentUserID(c)
+
+	tickets, stats, err := h.staffService.GetAllTickets(c.Request.Context(), userID)
+	if err != nil {
+		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"Error": "Failed to load tickets"})
+		return
+	}
+
+	c.HTML(http.StatusOK, "pages/staff/tickets.html", gin.H{
+		"Tickets": tickets,
+		"Stats":   stats,
+	})
+}
+
+// CancelTicket cancels a ticket
+func (h *StaffHandler) CancelTicket(c *gin.Context) {
+	ticketID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ticket ID"})
+		return
+	}
+
+	err = h.staffService.CancelTicket(c.Request.Context(), ticketID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to cancel ticket"})
+		return
+	}
+
+	h.hub.Broadcast("ticket_cancelled", gin.H{"message": "Ticket cancelled successfully"})
+
+	c.JSON(http.StatusOK, gin.H{"message": "Ticket cancelled successfully"})
+}
+
+// ResetYesterdayTickets resets all yesterday's waiting tickets
+func (h *StaffHandler) ResetYesterdayTickets(c *gin.Context) {
+	count, err := h.staffService.ResetYesterdayTickets(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset yesterday tickets"})
+		return
+	}
+
+	message := fmt.Sprintf("%d tiket kemarin berhasil dibatalkan", count)
+	h.hub.Broadcast("yesterday_tickets_reset", gin.H{"message": message})
+
+	c.JSON(http.StatusOK, gin.H{"message": message})
 }
