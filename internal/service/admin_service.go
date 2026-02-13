@@ -90,17 +90,9 @@ func (s *AdminService) GetStats(ctx context.Context) (*model.DashboardStats, err
 
 // CreateUser creates a new user
 func (s *AdminService) CreateUser(ctx context.Context, req *dto.CreateUserRequest) (*model.User, error) {
-	user := &model.User{
-		Username:  req.Username,
-		Password:  req.Password,
-		FullName:  sql.NullString{String: req.FullName, Valid: req.FullName != ""},
-		Email:     sql.NullString{String: req.Email, Valid: req.Email != ""},
-		Phone:     sql.NullString{String: req.Phone, Valid: req.Phone != ""},
-		Role:      req.Role,
-		CounterID: sql.NullInt64{Int64: int64(*req.CounterID), Valid: req.CounterID != nil},
-	}
-
-	return s.userRepo.Create(ctx, user)
+	// Delegate to UserService to ensure password is properly hashed
+	userService := NewUserService(s.userRepo)
+	return userService.CreateUser(ctx, req)
 }
 
 // GetUser gets a user by ID
