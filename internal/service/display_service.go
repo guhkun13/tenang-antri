@@ -32,7 +32,7 @@ func (s *DisplayService) GetDisplayData(ctx context.Context) ([]model.DisplayTic
 		tickets = []model.DisplayTicket{}
 	}
 
-	categories, err := s.categoryRepo.List(ctx, true)
+	categories, err := s.categoryRepo.List(ctx, true, true)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "service").Str("func", "GetDisplayData").Msg("Failed to get categories")
 		categories = []model.Category{}
@@ -64,7 +64,7 @@ func (s *DisplayService) GetWaitingByCategory(ctx context.Context) ([]model.Cate
 
 // GetCategoryDisplayData gets data for category-specific display
 func (s *DisplayService) GetCategoryDisplayData(ctx context.Context, categoryID int) (*model.Category, []model.DisplayTicket, error) {
-	categories, err := s.categoryRepo.List(ctx, true)
+	categories, err := s.categoryRepo.List(ctx, true, true)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get categories")
 		return nil, nil, err

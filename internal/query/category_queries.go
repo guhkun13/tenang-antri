@@ -31,11 +31,17 @@ func (q *CategoryQueries) DeleteCategory(ctx context.Context) string {
 	return `DELETE FROM categories WHERE id = $1`
 }
 
-func (q *CategoryQueries) ListCategories(ctx context.Context, activeOnly bool) string {
-	query := `SELECT id, name, prefix, priority, color_code, description, icon, is_active, created_at, updated_at FROM categories`
-	if activeOnly {
-		query += ` WHERE is_active = true`
+func (q *CategoryQueries) ListCategories(ctx context.Context, activeOnly bool, withCountersOnly bool) string {
+	query := `SELECT DISTINCT categories.id, categories.name, categories.prefix, categories.priority, categories.color_code, categories.description, categories.icon, categories.is_active, categories.created_at, categories.updated_at FROM categories`
+
+	if withCountersOnly {
+		query += ` INNER JOIN counters ON counters.category_id = categories.id AND counters.current_staff_id IS NOT NULL`
 	}
-	query += ` ORDER BY priority DESC, name`
+
+	if activeOnly {
+		query += ` WHERE categories.is_active = true`
+	}
+
+	query += ` ORDER BY categories.priority DESC, categories.name`
 	return query
 }

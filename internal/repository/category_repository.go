@@ -16,7 +16,7 @@ type CategoryRepository interface {
 	Create(ctx context.Context, category *model.Category) (*model.Category, error)
 	Update(ctx context.Context, category *model.Category) (*model.Category, error)
 	Delete(ctx context.Context, id int) error
-	List(ctx context.Context, activeOnly bool) ([]model.Category, error)
+	List(ctx context.Context, activeOnly bool, withCountersOnly bool) ([]model.Category, error)
 }
 
 type categoryRepository struct {
@@ -81,8 +81,8 @@ func (r *categoryRepository) Delete(ctx context.Context, id int) error {
 	return err
 }
 
-func (r *categoryRepository) List(ctx context.Context, activeOnly bool) ([]model.Category, error) {
-	sql := r.categoryQry.ListCategories(ctx, activeOnly)
+func (r *categoryRepository) List(ctx context.Context, activeOnly bool, withCountersOnly bool) ([]model.Category, error) {
+	sql := r.categoryQry.ListCategories(ctx, activeOnly, withCountersOnly)
 	rows, err := r.pool.Query(ctx, sql)
 	if err != nil {
 		return nil, err

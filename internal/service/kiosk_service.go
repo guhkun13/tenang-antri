@@ -29,7 +29,7 @@ func NewKioskService(categoryRepo repository.CategoryRepository, ticketRepo repo
 
 // GetCategories gets active categories for kiosk
 func (s *KioskService) GetCategories(ctx context.Context) ([]model.Category, error) {
-	categories, err := s.categoryRepo.List(ctx, true)
+	categories, err := s.categoryRepo.List(ctx, true, true)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to list categories")
 		return []model.Category{}, err

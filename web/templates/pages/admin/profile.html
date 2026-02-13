@@ -1,98 +1,146 @@
 {{ template "layouts/_header.html" }}
 <div class="flex h-screen bg-gray-100">
-    {{template "layouts/_admin_sidebar.html" .}}
+  {{template "layouts/_admin_sidebar.html" .}}
 
-    <!-- Main Content -->
-    <div class="flex-1 flex flex-col overflow-hidden">
-        <!-- Header -->
-        <header class="bg-white shadow-sm border-b px-6 py-4">
-            <h2 class="text-xl font-semibold text-gray-800">Profil Saya</h2>
-        </header>
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b px-6 py-4">
+      <h2 class="text-xl font-semibold text-gray-800">Profil Saya</h2>
+    </header>
 
-        <!-- Content -->
-        <main class="flex-1 overflow-y-auto p-6">
-            <div class="max-w-2xl mx-auto">
-                <!-- Profile Card -->
-                <div class="bg-white rounded-lg shadow mb-6">
-                    <div class="p-6">
-                        <div class="flex items-center mb-6">
-                            <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mr-6">
-                                <i class="fas fa-user text-4xl text-blue-600"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-2xl font-bold text-gray-800">{{.User.FullName}}</h3>
-                                <p class="text-gray-500">{{.User.Username}}</p>
-                                <span class="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mt-2 inline-block">
-                                    {{.User.Role}}
-                                </span>
-                            </div>
-                        </div>
-
-                        <form id="profileForm" onsubmit="return updateProfile(event)">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
-                                    <input type="text" name="full_name" value="{{.User.FullName}}" 
-                                           class="w-full border rounded-lg px-3 py-2">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                    <input type="email" name="email" value="{{.User.Email}}" 
-                                           class="w-full border rounded-lg px-3 py-2">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                                    <input type="tel" name="phone" value="{{.User.Phone}}" 
-                                           class="w-full border rounded-lg px-3 py-2">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Login Terakhir</label>
-                                    <input type="text" disabled 
-                                           value="{{if .User.LastLogin}}{{.User.LastLogin.Format "2006-01-02 15:04"}}{{else}}Never{{end}}" 
-                                           class="w-full border rounded-lg px-3 py-2 bg-gray-100">
-                                </div>
-                            </div>
-                            <div class="flex justify-end">
-                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-                                    <i class="fas fa-save mr-2"></i>Simpan Perubahan
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Change Password -->
-                <div class="bg-white rounded-lg shadow">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-semibold text-gray-800">
-                            <i class="fas fa-lock mr-2 text-gray-600"></i>Ubah Kata Sandi
-                        </h3>
-                    </div>
-                    <div class="p-6">
-                        <form id="passwordForm" onsubmit="return changePassword(event)">
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Kata Sandi Saat Ini</label>
-                                    <input type="password" name="current_password" required 
-                                           class="w-full border rounded-lg px-3 py-2">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Kata Sandi Baru</label>
-                                    <input type="password" name="new_password" required minlength="6"
-                                           class="w-full border rounded-lg px-3 py-2">
-                                </div>
-                            </div>
-                            <div class="flex justify-end mt-4">
-                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
-                                    <i class="fas fa-key mr-2"></i>Ubah Kata Sandi
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+    <!-- Content -->
+    <main class="flex-1 overflow-y-auto p-6">
+      <div class="max-w-2xl mx-auto">
+        <!-- Profile Card -->
+        <div class="bg-white rounded-lg shadow mb-6">
+          <div class="p-6">
+            <div class="flex items-center mb-6">
+              <div
+                class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mr-6"
+              >
+                <i class="fas fa-user text-4xl text-blue-600"></i>
+              </div>
+              <div>
+                <h3 class="text-2xl font-bold text-gray-800">
+                  {{.User.FullName.String}}
+                </h3>
+                <p class="text-gray-500">{{.User.Username}}</p>
+                <span
+                  class="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mt-2 inline-block"
+                >
+                  {{.User.Role}}
+                </span>
+              </div>
             </div>
-        </main>
-    </div>
+
+            <form id="profileForm" onsubmit="return updateProfile(event);">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >Nama Lengkap</label
+                  >
+                  <input
+                    type="text"
+                    name="full_name"
+                    value="{{.User.FullName.String}}"
+                    class="w-full border rounded-lg px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >Email</label
+                  >
+                  <input
+                    type="email"
+                    name="email"
+                    value="{{.User.Email.String}}"
+                    class="w-full border rounded-lg px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >Phone</label
+                  >
+                  <input
+                    type="tel"
+                    name="phone"
+                    value="{{.User.Phone.String}}"
+                    class="w-full border rounded-lg px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >Login Terakhir</label
+                  >
+                  <input
+                    type="text"
+                    disabled
+                    value="{{if .User.LastLogin}}{{.User.LastLogin.Value    }}{{else}}Never{{end}}"
+                    class="w-full border rounded-lg px-3 py-2 bg-gray-100"
+                  />
+                </div>
+              </div>
+              <div class="flex justify-end">
+                <button
+                  type="submit"
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                >
+                  <i class="fas fa-save mr-2"></i>Simpan Perubahan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Change Password -->
+        <div class="bg-white rounded-lg shadow">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-800">
+              <i class="fas fa-lock mr-2 text-gray-600"></i>Ubah Kata Sandi
+            </h3>
+          </div>
+          <div class="p-6">
+            <form id="passwordForm" onsubmit="return changePassword(event);">
+              <div class="space-y-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >Kata Sandi Saat Ini</label
+                  >
+                  <input
+                    type="password"
+                    name="current_password"
+                    required
+                    class="w-full border rounded-lg px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1"
+                    >Kata Sandi Baru</label
+                  >
+                  <input
+                    type="password"
+                    name="new_password"
+                    required
+                    minlength="6"
+                    class="w-full border rounded-lg px-3 py-2"
+                  />
+                </div>
+              </div>
+              <div class="flex justify-end mt-4">
+                <button
+                  type="submit"
+                  class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+                >
+                  <i class="fas fa-key mr-2"></i>Ubah Kata Sandi
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
 </div>
 
 <script src="/templates/pages/admin/js/profile.js"></script>

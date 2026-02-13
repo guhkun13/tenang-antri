@@ -71,7 +71,7 @@ func (s *AdminService) GetDashboardData(ctx context.Context) (*model.DashboardSt
 		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to get counters")
 	}
 
-	categories, err := s.categoryRepo.List(ctx, true)
+	categories, err := s.categoryRepo.List(ctx, true, false)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to get categories")
 	}
@@ -213,7 +213,7 @@ func (s *AdminService) GetCategory(ctx context.Context, id int) (*model.Category
 
 // ListCategories lists categories with optional active filter
 func (s *AdminService) ListCategories(ctx context.Context, activeOnly bool) ([]model.Category, error) {
-	return s.categoryRepo.List(ctx, activeOnly)
+	return s.categoryRepo.List(ctx, activeOnly, false)
 }
 
 // Counter Management methods

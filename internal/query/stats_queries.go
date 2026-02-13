@@ -38,6 +38,7 @@ func (q *StatsQueries) GetQueueLengthByCategory(ctx context.Context) string {
 		LIMIT 1
 	), '') as counter_number
 FROM categories c 
+INNER JOIN counters cnt ON cnt.category_id = c.id AND cnt.current_staff_id IS NOT NULL
 LEFT JOIN tickets t ON c.id = t.category_id AND t.status = 'waiting' 
 WHERE c.is_active = true 
 GROUP BY c.id, c.name, c.prefix, c.color_code 
@@ -70,6 +71,7 @@ func (q *StatsQueries) GetQueueLengthByCategories(ctx context.Context, categoryI
 		LIMIT 1
 	), '') as counter_number
 FROM categories c 
+INNER JOIN counters cnt ON cnt.category_id = c.id AND cnt.current_staff_id IS NOT NULL
 LEFT JOIN tickets t ON c.id = t.category_id AND t.status = 'waiting' 
 WHERE c.is_active = true AND c.id IN (%s) 
 GROUP BY c.id, c.name, c.prefix, c.color_code 

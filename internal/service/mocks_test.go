@@ -123,8 +123,8 @@ func (m *MockCategoryRepository) GetByID(ctx context.Context, id int) (*model.Ca
 	return args.Get(0).(*model.Category), args.Error(1)
 }
 
-func (m *MockCategoryRepository) List(ctx context.Context, activeOnly bool) ([]model.Category, error) {
-	args := m.Called(ctx, activeOnly)
+func (m *MockCategoryRepository) List(ctx context.Context, activeOnly bool, withCountersOnly bool) ([]model.Category, error) {
+	args := m.Called(ctx, activeOnly, withCountersOnly)
 	return args.Get(0).([]model.Category), args.Error(1)
 }
 
