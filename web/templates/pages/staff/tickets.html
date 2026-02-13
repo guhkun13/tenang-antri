@@ -1,14 +1,31 @@
 {{ template "layouts/_header.html" }}
 
-<div class="flex h-screen bg-gray-100">
-    <aside class="w-64 bg-white shadow-lg flex-shrink-0">
-        <div class="p-4 border-b">
+<div class="flex h-screen bg-gray-100" x-data="{ sidebarOpen: false }">
+    <aside 
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+        class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 lg:relative lg:translate-x-0 lg:static lg:inset-0 flex flex-col flex-shrink-0"
+    >
+        <div class="p-4 border-b flex items-center justify-between lg:hidden">
+            <h2 class="text-lg font-bold text-gray-800">Menu Staff</h2>
+            <button @click="sidebarOpen = false" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="p-4 border-b hidden lg:block">
             <h2 class="text-lg font-bold text-gray-800">Menu Staff</h2>
         </div>
-        {{template "layouts/_staff_sidebar.html" (dict "ActiveMenu" "tickets")}}
+        <nav class="flex-1 overflow-y-auto py-4">
+            {{template "layouts/_staff_sidebar.html" (dict "ActiveMenu" "tickets")}}
+        </nav>
     </aside>
 
     <div class="flex-1 flex flex-col overflow-hidden">
+        <header class="bg-white shadow-sm border-b px-4 py-3 lg:hidden">
+            <button @click="sidebarOpen = true" class="text-gray-700 hover:text-gray-900">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+        </header>
+
         <header class="bg-white shadow-sm border-b px-6 py-4">
             <div class="flex justify-between items-center">
                 <div>
@@ -25,7 +42,7 @@
         </header>
 
         <main class="flex-1 overflow-y-auto p-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white rounded-lg shadow p-4">
                     <div class="flex items-center">
                         <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -89,7 +106,6 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loket</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prioritas</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dibuat</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
                             </tr>
@@ -128,14 +144,6 @@
                                         {{else}}{{.Status}}{{end}}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-center">
-                                    <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
-                                        {{if eq .Priority 0}}Normal
-                                        {{else if eq .Priority 1}}Tinggi
-                                        {{else if eq .Priority 2}}Segera
-                                        {{else}}{{.Priority}}{{end}}
-                                    </span>
-                                </td>
                                 <td class="px-6 py-4 text-gray-500">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
                                 <td class="px-6 py-4">
                                     <div class="flex space-x-2">
@@ -151,7 +159,7 @@
                             {{end}}
                             {{if not .Tickets}}
                             <tr>
-                                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
                                     <i class="fas fa-inbox text-4xl mb-2"></i>
                                     <p class="text-lg">Tidak ada tiket ditemukan</p>
                                 </td>
@@ -163,6 +171,13 @@
             </div>
         </main>
     </div>
+    
+    <div 
+        x-show="sidebarOpen" 
+        @click="sidebarOpen = false"
+        x-transition.opacity
+        class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+    ></div>
 </div>
 
 <div id="resetModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">

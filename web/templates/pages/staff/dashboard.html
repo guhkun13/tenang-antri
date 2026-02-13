@@ -1,13 +1,37 @@
 {{ template "layouts/_header.html" }}
-<div class="flex h-screen bg-gray-100">
-    <aside class="w-64 bg-white shadow-lg flex-shrink-0">
-        <div class="p-4 border-b">
+<div class="flex h-screen bg-gray-100" x-data="{ sidebarOpen: false }">
+    <aside 
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+        class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 lg:relative lg:translate-x-0 lg:static lg:inset-0 flex flex-col flex-shrink-0"
+    >
+        <div class="p-4 border-b flex items-center justify-between lg:hidden">
+            <h2 class="text-lg font-bold text-gray-800">Menu Staff</h2>
+            <button @click="sidebarOpen = false" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="p-4 border-b hidden lg:block">
             <h2 class="text-lg font-bold text-gray-800">Menu Staff</h2>
         </div>
-        {{template "layouts/_staff_sidebar.html" (dict "ActiveMenu" "dashboard")}}
+        <nav class="flex-1 overflow-y-auto py-4">
+            {{template "layouts/_staff_sidebar.html" (dict "ActiveMenu" "dashboard")}}
+        </nav>
     </aside>
+
     <div class="flex-1 flex flex-col overflow-hidden">
+        <header class="bg-white shadow-sm border-b px-4 py-3 lg:hidden">
+            <button @click="sidebarOpen = true" class="text-gray-700 hover:text-gray-900">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+        </header>
         {{ template "pages/staff/_dashboard_content.html" . }}
     </div>
+    
+    <div 
+        x-show="sidebarOpen" 
+        @click="sidebarOpen = false"
+        x-transition.opacity
+        class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+    ></div>
 </div>
 {{ template "layouts/_footer.html"}}
