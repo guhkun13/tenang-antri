@@ -42,133 +42,63 @@
         </header>
 
         <main class="flex-1 overflow-y-auto p-6">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-ticket-alt text-blue-600"></i>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm text-gray-500">Total Tiket</p>
-                            <p class="text-xl font-bold text-gray-800">{{.Stats.Total}}</p>
-                        </div>
+            {{template "pages/staff/_stats_ticket.html" .}}
+
+            <!-- Filters -->
+            <div class="bg-white rounded-lg shadow p-4 mb-6">
+                <form id="filterForm" class="flex flex-wrap gap-4 items-end" method="GET" action="/staff/tickets">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Dari</label>
+                        <input type="date" name="date_from" 
+                               class="border rounded-lg px-3 py-2" value="{{.Filters.date_from}}">
                     </div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-clock text-yellow-600"></i>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm text-gray-500">Menunggu</p>
-                            <p class="text-xl font-bold text-gray-800">{{.Stats.Waiting}}</p>
-                        </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Sampai</label>
+                        <input type="date" name="date_to" 
+                               class="border rounded-lg px-3 py-2" value="{{.Filters.date_to}}">
                     </div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-play text-green-600"></i>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm text-gray-500">Melayani</p>
-                            <p class="text-xl font-bold text-gray-800">{{.Stats.Serving}}</p>
-                        </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select name="status" class="border rounded-lg px-3 py-2">
+                            <option value="">Semua Status</option>
+                            <option value="waiting" {{if eq .Filters.status "waiting"}}selected{{end}}>Menunggu</option>
+                            <option value="serving" {{if eq .Filters.status "serving"}}selected{{end}}>Melayani</option>
+                            <option value="completed" {{if eq .Filters.status "completed"}}selected{{end}}>Selesai</option>
+                            <option value="no_show" {{if eq .Filters.status "no_show"}}selected{{end}}>Tidak Hadir</option>
+                            <option value="cancelled" {{if eq .Filters.status "cancelled"}}selected{{end}}>Dibatalkan</option>
+                        </select>
                     </div>
-                </div>
-                <div class="bg-white rounded-lg shadow p-4">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-check text-purple-600"></i>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm text-gray-500">Selesai Hari Ini</p>
-                            <p class="text-xl font-bold text-gray-800">{{.Stats.Completed}}</p>
-                        </div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="setQuickDateRange('today')" 
+                                class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">
+                            Hari Ini
+                        </button>
+                        <button type="button" onclick="setQuickDateRange('week')" 
+                                class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">
+                            Minggu Ini
+                        </button>
+                        <button type="button" onclick="setQuickDateRange('month')" 
+                                class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">
+                            Bulan Ini
+                        </button>
                     </div>
-                </div>
+                    <div class="flex gap-2">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                            <i class="fas fa-filter mr-2"></i>Filter
+                        </button>
+                        <button type="button" onclick="clearFilters()" 
+                                class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg">
+                            Bersihkan
+                        </button>
+                    </div>
+                    
+                    <!-- Hidden fields for sorting -->
+                    <input type="hidden" name="sort_by" id="sortByInput" value="{{.SortBy}}">
+                    <input type="hidden" name="sort_order" id="sortOrderInput" value="{{.SortOrder}}">
+                </form>
             </div>
 
-            <div class="bg-white rounded-lg shadow">
-                <div class="p-4 border-b">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-semibold text-gray-800">Daftar Tiket</h3>
-                        <span class="text-sm text-gray-500">
-                            Menampilkan {{len .Tickets}} tiket
-                        </span>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-gray-50 border-b">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tiket #</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loket</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dibuat</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            {{range .Tickets}}
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 font-medium text-gray-900">{{.TicketNumber}}</td>
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center">
-                                        <span class="px-2 py-1 rounded text-xs text-white font-medium" style="background-color: {{if .Category.ColorCode}}{{.Category.ColorCode}}{{else}}#3b82f6{{end}}">
-                                            {{.Category.Prefix}}
-                                        </span>
-                                        <span class="ml-2">{{.Category.Name}}</span>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-gray-900">
-                                    {{if .Counter}}
-                                        {{.Counter.Number}} - {{.Counter.Name.String}}
-                                    {{else}}
-                                        <span class="text-gray-400">-</span>
-                                    {{end}}
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="px-2 py-1 rounded-full text-xs font-medium
-                                          {{if eq .Status "waiting"}} bg-yellow-100 text-yellow-800
-                                          {{else if eq .Status "serving"}} bg-blue-100 text-blue-800
-                                          {{else if eq .Status "completed"}} bg-green-100 text-green-800
-                                          {{else if eq .Status "no_show"}} bg-orange-100 text-orange-800
-                                          {{else}} bg-red-100 text-red-800{{end}}">
-                                        {{if eq .Status "waiting"}}Menunggu
-                                        {{else if eq .Status "serving"}}Melayani
-                                        {{else if eq .Status "completed"}}Selesai
-                                        {{else if eq .Status "no_show"}}Tidak Hadir
-                                        {{else if eq .Status "cancelled"}}Dibatalkan
-                                        {{else}}{{.Status}}{{end}}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-gray-500">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
-                                <td class="px-6 py-4">
-                                    <div class="flex space-x-2">
-                                        {{if eq .Status "waiting"}}
-                                        <button onclick="cancelTicket('{{.ID}}')"
-                                                class="text-red-600 hover:text-red-800" title="Batalkan">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                        {{end}}
-                                    </div>
-                                </td>
-                            </tr>
-                            {{end}}
-                            {{if not .Tickets}}
-                            <tr>
-                                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
-                                    <i class="fas fa-inbox text-4xl mb-2"></i>
-                                    <p class="text-lg">Tidak ada tiket ditemukan</p>
-                                </td>
-                            </tr>
-                            {{end}}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            {{template "pages/staff/_list_ticket.html" .}}
         </main>
     </div>
     
@@ -180,6 +110,92 @@
     ></div>
 </div>
 
+<!-- Ticket Detail Modal -->
+<div id="ticketDetailModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 p-6">
+        <div class="flex justify-between items-center mb-4 border-b pb-3">
+            <div>
+                <h3 class="text-xl font-bold text-gray-800">Detail Tiket</h3>
+                <p id="detailTicketNumber" class="text-lg text-blue-600 font-semibold"></p>
+            </div>
+            <button onclick="closeTicketDetailModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div id="ticketDetailContent" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-sm text-gray-500 mb-1">Status</p>
+                    <span id="detailStatus" class="px-2 py-1 rounded-full text-xs font-medium"></span>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-sm text-gray-500 mb-1">Kategori</p>
+                    <p id="detailCategory" class="font-medium text-gray-800"></p>
+                </div>
+            </div>
+            
+            <div class="border-t pt-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Timeline</h4>
+                <div class="space-y-3">
+                    <div class="flex items-start">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                            <i class="fas fa-plus text-blue-600 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-700">Tiket Dibuat</p>
+                            <p id="detailCreatedAt" class="text-sm text-gray-500"></p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                            <i class="fas fa-bell text-yellow-600 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-700">Tiket Dipanggil</p>
+                            <p id="detailCalledAt" class="text-sm text-gray-500"></p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                            <i class="fas fa-check text-green-600 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-700">Tiket Selesai</p>
+                            <p id="detailCompletedAt" class="text-sm text-gray-500"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t pt-4">
+                <h4 class="font-semibold text-gray-700 mb-3">Waktu</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-blue-50 p-3 rounded-lg text-center">
+                        <p class="text-sm text-gray-500 mb-1">Waktu Tunggu</p>
+                        <p id="detailWaitTime" class="text-lg font-bold text-blue-600"></p>
+                    </div>
+                    <div class="bg-green-50 p-3 rounded-lg text-center">
+                        <p class="text-sm text-gray-500 mb-1">Waktu Pelayanan</p>
+                        <p id="detailServiceTime" class="text-lg font-bold text-green-600"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="detailCounterSection" class="border-t pt-4 hidden">
+                <h4 class="font-semibold text-gray-700 mb-2">Loket</h4>
+                <p id="detailCounter" class="text-gray-700"></p>
+            </div>
+        </div>
+        <div class="mt-6 flex justify-end">
+            <button onclick="closeTicketDetailModal()" 
+                    class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg">
+                Tutup
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Modal -->
 <div id="resetModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
     <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
         <div class="flex justify-between items-center mb-4">
@@ -260,6 +276,193 @@ function resetYesterdayTickets() {
         closeResetModal();
         alert('Terjadi kesalahan: ' + error);
     });
+}
+
+function viewTicketDetail(ticketId) {
+    fetch('/staff/api/tickets/' + ticketId, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Failed to load ticket details');
+        }
+        return response.json();
+    })
+    .then(ticket => {
+        displayTicketDetail(ticket);
+        openTicketDetailModal();
+    })
+    .catch(error => {
+        alert('Terjadi kesalahan: ' + error.message);
+    });
+}
+
+function openTicketDetailModal() {
+    document.getElementById('ticketDetailModal').classList.remove('hidden');
+    document.getElementById('ticketDetailModal').classList.add('flex');
+}
+
+function closeTicketDetailModal() {
+    document.getElementById('ticketDetailModal').classList.add('hidden');
+    document.getElementById('ticketDetailModal').classList.remove('flex');
+}
+
+function displayTicketDetail(ticket) {
+    // Set basic info
+    document.getElementById('detailTicketNumber').textContent = ticket.ticket_number;
+    
+    // Set status with color
+    const statusEl = document.getElementById('detailStatus');
+    let statusText = ticket.status;
+    let statusClass = '';
+    
+    switch(ticket.status) {
+        case 'waiting':
+            statusText = 'Menunggu';
+            statusClass = 'bg-yellow-100 text-yellow-800';
+            break;
+        case 'serving':
+            statusText = 'Melayani';
+            statusClass = 'bg-blue-100 text-blue-800';
+            break;
+        case 'completed':
+            statusText = 'Selesai';
+            statusClass = 'bg-green-100 text-green-800';
+            break;
+        case 'no_show':
+            statusText = 'Tidak Hadir';
+            statusClass = 'bg-orange-100 text-orange-800';
+            break;
+        case 'cancelled':
+            statusText = 'Dibatalkan';
+            statusClass = 'bg-red-100 text-red-800';
+            break;
+    }
+    statusEl.textContent = statusText;
+    statusEl.className = 'px-2 py-1 rounded-full text-xs font-medium ' + statusClass;
+    
+    // Set category - Go JSON uses lowercase field names
+    document.getElementById('detailCategory').textContent = (ticket.category && ticket.category.name) ? ticket.category.name : '-';
+    
+    // Set timeline - handle sql.NullTime format {Time: "...", Valid: true/false}
+    document.getElementById('detailCreatedAt').textContent = formatDateTime(ticket.created_at);
+    document.getElementById('detailCalledAt').textContent = (ticket.called_at && ticket.called_at.Valid) ? formatDateTime(ticket.called_at.Time) : 'Belum dipanggil';
+    document.getElementById('detailCompletedAt').textContent = (ticket.completed_at && ticket.completed_at.Valid) ? formatDateTime(ticket.completed_at.Time) : 'Belum selesai';
+    
+    // Set timing metrics - handle sql.NullInt64 format {Int64: value, Valid: true/false}
+    document.getElementById('detailWaitTime').textContent = (ticket.wait_time && ticket.wait_time.Valid) ? formatDuration(ticket.wait_time.Int64) : '-';
+    document.getElementById('detailServiceTime').textContent = (ticket.service_time && ticket.service_time.Valid) ? formatDuration(ticket.service_time.Int64) : '-';
+    
+    // Set counter info if available - Go JSON uses lowercase field names
+    const counterSection = document.getElementById('detailCounterSection');
+    if (ticket.counter && ticket.counter.number) {
+        const counterName = ticket.counter.name || '';
+        document.getElementById('detailCounter').textContent = ticket.counter.number + (counterName ? ' - ' + counterName : '');
+        counterSection.classList.remove('hidden');
+    } else {
+        counterSection.classList.add('hidden');
+    }
+}
+
+function formatDateTime(dateValue) {
+    if (!dateValue) return '-';
+    
+    // Handle sql.NullTime format {Time: "...", Valid: true} or direct string
+    let dateString = dateValue;
+    if (typeof dateValue === 'object' && dateValue.Time) {
+        dateString = dateValue.Time;
+    }
+    
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+        return '-';
+    }
+    
+    return date.toLocaleString('id-ID', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function formatDuration(seconds) {
+    if (!seconds || seconds === 0) return '0 detik';
+    
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    let result = [];
+    if (hours > 0) result.push(hours + ' jam');
+    if (minutes > 0) result.push(minutes + ' menit');
+    if (secs > 0 && hours === 0) result.push(secs + ' detik');
+    
+    return result.join(' ') || '0 detik';
+}
+
+function sortBy(column) {
+    const sortByInput = document.getElementById('sortByInput');
+    const sortOrderInput = document.getElementById('sortOrderInput');
+    
+    if (sortByInput.value === column) {
+        // Toggle order
+        sortOrderInput.value = sortOrderInput.value === 'asc' ? 'desc' : 'asc';
+    } else {
+        // New column, default to desc
+        sortByInput.value = column;
+        sortOrderInput.value = 'desc';
+    }
+    
+    document.getElementById('filterForm').submit();
+}
+
+function setQuickDateRange(range) {
+    const today = new Date();
+    const dateFromInput = document.querySelector('input[name="date_from"]');
+    const dateToInput = document.querySelector('input[name="date_to"]');
+    
+    const formatDate = (date) => {
+        return date.toISOString().split('T')[0];
+    };
+    
+    switch(range) {
+        case 'today':
+            dateFromInput.value = formatDate(today);
+            dateToInput.value = formatDate(today);
+            break;
+        case 'week':
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay());
+            dateFromInput.value = formatDate(weekStart);
+            dateToInput.value = formatDate(today);
+            break;
+        case 'month':
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            dateFromInput.value = formatDate(monthStart);
+            dateToInput.value = formatDate(today);
+            break;
+    }
+}
+
+function clearFilters() {
+    document.querySelector('input[name="date_from"]').value = '';
+    document.querySelector('input[name="date_to"]').value = '';
+    document.querySelector('select[name="status"]').value = '';
+    document.getElementById('sortByInput').value = 'created_at';
+    document.getElementById('sortOrderInput').value = 'desc';
+    document.getElementById('filterForm').submit();
+}
+
+function goToPage(page) {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('page', page);
+    window.location.search = urlParams.toString();
 }
 </script>
 

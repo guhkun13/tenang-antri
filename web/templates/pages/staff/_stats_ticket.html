@@ -1,0 +1,54 @@
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+  <div class="bg-white rounded-lg shadow p-4">
+    <div class="flex items-center">
+      <div
+        class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"
+      >
+        <i class="fas fa-ticket-alt text-blue-600"></i>
+      </div>
+      <div class="ml-3">
+        <p class="text-sm text-gray-500">Total Tiket</p>
+        <p class="text-xl font-bold text-gray-800">{{.Stats.Total}}</p>
+      </div>
+    </div>
+  </div>
+  <div class="bg-white rounded-lg shadow p-4">
+    <div class="flex items-center">
+      <div
+        class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center"
+      >
+        <i class="fas fa-clock text-yellow-600"></i>
+      </div>
+      <div class="ml-3">
+        <p class="text-sm text-gray-500">Menunggu</p>
+        <p class="text-xl font-bold text-gray-800">{{.Stats.Waiting}}</p>
+      </div>
+    </div>
+  </div>
+  <div class="bg-white rounded-lg shadow p-4">
+    <div class="flex items-center">
+      <div
+        class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center"
+      >
+        <i class="fas fa-play text-green-600"></i>
+      </div>
+      <div class="ml-3">
+        <p class="text-sm text-gray-500">Melayani</p>
+        <p class="text-xl font-bold text-gray-800">{{.Stats.Serving}}</p>
+      </div>
+    </div>
+  </div>
+  <div class="bg-white rounded-lg shadow p-4">
+    <div class="flex items-center">
+      <div
+        class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center"
+      >
+        <i class="fas fa-check text-purple-600"></i>
+      </div>
+      <div class="ml-3">
+        <p class="text-sm text-gray-500">Selesai Hari Ini</p>
+        <p class="text-xl font-bold text-gray-800">{{.Stats.Completed}}</p>
+      </div>
+    </div>
+  </div>
+</div>

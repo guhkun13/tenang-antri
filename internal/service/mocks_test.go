@@ -126,6 +126,11 @@ func (m *MockTicketRepository) GetAllTicketsByCategories(ctx context.Context, ca
 	return args.Get(0).([]model.Ticket), args.Error(1)
 }
 
+func (m *MockTicketRepository) GetTicketsByCategoriesWithFilters(ctx context.Context, categoryIDs []int, filters map[string]interface{}) ([]model.Ticket, int, error) {
+	args := m.Called(ctx, categoryIDs, filters)
+	return args.Get(0).([]model.Ticket), args.Int(1), args.Error(2)
+}
+
 func (m *MockTicketRepository) CancelYesterdayWaiting(ctx context.Context) (int, error) {
 	args := m.Called(ctx)
 	return args.Int(0), args.Error(1)

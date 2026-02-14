@@ -104,6 +104,7 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 			staff.GET("/queue-status", staffHandler.GetQueueStatus)
 			staff.GET("/current-ticket", staffHandler.GetCurrentTicket)
 			staff.POST("/transfer/:id", staffHandler.TransferTicket)
+			staff.GET("/api/tickets/:id", staffHandler.GetTicketDetail)
 			staff.POST("/api/tickets/:id/cancel", staffHandler.CancelTicket)
 			staff.POST("/api/tickets/reset-yesterday", staffHandler.ResetYesterdayTickets)
 		}

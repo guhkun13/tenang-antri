@@ -1,0 +1,125 @@
+<div class="bg-white rounded-lg shadow">
+                <div class="p-4 border-b">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-800">Daftar Tiket</h3>
+                        <span class="text-sm text-gray-500">
+                            Menampilkan {{len .Tickets}} tiket
+                        </span>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortBy('ticket_number')">
+                                    Tiket # <i class="fas fa-sort{{if eq .SortBy "ticket_number"}}{{if eq .SortOrder "asc"}}-up{{else}}-down{{end}}{{end}}"></i>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortBy('category')">
+                                    Kategori <i class="fas fa-sort{{if eq .SortBy "category"}}{{if eq .SortOrder "asc"}}-up{{else}}-down{{end}}{{end}}"></i>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortBy('counter')">
+                                    Loket <i class="fas fa-sort{{if eq .SortBy "counter"}}{{if eq .SortOrder "asc"}}-up{{else}}-down{{end}}{{end}}"></i>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortBy('status')">
+                                    Status <i class="fas fa-sort{{if eq .SortBy "status"}}{{if eq .SortOrder "asc"}}-up{{else}}-down{{end}}{{end}}"></i>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100" onclick="sortBy('created_at')">
+                                    Dibuat <i class="fas fa-sort{{if eq .SortBy "created_at"}}{{if eq .SortOrder "asc"}}-up{{else}}-down{{end}}{{end}}"></i>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            {{range .Tickets}}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 font-medium text-gray-900">{{.TicketNumber}}</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <span class="px-2 py-1 rounded text-xs text-white font-medium" style="background-color: {{if .Category.ColorCode}}{{.Category.ColorCode}}{{else}}#3b82f6{{end}}">
+                                            {{.Category.Prefix}}
+                                        </span>
+                                        <span class="ml-2">{{.Category.Name}}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-gray-900">
+                                    {{if .Counter}}
+                                        {{.Counter.Number}} - {{.Counter.Name.String}}
+                                    {{else}}
+                                        <span class="text-gray-400">-</span>
+                                    {{end}}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 py-1 rounded-full text-xs font-medium
+                                          {{if eq .Status "waiting"}} bg-yellow-100 text-yellow-800
+                                          {{else if eq .Status "serving"}} bg-blue-100 text-blue-800
+                                          {{else if eq .Status "completed"}} bg-green-100 text-green-800
+                                          {{else if eq .Status "no_show"}} bg-orange-100 text-orange-800
+                                          {{else}} bg-red-100 text-red-800{{end}}">
+                                        {{if eq .Status "waiting"}}Menunggu
+                                        {{else if eq .Status "serving"}}Melayani
+                                        {{else if eq .Status "completed"}}Selesai
+                                        {{else if eq .Status "no_show"}}Tidak Hadir
+                                        {{else if eq .Status "cancelled"}}Dibatalkan
+                                        {{else}}{{.Status}}{{end}}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-gray-500">{{.CreatedAt.Format "2006-01-02 15:04"}}</td>
+                                <td class="px-6 py-4">
+                                    <div class="flex space-x-2">
+                                        <button onclick="viewTicketDetail('{{.ID}}')"
+                                                class="text-blue-600 hover:text-blue-800" title="Lihat Detail">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        {{if eq .Status "waiting"}}
+                                        <button onclick="cancelTicket('{{.ID}}')"
+                                                class="text-red-600 hover:text-red-800" title="Batalkan">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        {{end}}
+                                    </div>
+                                </td>
+                            </tr>
+                            {{end}}
+                            {{if not .Tickets}}
+                            <tr>
+                                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                    <i class="fas fa-inbox text-4xl mb-2"></i>
+                                    <p class="text-lg">Tidak ada tiket ditemukan</p>
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="px-4 py-3 border-t flex items-center justify-between">
+                    <div class="text-sm text-gray-500">
+                        Menampilkan {{len .Tickets}} dari {{.TotalCount}} tiket
+                        (Halaman {{.Page}} dari {{.TotalPages}})
+                    </div>
+                    <div class="flex gap-2">
+                        {{if .HasPrev}}
+                        <a href="{{buildPaginationURL (sub .Page 1) .Filters .SortBy .SortOrder}}"
+                           class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700">
+                            <i class="fas fa-chevron-left mr-1"></i> Sebelumnya
+                        </a>
+                        {{else}}
+                        <button disabled class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed">
+                            <i class="fas fa-chevron-left mr-1"></i> Sebelumnya
+                        </button>
+                        {{end}}
+
+                        {{if .HasNext}}
+                        <a href="{{buildPaginationURL (add .Page 1) .Filters .SortBy .SortOrder}}"
+                           class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700">
+                            Selanjutnya <i class="fas fa-chevron-right ml-1"></i>
+                        </a>
+                        {{else}}
+                        <button disabled class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-400 cursor-not-allowed">
+                            Selanjutnya <i class="fas fa-chevron-right ml-1"></i>
+                        </button>
+                        {{end}}
+                    </div>
+                </div>
+            </div>

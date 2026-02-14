@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -33,6 +34,7 @@ type TicketRepository interface {
 	GetTodayByCategories(ctx context.Context, categoryIDs []int) ([]model.Ticket, error)
 	GetAllTodayTickets(ctx context.Context) ([]model.Ticket, error)
 	GetAllTicketsByCategories(ctx context.Context, categoryIDs []int) ([]model.Ticket, error)
+	GetTicketsByCategoriesWithFilters(ctx context.Context, categoryIDs []int, filters map[string]interface{}) ([]model.Ticket, int, error)
 	CancelYesterdayWaiting(ctx context.Context) (int, error)
 }
 
@@ -721,4 +723,166 @@ func (r *ticketRepository) GetAllTicketsByCategories(ctx context.Context, catego
 	}
 
 	return tickets, nil
+}
+
+func (r *ticketRepository) GetTicketsByCategoriesWithFilters(ctx context.Context, categoryIDs []int, filters map[string]interface{}) ([]model.Ticket, int, error) {
+	if len(categoryIDs) == 0 {
+		return []model.Ticket{}, 0, nil
+	}
+
+	// Build the query dynamically - use separate args for count and main query
+	whereConditions := []string{"t.category_id = ANY($1)"}
+	countArgs := []interface{}{categoryIDs}
+	mainArgs := []interface{}{categoryIDs}
+	argCount := 1
+
+	// Add date filters
+	if dateFrom, ok := filters["date_from"].(string); ok && dateFrom != "" {
+		argCount++
+		whereConditions = append(whereConditions, "DATE(t.created_at) >= $"+fmt.Sprintf("%d", argCount))
+		countArgs = append(countArgs, dateFrom)
+		mainArgs = append(mainArgs, dateFrom)
+	}
+	if dateTo, ok := filters["date_to"].(string); ok && dateTo != "" {
+		argCount++
+		whereConditions = append(whereConditions, "DATE(t.created_at) <= $"+fmt.Sprintf("%d", argCount))
+		countArgs = append(countArgs, dateTo)
+		mainArgs = append(mainArgs, dateTo)
+	}
+
+	// Add status filter
+	if status, ok := filters["status"].(string); ok && status != "" {
+		argCount++
+		whereConditions = append(whereConditions, "t.status = $"+fmt.Sprintf("%d", argCount))
+		countArgs = append(countArgs, status)
+		mainArgs = append(mainArgs, status)
+	}
+
+	// Get total count
+	countQuery := `SELECT COUNT(*) FROM tickets t WHERE ` + strings.Join(whereConditions, " AND ")
+	var totalCount int
+	err := r.pool.QueryRow(ctx, countQuery, countArgs...).Scan(&totalCount)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated tickets
+	sortBy := "t.created_at"
+	if sb, ok := filters["sort_by"].(string); ok && sb != "" {
+		switch sb {
+		case "ticket_number":
+			sortBy = "t.ticket_number"
+		case "status":
+			sortBy = "t.status"
+		case "category":
+			sortBy = "c.name"
+		case "counter":
+			sortBy = "co.number"
+		default:
+			sortBy = "t.created_at"
+		}
+	}
+
+	sortOrder := "DESC"
+	if so, ok := filters["sort_order"].(string); ok && so != "" {
+		if so == "asc" {
+			sortOrder = "ASC"
+		}
+	}
+
+	// Pagination
+	limit := 20
+	if l, ok := filters["limit"].(int); ok && l > 0 {
+		limit = l
+	}
+
+	offset := 0
+	if o, ok := filters["offset"].(int); ok && o >= 0 {
+		offset = o
+	}
+
+	// Build main query with correct parameter indices
+	query := `
+		SELECT t.id, t.ticket_number, t.category_id, t.counter_id,
+		       t.status, t.priority, t.created_at, t.called_at,
+		       t.completed_at, t.wait_time, t.service_time, t.daily_sequence, t.queue_date, t.notes,
+		       c.id as cat_id, c.name as cat_name, c.prefix as cat_prefix, c.color_code as cat_color,
+		       co.id as co_id, co.number as co_number, co.name as co_name
+		FROM tickets t
+		LEFT JOIN categories c ON t.category_id = c.id
+		LEFT JOIN counters co ON t.counter_id = co.id
+		WHERE ` + strings.Join(whereConditions, " AND ") + `
+		ORDER BY ` + sortBy + ` ` + sortOrder + `
+		LIMIT $` + fmt.Sprintf("%d", argCount+1) + ` OFFSET $` + fmt.Sprintf("%d", argCount+2)
+
+	mainArgs = append(mainArgs, limit, offset)
+
+	rows, err := r.pool.Query(ctx, query, mainArgs...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	tickets, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (model.Ticket, error) {
+		var t model.Ticket
+		var catID int
+		var catName, catPrefix, catColor sql.NullString
+		var coID sql.NullInt64
+		var coNumber, coName sql.NullString
+		var waitTime, serviceTime sql.NullInt64
+		var calledAt, completedAt sql.NullTime
+		var notes sql.NullString
+
+		err := row.Scan(
+			&t.ID, &t.TicketNumber, &catID, &coID,
+			&t.Status, &t.Priority, &t.CreatedAt, &calledAt,
+			&completedAt, &waitTime, &serviceTime, &t.DailySequence, &t.QueueDate, &notes,
+			&catID, &catName, &catPrefix, &catColor,
+			&coID, &coNumber, &coName,
+		)
+		if err != nil {
+			return model.Ticket{}, err
+		}
+
+		t.CategoryID = sql.NullInt64{Int64: int64(catID), Valid: catID > 0}
+		if catID > 0 {
+			t.Category = &model.Category{
+				ID:        catID,
+				Name:      catName.String,
+				Prefix:    catPrefix.String,
+				ColorCode: catColor.String,
+			}
+		}
+		if coID.Valid {
+			t.CounterID = sql.NullInt64{Int64: coID.Int64, Valid: true}
+			t.Counter = &model.Counter{
+				ID:     int(coID.Int64),
+				Number: coNumber.String,
+				Name:   sql.NullString{String: coName.String, Valid: coName.Valid},
+			}
+		}
+		if calledAt.Valid {
+			t.CalledAt = calledAt
+		}
+		if completedAt.Valid {
+			t.CompletedAt = completedAt
+		}
+		if waitTime.Valid {
+			t.WaitTime = waitTime
+		}
+		if serviceTime.Valid {
+			t.ServiceTime = serviceTime
+		}
+		if notes.Valid {
+			t.Notes = notes
+		}
+
+		return t, nil
+	})
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return tickets, totalCount, nil
 }

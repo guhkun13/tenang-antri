@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -103,6 +104,35 @@ func BuildFuncMap() template.FuncMap {
 		},
 		"gt": func(a, b int) bool {
 			return a > b
+		},
+		"buildPaginationURL": func(page int, filters map[string]interface{}, sortBy, sortOrder string) string {
+			if page < 1 {
+				page = 1
+			}
+
+			params := []string{}
+			params = append(params, fmt.Sprintf("page=%d", page))
+
+			// Add filters
+			if dateFrom, ok := filters["date_from"].(string); ok && dateFrom != "" {
+				params = append(params, fmt.Sprintf("date_from=%s", dateFrom))
+			}
+			if dateTo, ok := filters["date_to"].(string); ok && dateTo != "" {
+				params = append(params, fmt.Sprintf("date_to=%s", dateTo))
+			}
+			if status, ok := filters["status"].(string); ok && status != "" {
+				params = append(params, fmt.Sprintf("status=%s", status))
+			}
+
+			// Add sorting
+			if sortBy != "" {
+				params = append(params, fmt.Sprintf("sort_by=%s", sortBy))
+			}
+			if sortOrder != "" {
+				params = append(params, fmt.Sprintf("sort_order=%s", sortOrder))
+			}
+
+			return "/staff/tickets?" + strings.Join(params, "&")
 		},
 	}
 }

@@ -198,19 +198,93 @@ func (h *StaffHandler) TransferTicket(c *gin.Context) {
 	c.JSON(http.StatusOK, ticket)
 }
 
+// GetTicketDetail gets detailed information about a ticket
+func (h *StaffHandler) GetTicketDetail(c *gin.Context) {
+	ticketID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ticket ID"})
+		return
+	}
+
+	ticket, err := h.staffService.GetTicketDetail(c.Request.Context(), ticketID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get ticket details"})
+		return
+	}
+
+	if ticket == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Ticket not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, ticket)
+}
+
 // TicketsPage shows the tickets management page for staff
 func (h *StaffHandler) TicketsPage(c *gin.Context) {
 	userID := middleware.GetCurrentUserID(c)
 
-	tickets, stats, err := h.staffService.GetAllTickets(c.Request.Context(), userID)
+	// Parse query parameters
+	filters := make(map[string]interface{})
+
+	if dateFrom := c.Query("date_from"); dateFrom != "" {
+		filters["date_from"] = dateFrom
+	}
+	if dateTo := c.Query("date_to"); dateTo != "" {
+		filters["date_to"] = dateTo
+	}
+	if status := c.Query("status"); status != "" {
+		filters["status"] = status
+	}
+
+	// Parse pagination parameters
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if err != nil || limit < 1 {
+		limit = 20
+	}
+
+	// Parse sorting parameters
+	sortBy := c.DefaultQuery("sort_by", "created_at")
+	sortOrder := c.DefaultQuery("sort_order", "desc")
+
+	filters["page"] = page
+	filters["limit"] = limit
+	filters["offset"] = (page - 1) * limit
+	filters["sort_by"] = sortBy
+	filters["sort_order"] = sortOrder
+
+	result, err := h.staffService.GetAllTickets(c.Request.Context(), userID, filters)
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "error.html", gin.H{"Error": "Failed to load tickets"})
 		return
 	}
 
+	// Calculate pagination info
+	totalPages := (result.TotalCount + limit - 1) / limit
+	if totalPages < 1 {
+		totalPages = 1
+	}
+
+	hasPrev := page > 1
+	hasNext := page < totalPages
+
 	c.HTML(http.StatusOK, "pages/staff/tickets.html", gin.H{
-		"Tickets": tickets,
-		"Stats":   stats,
+		"Tickets":    result.Tickets,
+		"Stats":      result.Stats,
+		"TotalCount": result.TotalCount,
+		"Page":       page,
+		"Limit":      limit,
+		"TotalPages": totalPages,
+		"HasPrev":    hasPrev,
+		"HasNext":    hasNext,
+		"Filters":    filters,
+		"SortBy":     sortBy,
+		"SortOrder":  sortOrder,
 	})
 }
 

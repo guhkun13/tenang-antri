@@ -11,6 +11,13 @@ import (
 	"tenangantri/internal/repository"
 )
 
+// TicketListResult holds the paginated ticket list with metadata
+type TicketListResult struct {
+	Tickets    []model.Ticket
+	Stats      map[string]int
+	TotalCount int
+}
+
 // StaffService handles staff-specific business logic
 type StaffService struct {
 	userRepo     repository.UserRepository
@@ -339,20 +346,33 @@ func (s *StaffService) TransferTicket(ctx context.Context, ticketID, counterID i
 	return s.ticketRepo.GetWithDetails(ctx, ticketID)
 }
 
-// GetAllTickets gets all tickets for staff view based on their counter's categories
-func (s *StaffService) GetAllTickets(ctx context.Context, userID int) ([]model.Ticket, map[string]int, error) {
+// GetTicketDetail gets detailed information about a ticket including timing metrics
+func (s *StaffService) GetTicketDetail(ctx context.Context, ticketID int) (*model.Ticket, error) {
+	ticket, err := s.ticketRepo.GetWithDetails(ctx, ticketID)
+	if err != nil {
+		return nil, err
+	}
+	return ticket, nil
+}
+
+// GetAllTickets gets all tickets for staff view based on their counter's categories with filters, pagination, and sorting
+func (s *StaffService) GetAllTickets(ctx context.Context, userID int, filters map[string]interface{}) (*TicketListResult, error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	if user.CounterID.Int64 == 0 {
-		return []model.Ticket{}, map[string]int{}, nil
+		return &TicketListResult{
+			Tickets:    []model.Ticket{},
+			Stats:      map[string]int{"Total": 0, "Waiting": 0, "Serving": 0, "Completed": 0},
+			TotalCount: 0,
+		}, nil
 	}
 
 	counter, err := s.counterRepo.GetByID(ctx, int(user.CounterID.Int64))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	var categoryIDs []int
@@ -361,45 +381,47 @@ func (s *StaffService) GetAllTickets(ctx context.Context, userID int) ([]model.T
 	}
 
 	var tickets []model.Ticket
-	var todayTickets []model.Ticket
+	var totalCount int
 
 	if len(categoryIDs) > 0 {
-		tickets, err = s.ticketRepo.GetAllTicketsByCategories(ctx, categoryIDs)
+		tickets, totalCount, err = s.ticketRepo.GetTicketsByCategoriesWithFilters(ctx, categoryIDs, filters)
 		if err != nil {
-			return nil, nil, err
-		}
-
-		todayTickets, err = s.ticketRepo.GetTodayByCategories(ctx, categoryIDs)
-		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	} else {
-		tickets, err = s.ticketRepo.GetAllTodayTickets(ctx)
-		if err != nil {
-			return nil, nil, err
-		}
-		todayTickets = tickets
+		tickets = []model.Ticket{}
+		totalCount = 0
 	}
 
+	// Calculate stats from today's tickets
 	stats := map[string]int{
-		"Total":     len(todayTickets),
+		"Total":     0,
 		"Waiting":   0,
 		"Serving":   0,
 		"Completed": 0,
 	}
 
-	for _, t := range todayTickets {
-		switch t.Status {
-		case "waiting":
-			stats["Waiting"]++
-		case "serving":
-			stats["Serving"]++
-		case "completed":
-			stats["Completed"]++
+	// Get all today's tickets for stats (without pagination)
+	if len(categoryIDs) > 0 {
+		todayTickets, _ := s.ticketRepo.GetTodayByCategories(ctx, categoryIDs)
+		stats["Total"] = len(todayTickets)
+		for _, t := range todayTickets {
+			switch t.Status {
+			case "waiting":
+				stats["Waiting"]++
+			case "serving":
+				stats["Serving"]++
+			case "completed":
+				stats["Completed"]++
+			}
 		}
 	}
 
-	return tickets, stats, nil
+	return &TicketListResult{
+		Tickets:    tickets,
+		Stats:      stats,
+		TotalCount: totalCount,
+	}, nil
 }
 
 // CancelTicket cancels a ticket
