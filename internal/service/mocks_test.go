@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/stretchr/testify/mock"
 
+	"tenangantri/internal/dto"
 	"tenangantri/internal/model"
 	"tenangantri/internal/repository"
 )
@@ -178,32 +180,32 @@ type MockStatsRepository struct {
 	mock.Mock
 }
 
-func (m *MockStatsRepository) GetDashboardStats(ctx context.Context) (*model.DashboardStats, error) {
+func (m *MockStatsRepository) GetDashboardStats(ctx context.Context) (*dto.DashboardStats, error) {
 	args := m.Called(ctx)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*model.DashboardStats), args.Error(1)
+	return args.Get(0).(*dto.DashboardStats), args.Error(1)
 }
 
-func (m *MockStatsRepository) GetQueueLengthByCategory(ctx context.Context) ([]model.CategoryQueueStats, error) {
+func (m *MockStatsRepository) GetQueueLengthByCategory(ctx context.Context) ([]dto.CategoryQueueStats, error) {
 	args := m.Called(ctx)
-	return args.Get(0).([]model.CategoryQueueStats), args.Error(1)
+	return args.Get(0).([]dto.CategoryQueueStats), args.Error(1)
 }
 
-func (m *MockStatsRepository) GetQueueLengthByCategories(ctx context.Context, categoryIDs []int) ([]model.CategoryQueueStats, error) {
+func (m *MockStatsRepository) GetQueueLengthByCategories(ctx context.Context, categoryIDs []int) ([]dto.CategoryQueueStats, error) {
 	args := m.Called(ctx, categoryIDs)
-	return args.Get(0).([]model.CategoryQueueStats), args.Error(1)
+	return args.Get(0).([]dto.CategoryQueueStats), args.Error(1)
 }
 
-func (m *MockStatsRepository) GetHourlyDistribution(ctx context.Context) ([]model.HourlyStats, error) {
+func (m *MockStatsRepository) GetHourlyDistribution(ctx context.Context) ([]dto.HourlyStats, error) {
 	args := m.Called(ctx)
-	return args.Get(0).([]model.HourlyStats), args.Error(1)
+	return args.Get(0).([]dto.HourlyStats), args.Error(1)
 }
 
-func (m *MockStatsRepository) GetCurrentlyServingTickets(ctx context.Context) ([]model.DisplayTicket, error) {
+func (m *MockStatsRepository) GetCurrentlyServingTickets(ctx context.Context) ([]dto.DisplayTicket, error) {
 	args := m.Called(ctx)
-	return args.Get(0).([]model.DisplayTicket), args.Error(1)
+	return args.Get(0).([]dto.DisplayTicket), args.Error(1)
 }
 
 type MockUserRepository struct {
@@ -278,6 +280,54 @@ func (m *MockUserRepository) List(ctx context.Context, role string) ([]model.Use
 	return args.Get(0).([]model.User), args.Error(1)
 }
 
+type MockUserCounterRepository struct {
+	mock.Mock
+}
+
+func (m *MockUserCounterRepository) Create(ctx context.Context, userID, counterID int) (*model.UserCounter, error) {
+	args := m.Called(ctx, userID, counterID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.UserCounter), args.Error(1)
+}
+
+func (m *MockUserCounterRepository) GetByUserID(ctx context.Context, userID int) (*model.UserCounter, error) {
+	args := m.Called(ctx, userID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.UserCounter), args.Error(1)
+}
+
+func (m *MockUserCounterRepository) GetCounterIDByUserID(ctx context.Context, userID int) (sql.NullInt64, error) {
+	args := m.Called(ctx, userID)
+	return args.Get(0).(sql.NullInt64), args.Error(1)
+}
+
+func (m *MockUserCounterRepository) GetByCounterID(ctx context.Context, counterID int) (*model.UserCounter, error) {
+	args := m.Called(ctx, counterID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.UserCounter), args.Error(1)
+}
+
+func (m *MockUserCounterRepository) DeleteByUserID(ctx context.Context, userID int) error {
+	args := m.Called(ctx, userID)
+	return args.Error(0)
+}
+
+func (m *MockUserCounterRepository) DeleteByCounterID(ctx context.Context, counterID int) error {
+	args := m.Called(ctx, counterID)
+	return args.Error(0)
+}
+
+func (m *MockUserCounterRepository) ListAll(ctx context.Context) ([]model.UserCounter, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]model.UserCounter), args.Error(1)
+}
+
 type MockCounterRepository struct {
 	mock.Mock
 }
@@ -324,4 +374,69 @@ func (m *MockCounterRepository) Delete(ctx context.Context, id int) error {
 func (m *MockCounterRepository) List(ctx context.Context) ([]model.Counter, error) {
 	args := m.Called(ctx)
 	return args.Get(0).([]model.Counter), args.Error(1)
+}
+
+type MockCounterCategoryRepository struct {
+	mock.Mock
+}
+
+func (m *MockCounterCategoryRepository) Create(ctx context.Context, counterID, categoryID int) (*model.CounterCategory, error) {
+	args := m.Called(ctx, counterID, categoryID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.CounterCategory), args.Error(1)
+}
+
+func (m *MockCounterCategoryRepository) GetByID(ctx context.Context, id int) (*model.CounterCategory, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*model.CounterCategory), args.Error(1)
+}
+
+func (m *MockCounterCategoryRepository) GetByCounterID(ctx context.Context, counterID int) ([]model.CounterCategory, error) {
+	args := m.Called(ctx, counterID)
+	return args.Get(0).([]model.CounterCategory), args.Error(1)
+}
+
+func (m *MockCounterCategoryRepository) GetCategoryIDsByCounterID(ctx context.Context, counterID int) ([]int, error) {
+	args := m.Called(ctx, counterID)
+	return args.Get(0).([]int), args.Error(1)
+}
+
+func (m *MockCounterCategoryRepository) GetByCategoryID(ctx context.Context, categoryID int) ([]model.CounterCategory, error) {
+	args := m.Called(ctx, categoryID)
+	return args.Get(0).([]model.CounterCategory), args.Error(1)
+}
+
+func (m *MockCounterCategoryRepository) GetCounterIDsByCategoryID(ctx context.Context, categoryID int) ([]int, error) {
+	args := m.Called(ctx, categoryID)
+	return args.Get(0).([]int), args.Error(1)
+}
+
+func (m *MockCounterCategoryRepository) DeleteByID(ctx context.Context, id int) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockCounterCategoryRepository) DeleteByCounterID(ctx context.Context, counterID int) error {
+	args := m.Called(ctx, counterID)
+	return args.Error(0)
+}
+
+func (m *MockCounterCategoryRepository) DeleteByCategoryID(ctx context.Context, categoryID int) error {
+	args := m.Called(ctx, categoryID)
+	return args.Error(0)
+}
+
+func (m *MockCounterCategoryRepository) DeleteByCounterAndCategory(ctx context.Context, counterID, categoryID int) error {
+	args := m.Called(ctx, counterID, categoryID)
+	return args.Error(0)
+}
+
+func (m *MockCounterCategoryRepository) ListAll(ctx context.Context) ([]model.CounterCategory, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]model.CounterCategory), args.Error(1)
 }

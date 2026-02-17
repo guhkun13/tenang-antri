@@ -5,6 +5,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"tenangantri/internal/dto"
 	"tenangantri/internal/model"
 	"tenangantri/internal/repository"
 )
@@ -25,11 +26,11 @@ func NewDisplayService(statsRepo repository.StatsRepository, categoryRepo reposi
 }
 
 // GetDisplayData gets data for the main display
-func (s *DisplayService) GetDisplayData(ctx context.Context) ([]model.DisplayTicket, []model.Category, []model.Counter, error) {
+func (s *DisplayService) GetDisplayData(ctx context.Context) ([]dto.DisplayTicket, []model.Category, []model.Counter, error) {
 	tickets, err := s.statsRepo.GetCurrentlyServingTickets(ctx)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "service").Str("func", "GetDisplayData").Msg("Failed to get currently serving tickets")
-		tickets = []model.DisplayTicket{}
+		tickets = []dto.DisplayTicket{}
 	}
 
 	categories, err := s.categoryRepo.List(ctx, true, true)
@@ -48,22 +49,22 @@ func (s *DisplayService) GetDisplayData(ctx context.Context) ([]model.DisplayTic
 }
 
 // GetCurrentlyServing gets currently serving tickets
-func (s *DisplayService) GetCurrentlyServing(ctx context.Context) ([]model.DisplayTicket, error) {
+func (s *DisplayService) GetCurrentlyServing(ctx context.Context) ([]dto.DisplayTicket, error) {
 	return s.statsRepo.GetCurrentlyServingTickets(ctx)
 }
 
 // GetQueueStats gets queue statistics for display
-func (s *DisplayService) GetQueueStats(ctx context.Context) (*model.DashboardStats, error) {
+func (s *DisplayService) GetQueueStats(ctx context.Context) (*dto.DashboardStats, error) {
 	return s.statsRepo.GetDashboardStats(ctx)
 }
 
 // GetWaitingByCategory gets waiting tickets count by category
-func (s *DisplayService) GetWaitingByCategory(ctx context.Context) ([]model.CategoryQueueStats, error) {
+func (s *DisplayService) GetWaitingByCategory(ctx context.Context) ([]dto.CategoryQueueStats, error) {
 	return s.statsRepo.GetQueueLengthByCategory(ctx)
 }
 
 // GetCategoryDisplayData gets data for category-specific display
-func (s *DisplayService) GetCategoryDisplayData(ctx context.Context, categoryID int) (*model.Category, []model.DisplayTicket, error) {
+func (s *DisplayService) GetCategoryDisplayData(ctx context.Context, categoryID int) (*model.Category, []dto.DisplayTicket, error) {
 	categories, err := s.categoryRepo.List(ctx, true, true)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get categories")
@@ -81,7 +82,7 @@ func (s *DisplayService) GetCategoryDisplayData(ctx context.Context, categoryID 
 	tickets, err := s.statsRepo.GetCurrentlyServingTickets(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get currently serving tickets")
-		return selectedCategory, []model.DisplayTicket{}, nil
+		return selectedCategory, []dto.DisplayTicket{}, nil
 	}
 
 	return selectedCategory, tickets, nil

@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
+	"tenangantri/internal/dto"
 	"tenangantri/internal/model"
 	"tenangantri/internal/service"
 )
@@ -27,7 +28,7 @@ func (h *DisplayHandler) ShowDisplay(c *gin.Context) {
 	tickets, categories, counters, err := h.displayService.GetDisplayData(c.Request.Context())
 	if err != nil {
 		log.Error().Err(err).Str("layer", "handler").Str("func", "ShowDisplay").Msg("Failed to get display data")
-		tickets = []model.DisplayTicket{}
+		tickets = []dto.DisplayTicket{}
 		categories = []model.Category{}
 		counters = []model.Counter{}
 	}

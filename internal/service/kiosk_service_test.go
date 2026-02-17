@@ -42,7 +42,7 @@ func TestKioskService_GenerateTicket(t *testing.T) {
 		TicketNumber: "A001",
 	}, nil)
 	mockTicketRepo.On("GetTodayCountByCategory", ctx, catID).Return(5, nil)
-	mockStatsRepo.On("GetDashboardStats", ctx).Return(&model.DashboardStats{
+	mockStatsRepo.On("GetDashboardStats", ctx).Return(&dto.DashboardStats{
 		AvgWaitTime: 600, // 10 mins
 	}, nil)
 

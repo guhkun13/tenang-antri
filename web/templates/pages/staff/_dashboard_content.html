@@ -1,4 +1,4 @@
-<header class="bg-white shadow-sm border-b px-6 py-4">
+<header class="bg-white shadow-sm border-b px-6 py-4" x-data="headerStatus()">
   <div class="flex justify-between items-center">
     <div class="flex items-center space-x-4">
       <h1 class="text-xl font-bold text-gray-800">
@@ -53,6 +53,7 @@
   id="staff-data"
   data-has-ticket="{{if .CurrentTicket}}true{{else}}false{{end}}"
   data-counter-status="{{if eq .Counter.Status "offline"}}disabled{{else}}{{.Counter.Status}}{{end}}"
+  data-counter-number="{{.Counter.Number}}"
 ></div>
 
 <script src="/templates/pages/staff/staff.js"></script>
@@ -70,7 +71,7 @@
             </h2>
             <div class="flex justify-center items-center space-x-4 mb-4">
               <span class="px-4 py-2 rounded-full text-white text-sm bg-blue-400">
-                {{.CurrentTicket.Category.Name}}
+                Kategori #{{.CurrentTicket.CategoryID.Int64}}
               </span>
               <span class="text-gray-500">
                 <i class="fas fa-clock mr-1"></i>
@@ -93,7 +94,16 @@
           {{end}}
         </div>
 
-        <div class="grid grid-cols-3 gap-4 mt-6">
+        <div class="grid grid-cols-4 gap-4 mt-6">
+          <button
+            @click="callAgain()"
+            :disabled="!hasCurrentTicket || loading"
+            class="bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white font-bold py-4 px-6 rounded-xl shadow-lg transform hover:scale-105 transition duration-200"
+          >
+            <i class="fas fa-bell mr-2"></i>
+            <span x-text="loading ? 'Memproses...' : 'Panggil Ulang'"></span>
+          </button>
+
           <button
             @click="callNext()"
             :disabled="loading || hasCurrentTicket || counterStatus === 'paused'"

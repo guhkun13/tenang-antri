@@ -1,14 +1,14 @@
-<nav class="space-y-1">
-    <a href="/staff/dashboard" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors {{if eq .ActiveMenu "dashboard"}}bg-blue-50 text-blue-600{{end}}">
-        <i class="fas fa-tachometer-alt w-6"></i>
-        <span>Dasbor</span>
+<nav class="space-y-1" x-data="{ minimized: false }" x-init="minimized = $el.closest('[x-data]').sidebarMinimized || false">
+    <a href="/staff/dashboard" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors {{if eq .ActiveMenu "dashboard"}}bg-blue-50 text-blue-600{{end}}" :class="minimized ? 'justify-center px-2' : ''">
+        <i class="fas fa-tachometer-alt" :class="minimized ? '' : 'w-6'"></i>
+        <span x-show="!minimized" class="ml-2">Dasbor</span>
     </a>
-    <a href="/staff/tickets" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors {{if eq .ActiveMenu "tickets"}}bg-blue-50 text-blue-600{{end}}">
-        <i class="fas fa-ticket-alt w-6"></i>
-        <span>Kelola Tiket</span>
+    <a href="/staff/tickets" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors {{if eq .ActiveMenu "tickets"}}bg-blue-50 text-blue-600{{end}}" :class="minimized ? 'justify-center px-2' : ''">
+        <i class="fas fa-ticket-alt" :class="minimized ? '' : 'w-6'"></i>
+        <span x-show="!minimized" class="ml-2">Kelola Tiket</span>
     </a>
-    <a href="/profile" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors {{if eq .ActiveMenu "profile"}}bg-blue-50 text-blue-600{{end}}">
-        <i class="fas fa-user w-6"></i>
-        <span>Profil</span>
+    <a href="/profile" class="flex items-center px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors {{if eq .ActiveMenu "profile"}}bg-blue-50 text-blue-600{{end}}" :class="minimized ? 'justify-center px-2' : ''">
+        <i class="fas fa-user" :class="minimized ? '' : 'w-6'"></i>
+        <span x-show="!minimized" class="ml-2">Profil</span>
     </a>
 </nav>

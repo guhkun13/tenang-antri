@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/rs/zerolog/log"
 
@@ -20,24 +19,30 @@ type TicketListResult struct {
 
 // StaffService handles staff-specific business logic
 type StaffService struct {
-	userRepo     repository.UserRepository
-	counterRepo  repository.CounterRepository
-	ticketRepo   repository.TicketRepository
-	statsRepo    repository.StatsRepository
-	categoryRepo repository.CategoryRepository
+	userRepo            repository.UserRepository
+	userCounterRepo     repository.UserCounterRepository
+	counterRepo         repository.CounterRepository
+	counterCategoryRepo repository.CounterCategoryRepository
+	ticketRepo          repository.TicketRepository
+	statsRepo           repository.StatsRepository
+	categoryRepo        repository.CategoryRepository
 }
 
 func NewStaffService(userRepo repository.UserRepository,
+	userCounterRepo repository.UserCounterRepository,
 	counterRepo repository.CounterRepository,
+	counterCategoryRepo repository.CounterCategoryRepository,
 	ticketRepo repository.TicketRepository,
 	statsRepo repository.StatsRepository,
 	categoryRepo repository.CategoryRepository) *StaffService {
 	return &StaffService{
-		userRepo:     userRepo,
-		counterRepo:  counterRepo,
-		ticketRepo:   ticketRepo,
-		statsRepo:    statsRepo,
-		categoryRepo: categoryRepo,
+		userRepo:            userRepo,
+		userCounterRepo:     userCounterRepo,
+		counterRepo:         counterRepo,
+		counterCategoryRepo: counterCategoryRepo,
+		ticketRepo:          ticketRepo,
+		statsRepo:           statsRepo,
+		categoryRepo:        categoryRepo,
 	}
 }
 
@@ -49,23 +54,27 @@ func (s *StaffService) GetDashboardData(ctx context.Context, userID int) (*dto.S
 		return nil, err
 	}
 
-	if user.CounterID.Int64 == 0 {
+	counterID, err := s.userCounterRepo.GetCounterIDByUserID(ctx, userID)
+	if err != nil {
+		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load user counter")
+		return nil, err
+	}
+
+	if !counterID.Valid {
 		return nil, nil
 	}
 
-	counter, err := s.counterRepo.GetByID(ctx, int(user.CounterID.Int64))
+	counter, err := s.counterRepo.GetByID(ctx, int(counterID.Int64))
 	if err != nil {
 		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load counter")
 		return nil, err
 	}
 
-	if counter.CategoryID.Valid {
-		category, err := s.categoryRepo.GetByID(ctx, int(counter.CategoryID.Int64))
-		if err != nil {
-			log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load counter category")
-			return nil, err
-		}
-		counter.CategoryID = sql.NullInt64{Int64: int64(category.ID), Valid: true}
+	// Get categories served by this counter
+	categoryIDs, err := s.counterCategoryRepo.GetCategoryIDsByCounterID(ctx, counter.ID)
+	if err != nil {
+		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load counter categories")
+		return nil, err
 	}
 
 	// Get current serving ticket
@@ -76,23 +85,7 @@ func (s *StaffService) GetDashboardData(ctx context.Context, userID int) (*dto.S
 	}
 	log.Info().Interface("currentTicket", currentTicket).Msg("Current ticket")
 
-	if currentTicket != nil && currentTicket.CategoryID.Valid {
-		currentCategory, err := s.categoryRepo.GetByID(ctx, int(currentTicket.CategoryID.Int64))
-		if err != nil {
-			log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load current ticket category")
-			return nil, err
-		}
-		currentTicket.Category = currentCategory
-	}
-
-	log.Info().Interface("currentTicket", currentTicket).Msg("Current ticket")
-
 	// Get waiting tickets preview
-	var categoryIDs []int
-	if counter.CategoryID.Valid {
-		categoryIDs = append(categoryIDs, int(counter.CategoryID.Int64))
-	}
-
 	waitingTickets, err := s.ticketRepo.GetWaitingPreviewByCategories(ctx, categoryIDs, 5)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "service").Str("func", "GetDashboardData").Msg("Failed to load waiting tickets preview")
@@ -130,16 +123,16 @@ func (s *StaffService) GetDashboardData(ctx context.Context, userID int) (*dto.S
 
 // CallNext calls the next ticket for a staff member
 func (s *StaffService) CallNext(ctx context.Context, userID int) (*model.Ticket, error) {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	counterID, err := s.userCounterRepo.GetCounterIDByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	if user.CounterID.Int64 == 0 {
+	if !counterID.Valid {
 		return nil, nil // No counter assigned
 	}
 
-	counter, err := s.counterRepo.GetByID(ctx, int(user.CounterID.Int64))
+	counter, err := s.counterRepo.GetByID(ctx, int(counterID.Int64))
 	if err != nil {
 		return nil, err
 	}
@@ -160,10 +153,10 @@ func (s *StaffService) CallNext(ctx context.Context, userID int) (*model.Ticket,
 		return nil, nil // Counter is paused
 	}
 
-	// Get category for this counter
-	var categoryIDs []int
-	if counter.CategoryID.Valid {
-		categoryIDs = append(categoryIDs, int(counter.CategoryID.Int64))
+	// Get categories served by this counter
+	categoryIDs, err := s.counterCategoryRepo.GetCategoryIDsByCounterID(ctx, counter.ID)
+	if err != nil {
+		return nil, err
 	}
 
 	if len(categoryIDs) == 0 {
@@ -195,20 +188,56 @@ func (s *StaffService) CallNext(ctx context.Context, userID int) (*model.Ticket,
 	return s.ticketRepo.GetWithDetails(ctx, nextTicket.ID)
 }
 
+// CallAgain calls the current ticket again (re-calls)
+func (s *StaffService) CallAgain(ctx context.Context, userID int) (*model.Ticket, error) {
+	counterID, err := s.userCounterRepo.GetCounterIDByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !counterID.Valid {
+		return nil, nil // No counter assigned
+	}
+
+	counter, err := s.counterRepo.GetByID(ctx, int(counterID.Int64))
+	if err != nil {
+		return nil, err
+	}
+
+	// Get current ticket
+	currentTicket, err := s.ticketRepo.GetCurrentForCounter(ctx, counter.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if currentTicket == nil {
+		return nil, nil // No ticket currently being served
+	}
+
+	// Update called_at to now (re-call)
+	err = s.ticketRepo.UpdateCalledAt(ctx, currentTicket.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get full ticket details
+	return s.ticketRepo.GetWithDetails(ctx, currentTicket.ID)
+}
+
 // CompleteTicket completes the current ticket and sets counter to IDLE
 func (s *StaffService) CompleteTicket(ctx context.Context, userID int) error {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	counterID, err := s.userCounterRepo.GetCounterIDByUserID(ctx, userID)
 	if err != nil {
 		return err
 	}
 
-	if user.CounterID.Int64 == 0 {
+	if !counterID.Valid {
 		return nil // No counter assigned
 	}
 
-	counterID := int(user.CounterID.Int64)
+	counterIDInt := int(counterID.Int64)
 
-	currentTicket, err := s.ticketRepo.GetCurrentForCounter(ctx, counterID)
+	currentTicket, err := s.ticketRepo.GetCurrentForCounter(ctx, counterIDInt)
 	if err != nil {
 		return err
 	}
@@ -224,21 +253,21 @@ func (s *StaffService) CompleteTicket(ctx context.Context, userID int) error {
 	}
 
 	// Set counter back to IDLE
-	return s.counterRepo.UpdateStatus(ctx, counterID, model.CounterStatusIdle)
+	return s.counterRepo.UpdateStatus(ctx, counterIDInt, model.CounterStatusIdle)
 }
 
 // MarkNoShow marks current ticket as no-show
 func (s *StaffService) MarkNoShow(ctx context.Context, userID int) error {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	counterID, err := s.userCounterRepo.GetCounterIDByUserID(ctx, userID)
 	if err != nil {
 		return err
 	}
 
-	if user.CounterID.Int64 == 0 {
+	if !counterID.Valid {
 		return nil // No counter assigned
 	}
 
-	currentTicket, err := s.ticketRepo.GetCurrentForCounter(ctx, int(user.CounterID.Int64))
+	currentTicket, err := s.ticketRepo.GetCurrentForCounter(ctx, int(counterID.Int64))
 	if err != nil {
 		return err
 	}
@@ -252,44 +281,44 @@ func (s *StaffService) MarkNoShow(ctx context.Context, userID int) error {
 
 // PauseCounter pauses the counter (staff on break)
 func (s *StaffService) PauseCounter(ctx context.Context, userID int) error {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	counterID, err := s.userCounterRepo.GetCounterIDByUserID(ctx, userID)
 	if err != nil {
 		return err
 	}
 
-	if user.CounterID.Int64 == 0 {
+	if !counterID.Valid {
 		return nil // No counter assigned
 	}
 
-	return s.counterRepo.UpdateStatus(ctx, int(user.CounterID.Int64), model.CounterStatusPaused)
+	return s.counterRepo.UpdateStatus(ctx, int(counterID.Int64), model.CounterStatusPaused)
 }
 
 // ResumeCounter resumes the counter from paused
 func (s *StaffService) ResumeCounter(ctx context.Context, userID int) error {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	counterID, err := s.userCounterRepo.GetCounterIDByUserID(ctx, userID)
 	if err != nil {
 		return err
 	}
 
-	if user.CounterID.Int64 == 0 {
+	if !counterID.Valid {
 		return nil // No counter assigned
 	}
 
-	return s.counterRepo.UpdateStatus(ctx, int(user.CounterID.Int64), model.CounterStatusIdle)
+	return s.counterRepo.UpdateStatus(ctx, int(counterID.Int64), model.CounterStatusIdle)
 }
 
 // GetQueueStatus gets queue status for staff
 func (s *StaffService) GetQueueStatus(ctx context.Context, userID int) (*dto.StaffQueueStatusResponse, error) {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	counterID, err := s.userCounterRepo.GetCounterIDByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	if user.CounterID.Int64 == 0 {
+	if !counterID.Valid {
 		return nil, nil
 	}
 
-	counter, err := s.counterRepo.GetByID(ctx, int(user.CounterID.Int64))
+	counter, err := s.counterRepo.GetByID(ctx, int(counterID.Int64))
 	if err != nil {
 		return nil, err
 	}
@@ -324,16 +353,16 @@ func (s *StaffService) GetQueueStatus(ctx context.Context, userID int) (*dto.Sta
 
 // GetCurrentTicket gets the current ticket for staff
 func (s *StaffService) GetCurrentTicket(ctx context.Context, userID int) (*model.Ticket, error) {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	counterID, err := s.userCounterRepo.GetCounterIDByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	if user.CounterID.Int64 == 0 {
+	if !counterID.Valid {
 		return nil, nil // No counter assigned
 	}
 
-	return s.ticketRepo.GetCurrentForCounter(ctx, int(user.CounterID.Int64))
+	return s.ticketRepo.GetCurrentForCounter(ctx, int(counterID.Int64))
 }
 
 // TransferTicket transfers a ticket to another counter
@@ -357,12 +386,12 @@ func (s *StaffService) GetTicketDetail(ctx context.Context, ticketID int) (*mode
 
 // GetAllTickets gets all tickets for staff view based on their counter's categories with filters, pagination, and sorting
 func (s *StaffService) GetAllTickets(ctx context.Context, userID int, filters map[string]interface{}) (*TicketListResult, error) {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	counterID, err := s.userCounterRepo.GetCounterIDByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	if user.CounterID.Int64 == 0 {
+	if !counterID.Valid {
 		return &TicketListResult{
 			Tickets:    []model.Ticket{},
 			Stats:      map[string]int{"Total": 0, "Waiting": 0, "Serving": 0, "Completed": 0},
@@ -370,14 +399,15 @@ func (s *StaffService) GetAllTickets(ctx context.Context, userID int, filters ma
 		}, nil
 	}
 
-	counter, err := s.counterRepo.GetByID(ctx, int(user.CounterID.Int64))
+	counter, err := s.counterRepo.GetByID(ctx, int(counterID.Int64))
 	if err != nil {
 		return nil, err
 	}
 
-	var categoryIDs []int
-	if counter.CategoryID.Valid {
-		categoryIDs = append(categoryIDs, int(counter.CategoryID.Int64))
+	// Get categories served by this counter
+	categoryIDs, err := s.counterCategoryRepo.GetCategoryIDsByCounterID(ctx, counter.ID)
+	if err != nil {
+		return nil, err
 	}
 
 	var tickets []model.Ticket

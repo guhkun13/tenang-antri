@@ -1,8 +1,9 @@
 {{ template "layouts/_header.html" }}
-<div class="flex h-screen bg-gray-100" x-data="{ sidebarOpen: false }">
+<div class="flex h-screen bg-gray-100" x-data="{ sidebarOpen: false, sidebarMinimized: false }">
     <aside 
         :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-        class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 lg:relative lg:translate-x-0 lg:static lg:inset-0 flex flex-col flex-shrink-0"
+        class="fixed inset-y-0 left-0 z-50 bg-white shadow-lg transform transition-transform duration-300 lg:relative lg:translate-x-0 lg:inset-0 flex flex-col flex-shrink-0"
+        :class="sidebarMinimized ? 'lg:w-16' : 'w-64'"
     >
         <div class="p-4 border-b flex items-center justify-between lg:hidden">
             <h2 class="text-lg font-bold text-gray-800">Menu Staff</h2>
@@ -10,9 +11,19 @@
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
-        <div class="p-4 border-b hidden lg:block">
+        
+        <!-- Minimize button - desktop only -->
+        <button 
+            @click="sidebarMinimized = !sidebarMinimized"
+            class="hidden lg:flex items-center justify-center p-2 border-b hover:bg-gray-100 transition-colors"
+        >
+            <i class="fas" :class="sidebarMinimized ? 'fa-angle-right' : 'fa-angle-left'"></i>
+        </button>
+        
+        <div class="p-4 border-b hidden lg:block" :class="sidebarMinimized ? 'hidden' : ''">
             <h2 class="text-lg font-bold text-gray-800">Menu Staff</h2>
         </div>
+        
         <nav class="flex-1 overflow-y-auto py-4">
             {{template "layouts/_staff_sidebar.html" (dict "ActiveMenu" "dashboard")}}
         </nav>

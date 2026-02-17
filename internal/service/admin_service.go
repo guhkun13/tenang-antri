@@ -35,33 +35,39 @@ func getPriorityFromInterface(priority interface{}) int {
 
 // AdminService handles admin-specific business logic
 type AdminService struct {
-	userRepo     repository.UserRepository
-	counterRepo  repository.CounterRepository
-	categoryRepo repository.CategoryRepository
-	ticketRepo   repository.TicketRepository
-	statsRepo    repository.StatsRepository
+	userRepo            repository.UserRepository
+	userCounterRepo     repository.UserCounterRepository
+	counterRepo         repository.CounterRepository
+	counterCategoryRepo repository.CounterCategoryRepository
+	categoryRepo        repository.CategoryRepository
+	ticketRepo          repository.TicketRepository
+	statsRepo           repository.StatsRepository
 }
 
 func NewAdminService(userRepo repository.UserRepository,
+	userCounterRepo repository.UserCounterRepository,
 	counterRepo repository.CounterRepository,
+	counterCategoryRepo repository.CounterCategoryRepository,
 	categoryRepo repository.CategoryRepository,
 	ticketRepo repository.TicketRepository,
 	statsRepo repository.StatsRepository) *AdminService {
 	return &AdminService{
-		userRepo:     userRepo,
-		counterRepo:  counterRepo,
-		categoryRepo: categoryRepo,
-		ticketRepo:   ticketRepo,
-		statsRepo:    statsRepo,
+		userRepo:            userRepo,
+		userCounterRepo:     userCounterRepo,
+		counterRepo:         counterRepo,
+		counterCategoryRepo: counterCategoryRepo,
+		categoryRepo:        categoryRepo,
+		ticketRepo:          ticketRepo,
+		statsRepo:           statsRepo,
 	}
 }
 
 // GetDashboardData gets admin dashboard data
-func (s *AdminService) GetDashboardData(ctx context.Context) (*model.DashboardStats, []model.Counter, []model.Category, error) {
+func (s *AdminService) GetDashboardData(ctx context.Context) (*dto.DashboardStats, []model.Counter, []model.Category, error) {
 	stats, err := s.statsRepo.GetDashboardStats(ctx)
 	if err != nil {
 		log.Error().Err(err).Str("layer", "service").Msg("Failed to get dashboard stats")
-		stats = &model.DashboardStats{TicketsByStatus: make(map[string]int)}
+		stats = &dto.DashboardStats{TicketsByStatus: make(map[string]int)}
 	}
 
 	log.Info().Interface("stats", stats).Msg("Dashboard stats")
@@ -82,7 +88,7 @@ func (s *AdminService) GetDashboardData(ctx context.Context) (*model.DashboardSt
 }
 
 // GetStats gets dashboard statistics
-func (s *AdminService) GetStats(ctx context.Context) (*model.DashboardStats, error) {
+func (s *AdminService) GetStats(ctx context.Context) (*dto.DashboardStats, error) {
 	return s.statsRepo.GetDashboardStats(ctx)
 }
 
@@ -91,7 +97,7 @@ func (s *AdminService) GetStats(ctx context.Context) (*model.DashboardStats, err
 // CreateUser creates a new user
 func (s *AdminService) CreateUser(ctx context.Context, req *dto.CreateUserRequest) (*model.User, error) {
 	// Delegate to UserService to ensure password is properly hashed
-	userService := NewUserService(s.userRepo)
+	userService := NewUserService(s.userRepo, s.userCounterRepo)
 	return userService.CreateUser(ctx, req)
 }
 
@@ -111,9 +117,24 @@ func (s *AdminService) UpdateUserProfile(ctx context.Context, id int, req *dto.U
 	user.Email = sql.NullString{String: req.Email, Valid: req.Email != ""}
 	user.Phone = sql.NullString{String: req.Phone, Valid: req.Phone != ""}
 	user.Role = req.Role
-	user.CounterID = sql.NullInt64{Int64: int64(*req.CounterID), Valid: req.CounterID != nil}
 
-	return s.userRepo.Update(ctx, user)
+	updatedUser, err := s.userRepo.Update(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update user-counter association
+	if req.CounterID != nil {
+		// Delete existing association
+		_ = s.userCounterRepo.DeleteByUserID(ctx, id)
+		// Create new association
+		_, _ = s.userCounterRepo.Create(ctx, id, *req.CounterID)
+	} else {
+		// Remove association if counter_id is not provided
+		_ = s.userCounterRepo.DeleteByUserID(ctx, id)
+	}
+
+	return updatedUser, nil
 }
 
 // UpdateUser updates a user
@@ -127,19 +148,36 @@ func (s *AdminService) UpdateUser(ctx context.Context, id int, req *dto.UpdateUs
 	user.Email = sql.NullString{String: req.Email, Valid: req.Email != ""}
 	user.Phone = sql.NullString{String: req.Phone, Valid: req.Phone != ""}
 	user.Role = req.Role
-	user.CounterID = sql.NullInt64{Int64: int64(*req.CounterID), Valid: req.CounterID != nil}
 
-	return s.userRepo.Update(ctx, user)
+	updatedUser, err := s.userRepo.Update(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update user-counter association
+	if req.CounterID != nil {
+		// Delete existing association
+		_ = s.userCounterRepo.DeleteByUserID(ctx, id)
+		// Create new association
+		_, _ = s.userCounterRepo.Create(ctx, id, *req.CounterID)
+	} else {
+		// Remove association if counter_id is not provided
+		_ = s.userCounterRepo.DeleteByUserID(ctx, id)
+	}
+
+	return updatedUser, nil
 }
 
 // DeleteUser deletes a user
 func (s *AdminService) DeleteUser(ctx context.Context, id int) error {
+	// Delete user-counter association first
+	_ = s.userCounterRepo.DeleteByUserID(ctx, id)
 	return s.userRepo.Delete(ctx, id)
 }
 
 // ResetUserPassword resets a user's password
 func (s *AdminService) ResetUserPassword(ctx context.Context, id int) (string, error) {
-	userService := NewUserService(s.userRepo)
+	userService := NewUserService(s.userRepo, s.userCounterRepo)
 	return userService.ResetUserPassword(ctx, id)
 }
 
@@ -195,6 +233,8 @@ func (s *AdminService) UpdateCategoryStatus(ctx context.Context, id int, isActiv
 
 // DeleteCategory deletes a category
 func (s *AdminService) DeleteCategory(ctx context.Context, id int) error {
+	// Delete counter-category associations first
+	_ = s.counterCategoryRepo.DeleteByCategoryID(ctx, id)
 	return s.categoryRepo.Delete(ctx, id)
 }
 
@@ -210,14 +250,13 @@ func (s *AdminService) ListCategories(ctx context.Context, activeOnly bool) ([]m
 
 // Counter Management methods
 
-// CreateCounter creates a new counter
-func (s *AdminService) CreateCounter(ctx context.Context, req *model.CreateCounterRequest) (*model.Counter, error) {
+// CreateCounter creates a new counter with categories
+func (s *AdminService) CreateCounter(ctx context.Context, req *dto.CreateCounterRequest) (*model.Counter, error) {
 	counter := &model.Counter{
-		Number:     req.Number,
-		Name:       sql.NullString{String: req.Name, Valid: req.Name != ""},
-		Location:   sql.NullString{String: req.Location, Valid: req.Location != ""},
-		Status:     model.CounterStatusOffline,
-		CategoryID: req.CategoryID,
+		Number:   req.Number,
+		Name:     sql.NullString{String: req.Name, Valid: req.Name != ""},
+		Location: sql.NullString{String: req.Location, Valid: req.Location != ""},
+		Status:   model.CounterStatusOffline,
 	}
 
 	createdCounter, err := s.counterRepo.Create(ctx, counter)
@@ -225,11 +264,16 @@ func (s *AdminService) CreateCounter(ctx context.Context, req *model.CreateCount
 		return nil, err
 	}
 
+	// Add category associations if provided
+	for _, categoryID := range req.CategoryIDs {
+		_, _ = s.counterCategoryRepo.Create(ctx, createdCounter.ID, categoryID)
+	}
+
 	return createdCounter, nil
 }
 
-// UpdateCounter updates a counter
-func (s *AdminService) UpdateCounter(ctx context.Context, id int, req *model.CreateCounterRequest) (*model.Counter, error) {
+// UpdateCounter updates a counter and its categories
+func (s *AdminService) UpdateCounter(ctx context.Context, id int, req *dto.CreateCounterRequest) (*model.Counter, error) {
 	counter, err := s.counterRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -238,11 +282,16 @@ func (s *AdminService) UpdateCounter(ctx context.Context, id int, req *model.Cre
 	counter.Number = req.Number
 	counter.Name = sql.NullString{String: req.Name, Valid: req.Name != ""}
 	counter.Location = sql.NullString{String: req.Location, Valid: req.Location != ""}
-	counter.CategoryID = req.CategoryID
 
 	updatedCounter, err := s.counterRepo.Update(ctx, counter)
 	if err != nil {
 		return nil, err
+	}
+
+	// Update category associations - clear existing and add new
+	_ = s.counterCategoryRepo.DeleteByCounterID(ctx, id)
+	for _, categoryID := range req.CategoryIDs {
+		_, _ = s.counterCategoryRepo.Create(ctx, id, categoryID)
 	}
 
 	return updatedCounter, nil
@@ -250,6 +299,10 @@ func (s *AdminService) UpdateCounter(ctx context.Context, id int, req *model.Cre
 
 // DeleteCounter deletes a counter
 func (s *AdminService) DeleteCounter(ctx context.Context, id int) error {
+	// Delete counter-category associations first
+	_ = s.counterCategoryRepo.DeleteByCounterID(ctx, id)
+	// Delete user-counter associations
+	_ = s.userCounterRepo.DeleteByCounterID(ctx, id)
 	return s.counterRepo.Delete(ctx, id)
 }
 
@@ -263,22 +316,44 @@ func (s *AdminService) ListCounters(ctx context.Context) ([]model.Counter, error
 
 	log.Info().Interface("counters", counters).Msg("Counters loaded successfully")
 
-	for i := range counters {
-		if counters[i].CategoryID.Valid {
-			category, err := s.categoryRepo.GetByID(ctx, int(counters[i].CategoryID.Int64))
-			if err != nil {
-				log.Error().Err(err).Msg("Failed to load counter category")
-			} else {
-				counters[i].Category = category
-			}
+	return counters, nil
+}
+
+// GetCounterCategories gets categories served by a counter
+func (s *AdminService) GetCounterCategories(ctx context.Context, counterID int) ([]int, error) {
+	return s.counterCategoryRepo.GetCategoryIDsByCounterID(ctx, counterID)
+}
+
+// GetCounterWithCategories gets a counter with its assigned categories
+func (s *AdminService) GetCounterWithCategories(ctx context.Context, counterID int) (*model.Counter, []int, error) {
+	counter, err := s.counterRepo.GetByID(ctx, counterID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	categoryIDs, err := s.counterCategoryRepo.GetCategoryIDsByCounterID(ctx, counterID)
+	if err != nil {
+		return counter, nil, err
+	}
+
+	return counter, categoryIDs, nil
+}
+
+// AssignCategoriesToCounter assigns multiple categories to a counter
+func (s *AdminService) AssignCategoriesToCounter(ctx context.Context, counterID int, categoryIDs []int) error {
+	// Delete existing assignments
+	if err := s.counterCategoryRepo.DeleteByCounterID(ctx, counterID); err != nil {
+		return err
+	}
+
+	// Add new assignments
+	for _, categoryID := range categoryIDs {
+		if _, err := s.counterCategoryRepo.Create(ctx, counterID, categoryID); err != nil {
+			return err
 		}
 	}
 
-	log.Info().
-		Interface("counters", counters).
-		Msg("Counters loaded successfully")
-
-	return counters, nil
+	return nil
 }
 
 // UpdateCounterStatus updates counter status
@@ -294,16 +369,7 @@ func (s *AdminService) UpdateCounterStatus(ctx context.Context, id int, status s
 
 // GetCounter gets a counter by ID
 func (s *AdminService) GetCounter(ctx context.Context, id int) (*model.Counter, error) {
-	counter, err := s.counterRepo.GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	if counter.CategoryID.Valid {
-		_, _ = s.categoryRepo.GetByID(ctx, int(counter.CategoryID.Int64))
-	}
-
-	return counter, nil
+	return s.counterRepo.GetByID(ctx, id)
 }
 
 // Ticket Management methods

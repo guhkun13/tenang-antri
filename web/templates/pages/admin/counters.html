@@ -73,16 +73,44 @@
               {{else}}Siap{{end}}
             </span>
           </div>
-          {{if .Category}}
-          <div class="pt-3 border-t">
-            <p class="text-sm text-gray-500 mb-2">Kategori Ditugaskan:</p>
-            <span
-              class="px-2 py-1 rounded text-xs text-white"
-              style="background-color: {{.Category.ColorCode}};"
-            >
-              {{.Category.Name}}
-            </span>
-          </div>
+          {{$counterID := .ID}}
+          {{if $.CounterCategories}}
+            {{$categories := index $.CounterCategories $counterID}}
+            {{if $categories}}
+            <div class="pt-3 border-t">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-sm text-gray-500">Kategori Ditugaskan:</p>
+                <button
+                  onclick="manageCounterCategories('{{.ID}}', '{{.Name.String}}')"
+                  class="text-blue-600 hover:text-blue-800 text-xs"
+                >
+                  <i class="fas fa-cog mr-1"></i>Kelola
+                </button>
+              </div>
+              <div class="flex flex-wrap gap-1">
+                {{range $categories}}
+                <span
+                  class="px-2 py-1 rounded text-xs text-white"
+                  style="background-color: {{.ColorCode}};"
+                >
+                  {{.Name}}
+                </span>
+                {{end}}
+              </div>
+            </div>
+            {{else}}
+            <div class="pt-3 border-t">
+              <div class="flex items-center justify-between">
+                <p class="text-sm text-gray-500">Belum ada kategori ditugaskan</p>
+                <button
+                  onclick="manageCounterCategories('{{.ID}}', '{{.Name.String}}')"
+                  class="text-blue-600 hover:text-blue-800 text-xs"
+                >
+                  <i class="fas fa-plus mr-1"></i>Tambah
+                </button>
+              </div>
+            </div>
+            {{end}}
           {{end}}
         </div>
         {{end}}
@@ -181,7 +209,7 @@
 >
   <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
     <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-bold">Edit Loket</h3>
+      <h3 class="text-lg font-bold">Edit Loket: <span id="editCounterTitleName"></span></h3>
       <button
         onclick="closeModal('editCounterModal')"
         class="text-gray-400 hover:text-gray-600"
@@ -230,21 +258,6 @@
             placeholder="e.g., Main Hall"
           />
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1"
-            >Kategori Ditugaskan (Opsional)</label
-          >
-          <select
-            name="category_id"
-            id="editCounterCategory"
-            class="w-full border rounded-lg px-3 py-2"
-          >
-            <option value="">Tidak ada kategori ditugaskan</option>
-            {{range .Categories}}
-            <option value="{{.ID}}">{{.Name}} ({{.Prefix}})</option>
-            {{end}}
-          </select>
-        </div>
       </div>
       <div class="mt-6 flex justify-end space-x-3">
         <button
@@ -263,6 +276,62 @@
       </div>
     </form>
     </div>
+</div>
+
+<!-- Manage Categories Modal -->
+<div
+  id="manageCategoriesModal"
+  class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50"
+>
+  <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold">Kelola Kategori: <span id="manageCategoriesCounterName"></span></h3>
+      <button
+        onclick="closeModal('manageCategoriesModal')"
+        class="text-gray-400 hover:text-gray-600"
+      >
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <form id="manageCategoriesForm" onsubmit="return saveCounterCategories(event);">
+      <input type="hidden" name="counter_id" id="manageCategoriesCounterId" />
+      <div class="space-y-3 max-h-64 overflow-y-auto">
+        <p class="text-sm text-gray-600 mb-2">Pilih kategori yang dapat dilayani oleh loket ini:</p>
+        {{range .Categories}}
+        <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+          <input
+            type="checkbox"
+            name="category_ids"
+            value="{{.ID}}"
+            class="category-checkbox w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+          />
+          <span class="ml-3 flex items-center">
+            <span
+              class="w-3 h-3 rounded-full mr-2"
+              style="background-color: {{.ColorCode}};"
+            ></span>
+            <span class="text-sm font-medium">{{.Name}} ({{.Prefix}})</span>
+          </span>
+        </label>
+        {{end}}
+      </div>
+      <div class="mt-6 flex justify-end space-x-3">
+        <button
+          type="button"
+          onclick="closeModal('manageCategoriesModal')"
+          class="px-4 py-2 text-gray-600 hover:text-gray-800"
+        >
+          Batal
+        </button>
+        <button
+          type="submit"
+          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+        >
+          Simpan Kategori
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script src="/templates/pages/admin/js/counters.js"></script>

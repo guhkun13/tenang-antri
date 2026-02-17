@@ -12,28 +12,28 @@ import (
 
 func TestStaffService_CallNext(t *testing.T) {
 	mockUserRepo := new(MockUserRepository)
+	mockUserCounterRepo := new(MockUserCounterRepository)
 	mockCounterRepo := new(MockCounterRepository)
+	mockCounterCategoryRepo := new(MockCounterCategoryRepository)
 	mockTicketRepo := new(MockTicketRepository)
 	mockStatsRepo := new(MockStatsRepository)
 	mockCatRepo := new(MockCategoryRepository)
 
-	service := NewStaffService(mockUserRepo, mockCounterRepo, mockTicketRepo, mockStatsRepo, mockCatRepo)
+	service := NewStaffService(mockUserRepo, mockUserCounterRepo, mockCounterRepo, mockCounterCategoryRepo, mockTicketRepo, mockStatsRepo, mockCatRepo)
 
 	ctx := context.Background()
 	staffID := 1
 	counterID := 1
 	categoryID := 1
 
-	mockUserRepo.On("GetByID", ctx, staffID).Return(&model.User{
-		ID:        staffID,
-		CounterID: sql.NullInt64{Int64: int64(counterID), Valid: true},
-	}, nil)
+	mockUserCounterRepo.On("GetCounterIDByUserID", ctx, staffID).Return(sql.NullInt64{Int64: int64(counterID), Valid: true}, nil)
 
 	mockCounterRepo.On("GetByID", ctx, counterID).Return(&model.Counter{
-		ID:         counterID,
-		CategoryID: sql.NullInt64{Int64: int64(categoryID), Valid: true},
-		Status:     "active",
+		ID:     counterID,
+		Status: "active",
 	}, nil)
+
+	mockCounterCategoryRepo.On("GetCategoryIDsByCounterID", ctx, counterID).Return([]int{categoryID}, nil)
 
 	mockTicketRepo.On("GetCurrentForCounter", ctx, counterID).Return(nil, nil)
 	mockTicketRepo.On("GetNextTicket", ctx, []int{categoryID}).Return(&model.Ticket{

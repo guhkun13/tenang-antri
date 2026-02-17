@@ -5,6 +5,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"tenangantri/internal/dto"
 	"tenangantri/internal/model"
 )
 
@@ -14,7 +15,7 @@ func ScanUser(row pgx.Row) (*model.User, error) {
 	err := row.Scan(
 		&user.ID, &user.Username, &user.Password, &user.FullName,
 		&user.Email, &user.Phone, &user.Role, &user.IsActive,
-		&user.CounterID, &user.CreatedAt, &user.UpdatedAt, &user.LastLogin,
+		&user.CreatedAt, &user.UpdatedAt, &user.LastLogin,
 	)
 	return user, err
 }
@@ -35,8 +36,7 @@ func ScanCounter(row pgx.Row) (*model.Counter, error) {
 	counter := &model.Counter{}
 	err := row.Scan(
 		&counter.ID, &counter.Number, &counter.Name, &counter.Location,
-		&counter.Status, &counter.CurrentStaffID,
-		&counter.CreatedAt, &counter.UpdatedAt,
+		&counter.Status, &counter.CreatedAt, &counter.UpdatedAt,
 	)
 	return counter, err
 }
@@ -81,15 +81,15 @@ func ScanTicketWithDetails(row pgx.Row) (*model.Ticket, error) {
 }
 
 // ScanDisplayTicket scans a row into a DisplayTicket struct
-func ScanDisplayTicket(row pgx.Row) (*model.DisplayTicket, error) {
-	ticket := &model.DisplayTicket{}
+func ScanDisplayTicket(row pgx.Row) (*dto.DisplayTicket, error) {
+	ticket := &dto.DisplayTicket{}
 	err := row.Scan(&ticket.TicketNumber, &ticket.CounterNumber, &ticket.CategoryPrefix, &ticket.ColorCode, &ticket.Status)
 	return ticket, err
 }
 
 // ScanCategoryQueueStats scans a row into a CategoryQueueStats struct
-func ScanCategoryQueueStats(row pgx.Row) (*model.CategoryQueueStats, error) {
-	stats := &model.CategoryQueueStats{}
+func ScanCategoryQueueStats(row pgx.Row) (*dto.CategoryQueueStats, error) {
+	stats := &dto.CategoryQueueStats{}
 	err := row.Scan(
 		&stats.CategoryID, &stats.CategoryName, &stats.Prefix, &stats.ColorCode,
 		&stats.WaitingCount, &stats.LastTicketNumber, &stats.CounterNumber,
@@ -98,8 +98,8 @@ func ScanCategoryQueueStats(row pgx.Row) (*model.CategoryQueueStats, error) {
 }
 
 // ScanHourlyStats scans a row into a HourlyStats struct
-func ScanHourlyStats(row pgx.Row) (*model.HourlyStats, error) {
-	stats := &model.HourlyStats{}
+func ScanHourlyStats(row pgx.Row) (*dto.HourlyStats, error) {
+	stats := &dto.HourlyStats{}
 	err := row.Scan(&stats.Hour, &stats.Count)
 	return stats, err
 }

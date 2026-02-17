@@ -1,109 +1,141 @@
-{{ template "layouts/_header.html"}}
+{{ template "layouts/_header.html" }}
 
-<div class="min-h-screen bg-gray-100">
-    <!-- Header -->
-    <header class="bg-white shadow-sm border-b px-6 py-4">
-        <div class="flex justify-between items-center">
-            <h1 class="text-xl font-bold text-gray-800">
-                <i class="fas fa-headset mr-2 text-blue-600"></i>Portal Staf
-            </h1>
-            <a href="/staff/dashboard" class="text-blue-600 hover:text-blue-800">
-                <i class="fas fa-arrow-left mr-1"></i>Kembali ke Dasbor
-            </a>
+<div class="flex h-screen bg-gray-100" x-data="{ sidebarOpen: false, sidebarMinimized: false }">
+    <aside 
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+        class="fixed inset-y-0 left-0 z-50 bg-white shadow-lg transform transition-transform duration-300 lg:relative lg:translate-x-0 lg:inset-0 flex flex-col flex-shrink-0"
+        :class="sidebarMinimized ? 'lg:w-16' : 'w-64'"
+    >
+        <div class="p-4 border-b flex items-center justify-between lg:hidden">
+            <h2 class="text-lg font-bold text-gray-800">Menu Staff</h2>
+            <button @click="sidebarOpen = false" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times text-xl"></i>
+            </button>
         </div>
-    </header>
+        
+        <!-- Minimize button - desktop only -->
+        <button 
+            @click="sidebarMinimized = !sidebarMinimized"
+            class="hidden lg:flex items-center justify-center p-2 border-b hover:bg-gray-100 transition-colors"
+        >
+            <i class="fas" :class="sidebarMinimized ? 'fa-angle-right' : 'fa-angle-left'"></i>
+        </button>
+        
+        <div class="p-4 border-b hidden lg:block" :class="sidebarMinimized ? 'hidden' : ''">
+            <h2 class="text-lg font-bold text-gray-800">Menu Staff</h2>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-4">
+            {{template "layouts/_staff_sidebar.html" (dict "ActiveMenu" "profile")}}
+        </nav>
+    </aside>
 
-    <main class="p-6">
-        <div class="max-w-2xl mx-auto">
-            <!-- Profile Card -->
-            <div class="bg-white rounded-lg shadow mb-6">
-                <div class="p-6">
-                    <div class="flex items-center mb-6">
-                        <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mr-6">
-                            <i class="fas fa-user text-4xl text-blue-600"></i>
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <header class="bg-white shadow-sm border-b px-4 py-3 lg:hidden">
+            <button @click="sidebarOpen = true" class="text-gray-700 hover:text-gray-900">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+        </header>
+        
+        <main class="flex-1 overflow-y-auto p-6">
+            <div class="max-w-2xl mx-auto">
+                <!-- Profile Card -->
+                <div class="bg-white rounded-lg shadow mb-6">
+                    <div class="p-6">
+                        <div class="flex items-center mb-6">
+                            <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mr-6">
+                                <i class="fas fa-user text-4xl text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-bold text-gray-800">{{.User.FullName.String}}</h3>
+                                <p class="text-gray-500">{{.User.Username}}</p>
+                                <span class="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-2 inline-block">
+                                    Anggota Staf
+                                </span>
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="text-2xl font-bold text-gray-800">{{.User.FullName.String}}</h3>
-                            <p class="text-gray-500">{{.User.Username}}</p>
-                            <span class="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-2 inline-block">
-                                Anggota Staf
-                            </span>
+
+                        {{if .Counter}}
+                        <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                            <h4 class="font-semibold text-blue-800 mb-2">
+                                <i class="fas fa-desktop mr-2"></i>Loket Ditugaskan
+                            </h4>
+                            <p class="text-blue-700">{{.Counter.Name.String}} - {{.Counter.Location.String}}</p>
                         </div>
+                        {{end}}
+
+                        <form id="profileForm" onsubmit="return updateProfile(event)">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                                    <input type="text" name="full_name" value="{{.User.FullName.String}}" 
+                                           class="w-full border rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input type="email" name="email" value="{{.User.Email.String}}" 
+                                           class="w-full border rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                                    <input type="tel" name="phone" value="{{.User.Phone.String}}" 
+                                           class="w-full border rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Login Terakhir</label>
+                                    <input type="text" disabled 
+                                           value="{{if .User.LastLogin}}{{.User.LastLogin.Value.Format "2006-01-02 15:04"}}{{else}}Never{{end}}" 
+                                           class="w-full border rounded-lg px-3 py-2 bg-gray-100">
+                                </div>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                                    <i class="fas fa-save mr-2"></i>Simpan Perubahan
+                                </button>
+                            </div>
+                        </form>
                     </div>
+                </div>
 
-                    {{if .Counter}}
-                    <div class="bg-blue-50 rounded-lg p-4 mb-6">
-                        <h4 class="font-semibold text-blue-800 mb-2">
-                            <i class="fas fa-desktop mr-2"></i>Loket Ditugaskan
-                        </h4>
-                        <p class="text-blue-700">{{.Counter.Name.String}} - {{.Counter.Location.String}}</p>
+                <!-- Change Password -->
+                <div class="bg-white rounded-lg shadow">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-800">
+                            <i class="fas fa-lock mr-2 text-gray-600"></i>Ubah Kata Sandi
+                        </h3>
                     </div>
-                    {{end}}
-
-                    <form id="profileForm" onsubmit="return updateProfile(event)">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
-                                <input type="text" name="full_name" value="{{.User.FullName.String}}" 
-                                       class="w-full border rounded-lg px-3 py-2">
+                    <div class="p-6">
+                        <form id="passwordForm" onsubmit="return changePassword(event)">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Kata Sandi Saat Ini</label>
+                                    <input type="password" name="current_password" required 
+                                           class="w-full border rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Kata Sandi Baru</label>
+                                    <input type="password" name="new_password" required minlength="6"
+                                           class="w-full border rounded-lg px-3 py-2">
+                                </div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                <input type="email" name="email" value="{{.User.Email.String}}" 
-                                       class="w-full border rounded-lg px-3 py-2">
+                            <div class="flex justify-end mt-4">
+                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                                    <i class="fas fa-key mr-2"></i>Ubah Kata Sandi
+                                </button>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                                <input type="tel" name="phone" value="{{.User.Phone.String}}" 
-                                       class="w-full border rounded-lg px-3 py-2">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Login Terakhir</label>
-                                <input type="text" disabled 
-                                       value="{{if .User.LastLogin}}{{.User.LastLogin.Value.Format "2006-01-02 15:04"}}{{else}}Never{{end}}" 
-                                       class="w-full border rounded-lg px-3 py-2 bg-gray-100">
-                            </div>
-                        </div>
-                        <div class="flex justify-end">
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
-                                <i class="fas fa-save mr-2"></i>Simpan Perubahan
-                            </button>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
-
-            <!-- Change Password -->
-            <div class="bg-white rounded-lg shadow">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800">
-                        <i class="fas fa-lock mr-2 text-gray-600"></i>Ubah Kata Sandi
-                    </h3>
-                </div>
-                <div class="p-6">
-                    <form id="passwordForm" onsubmit="return changePassword(event)">
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Kata Sandi Saat Ini</label>
-                                <input type="password" name="current_password" required 
-                                       class="w-full border rounded-lg px-3 py-2">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Kata Sandi Baru</label>
-                                <input type="password" name="new_password" required minlength="6"
-                                       class="w-full border rounded-lg px-3 py-2">
-                            </div>
-                        </div>
-                        <div class="flex justify-end mt-4">
-                            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
-                                <i class="fas fa-key mr-2"></i>Ubah Kata Sandi
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </main>
+        </main>
+    </div>
+    
+    <div 
+        x-show="sidebarOpen" 
+        @click="sidebarOpen = false"
+        x-transition.opacity
+        class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+    ></div>
 </div>
 
 <script>

@@ -71,6 +71,26 @@ func (h *StaffHandler) CallNext(c *gin.Context) {
 	c.JSON(http.StatusOK, ticket)
 }
 
+// CallAgain calls the current ticket again
+func (h *StaffHandler) CallAgain(c *gin.Context) {
+	userID := middleware.GetCurrentUserID(c)
+
+	ticket, err := h.staffService.CallAgain(c.Request.Context(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to call ticket again"})
+		return
+	}
+
+	if ticket == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Tidak ada ticket yang sedang dilayani"})
+		return
+	}
+
+	h.hub.BroadcastTicketUpdate(ticket)
+
+	c.JSON(http.StatusOK, ticket)
+}
+
 // CompleteTicket completes the current ticket
 func (h *StaffHandler) CompleteTicket(c *gin.Context) {
 	userID := middleware.GetCurrentUserID(c)

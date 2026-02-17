@@ -308,18 +308,39 @@ func (h *AdminHandler) ListCounters(c *gin.Context) {
 
 	categories, _ := h.adminService.ListCategories(c.Request.Context(), true)
 
+	// Create a map of counter ID to its assigned categories
+	counterCategories := make(map[int][]model.Category)
+	for _, counter := range counters {
+		categoryIDs, err := h.adminService.GetCounterCategories(c.Request.Context(), counter.ID)
+		if err != nil {
+			continue
+		}
+
+		var assignedCategories []model.Category
+		for _, catID := range categoryIDs {
+			for _, cat := range categories {
+				if cat.ID == catID {
+					assignedCategories = append(assignedCategories, cat)
+					break
+				}
+			}
+		}
+		counterCategories[counter.ID] = assignedCategories
+	}
+
 	log.Info().Str("layer", "handler").Str("func", "ListCounters").Msg("Counters loaded successfully")
 
 	c.HTML(http.StatusOK, "pages/admin/counters.html", gin.H{
-		"Counters":   counters,
-		"Categories": categories,
-		"ActiveTab":  "counters",
+		"Counters":          counters,
+		"Categories":        categories,
+		"CounterCategories": counterCategories,
+		"ActiveTab":         "counters",
 	})
 }
 
 // CreateCounter creates a new counter
 func (h *AdminHandler) CreateCounter(c *gin.Context) {
-	var req model.CreateCounterRequest
+	var req dto.CreateCounterRequest
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -343,7 +364,7 @@ func (h *AdminHandler) UpdateCounter(c *gin.Context) {
 		return
 	}
 
-	var req model.CreateCounterRequest
+	var req dto.CreateCounterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -392,6 +413,47 @@ func (h *AdminHandler) GetCounter(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, counter)
+}
+
+// GetCounterCategories gets categories assigned to a counter
+func (h *AdminHandler) GetCounterCategories(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid counter ID"})
+		return
+	}
+
+	categoryIDs, err := h.adminService.GetCounterCategories(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get categories"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"category_ids": categoryIDs})
+}
+
+// AssignCounterCategories assigns categories to a counter
+func (h *AdminHandler) AssignCounterCategories(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid counter ID"})
+		return
+	}
+
+	var req struct {
+		CategoryIDs []int `json:"category_ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	if err := h.adminService.AssignCategoriesToCounter(c.Request.Context(), id, req.CategoryIDs); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to assign categories"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Categories assigned successfully"})
 }
 
 // UpdateCounterStatus updates counter status

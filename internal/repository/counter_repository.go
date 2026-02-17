@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -17,7 +16,6 @@ type CounterRepository interface {
 	Create(ctx context.Context, counter *model.Counter) (*model.Counter, error)
 	Update(ctx context.Context, counter *model.Counter) (*model.Counter, error)
 	UpdateStatus(ctx context.Context, id int, status string) error
-	UpdateStaff(ctx context.Context, counterID int, staffID *int) error
 	Delete(ctx context.Context, id int) error
 	List(ctx context.Context) ([]model.Counter, error)
 }
@@ -39,11 +37,9 @@ func (r *counterRepository) GetByID(ctx context.Context, id int) (*model.Counter
 	row := r.pool.QueryRow(ctx, queryStr, id)
 
 	counter := &model.Counter{}
-	var catID, staffID sql.NullInt64
 	err := row.Scan(
 		&counter.ID, &counter.Number, &counter.Name, &counter.Location,
-		&counter.Status, &catID, &staffID,
-		&counter.CreatedAt, &counter.UpdatedAt,
+		&counter.Status, &counter.CreatedAt, &counter.UpdatedAt,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -53,13 +49,6 @@ func (r *counterRepository) GetByID(ctx context.Context, id int) (*model.Counter
 		return nil, err
 	}
 
-	if catID.Valid {
-		counter.CategoryID = sql.NullInt64{Int64: catID.Int64, Valid: true}
-	}
-	if staffID.Valid {
-		counter.CurrentStaffID = sql.NullInt64{Int64: staffID.Int64, Valid: true}
-	}
-
 	return counter, nil
 }
 
@@ -67,7 +56,7 @@ func (r *counterRepository) Create(ctx context.Context, counter *model.Counter) 
 	queryStr := r.counterQry.CreateCounter(ctx)
 	var id int
 	var createdAt, updatedAt time.Time
-	err := r.pool.QueryRow(ctx, queryStr, counter.Number, counter.Name, counter.Location, counter.Status, counter.CategoryID).Scan(&id, &createdAt, &updatedAt)
+	err := r.pool.QueryRow(ctx, queryStr, counter.Number, counter.Name, counter.Location, counter.Status).Scan(&id, &createdAt, &updatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +69,7 @@ func (r *counterRepository) Create(ctx context.Context, counter *model.Counter) 
 
 func (r *counterRepository) Update(ctx context.Context, counter *model.Counter) (*model.Counter, error) {
 	queryStr := r.counterQry.UpdateCounter(ctx)
-	_, err := r.pool.Exec(ctx, queryStr, counter.Number, counter.Name, counter.Location, counter.Status, counter.CategoryID, counter.ID)
+	_, err := r.pool.Exec(ctx, queryStr, counter.Number, counter.Name, counter.Location, counter.Status, counter.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -90,12 +79,6 @@ func (r *counterRepository) Update(ctx context.Context, counter *model.Counter) 
 func (r *counterRepository) UpdateStatus(ctx context.Context, id int, status string) error {
 	queryStr := r.counterQry.UpdateCounterStatus(ctx)
 	_, err := r.pool.Exec(ctx, queryStr, status, id)
-	return err
-}
-
-func (r *counterRepository) UpdateStaff(ctx context.Context, counterID int, staffID *int) error {
-	queryStr := r.counterQry.UpdateCounterStaff(ctx)
-	_, err := r.pool.Exec(ctx, queryStr, staffID, counterID)
 	return err
 }
 

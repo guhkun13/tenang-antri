@@ -34,11 +34,13 @@ func (q *StatsQueries) GetQueueLengthByCategory(ctx context.Context) string {
 	COALESCE((
 		SELECT c2.number 
 		FROM counters c2 
-		WHERE c2.category_id = c.id AND c2.status != 'offline'
+		JOIN counter_category cc ON cc.counter_id = c2.id
+		WHERE cc.category_id = c.id AND c2.status != 'offline'
 		LIMIT 1
 	), '') as counter_number
 FROM categories c 
-INNER JOIN counters cnt ON cnt.category_id = c.id AND cnt.current_staff_id IS NOT NULL
+INNER JOIN counter_category cc ON cc.category_id = c.id
+INNER JOIN counters cnt ON cnt.id = cc.counter_id
 LEFT JOIN tickets t ON c.id = t.category_id AND t.status = 'waiting' 
 WHERE c.is_active = true 
 GROUP BY c.id, c.name, c.prefix, c.color_code 
@@ -67,11 +69,13 @@ func (q *StatsQueries) GetQueueLengthByCategories(ctx context.Context, categoryI
 	COALESCE((
 		SELECT c2.number 
 		FROM counters c2 
-		WHERE c2.category_id = c.id AND c2.status != 'offline'
+		JOIN counter_category cc ON cc.counter_id = c2.id
+		WHERE cc.category_id = c.id AND c2.status != 'offline'
 		LIMIT 1
 	), '') as counter_number
 FROM categories c 
-INNER JOIN counters cnt ON cnt.category_id = c.id AND cnt.current_staff_id IS NOT NULL
+INNER JOIN counter_category cc ON cc.category_id = c.id
+INNER JOIN counters cnt ON cnt.id = cc.counter_id
 LEFT JOIN tickets t ON c.id = t.category_id AND t.status = 'waiting' 
 WHERE c.is_active = true AND c.id IN (%s) 
 GROUP BY c.id, c.name, c.prefix, c.color_code 

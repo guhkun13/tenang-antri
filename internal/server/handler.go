@@ -23,14 +23,16 @@ type Handlers struct {
 
 func BuildHandlers(cfg *config.Config, pool *pgxpool.Pool) *Handlers {
 	userRepo := repository.NewUserRepository(pool)
+	userCounterRepo := repository.NewUserCounterRepository(pool)
 	counterRepo := repository.NewCounterRepository(pool)
+	counterCategoryRepo := repository.NewCounterCategoryRepository(pool)
 	categoryRepo := repository.NewCategoryRepository(pool)
 	ticketRepo := repository.NewTicketRepository(pool)
 	statsRepo := repository.NewStatsRepository(pool)
 
-	userService := service.NewUserService(userRepo)
-	adminService := service.NewAdminService(userRepo, counterRepo, categoryRepo, ticketRepo, statsRepo)
-	staffService := service.NewStaffService(userRepo, counterRepo, ticketRepo, statsRepo, categoryRepo)
+	userService := service.NewUserService(userRepo, userCounterRepo)
+	adminService := service.NewAdminService(userRepo, userCounterRepo, counterRepo, counterCategoryRepo, categoryRepo, ticketRepo, statsRepo)
+	staffService := service.NewStaffService(userRepo, userCounterRepo, counterRepo, counterCategoryRepo, ticketRepo, statsRepo, categoryRepo)
 	kioskService := service.NewKioskService(categoryRepo, ticketRepo, statsRepo)
 	displayService := service.NewDisplayService(statsRepo, categoryRepo, counterRepo)
 	trackingService := service.NewTrackingService(ticketRepo, categoryRepo, counterRepo)

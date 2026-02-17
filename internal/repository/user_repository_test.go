@@ -24,8 +24,8 @@ func TestUserRepository_GetByUsername(t *testing.T) {
 
 	username := "admin"
 	now := time.Now()
-	rows := pgxmock.NewRows([]string{"id", "username", "full_name", "email", "phone", "role", "is_active", "counter_id", "created_at", "updated_at", "last_login"}).
-		AddRow(1, username, "Admin User", "admin@example.com", "123456", "admin", true, nil, now, now, nil)
+	rows := pgxmock.NewRows([]string{"id", "username", "full_name", "email", "phone", "role", "is_active", "created_at", "updated_at", "last_login"}).
+		AddRow(1, username, "Admin User", "admin@example.com", "123456", "admin", true, now, now, nil)
 
 	mock.ExpectQuery("SELECT id, username, full_name").
 		WithArgs(username).

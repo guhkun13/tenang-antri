@@ -157,10 +157,11 @@ func (h *AuthHandler) ShowProfile(c *gin.Context) {
 		return
 	}
 
+	// Get counter information for the user
+	counterID, err := h.userService.GetUserCounterID(c.Request.Context(), userID)
 	var counter *model.Counter
-	if user.CounterID.Valid {
-		// Get counter information would require counter service
-		counter = &model.Counter{}
+	if err == nil && counterID.Valid {
+		counter = &model.Counter{ID: int(counterID.Int64)}
 	}
 
 	template := "pages/staff/profile.html"

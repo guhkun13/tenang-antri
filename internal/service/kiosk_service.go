@@ -98,7 +98,7 @@ func (s *KioskService) GenerateTicket(ctx context.Context, req *dto.CreateTicket
 }
 
 // GetQueueInfo gets queue information for kiosk display
-func (s *KioskService) GetQueueInfo(ctx context.Context) (*model.DashboardStats, []model.CategoryQueueStats, error) {
+func (s *KioskService) GetQueueInfo(ctx context.Context) (*dto.DashboardStats, []dto.CategoryQueueStats, error) {
 	stats, err := s.statsRepo.GetDashboardStats(ctx)
 	if err != nil {
 		return nil, nil, err

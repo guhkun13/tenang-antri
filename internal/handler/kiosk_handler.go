@@ -45,8 +45,8 @@ func (h *KioskHandler) ShowKiosk(c *gin.Context) {
 	stats, queueCategories, err := h.kioskService.GetQueueInfo(c.Request.Context())
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to get queue info")
-		stats = &model.DashboardStats{}
-		queueCategories = []model.CategoryQueueStats{}
+		stats = &dto.DashboardStats{}
+		queueCategories = []dto.CategoryQueueStats{}
 	}
 
 	for _, cat := range queueCategories {

@@ -14,11 +14,15 @@ import (
 
 // UserService handles user-related business logic
 type UserService struct {
-	userRepo repository.UserRepository
+	userRepo        repository.UserRepository
+	userCounterRepo repository.UserCounterRepository
 }
 
-func NewUserService(userRepo repository.UserRepository) *UserService {
-	return &UserService{userRepo: userRepo}
+func NewUserService(userRepo repository.UserRepository, userCounterRepo repository.UserCounterRepository) *UserService {
+	return &UserService{
+		userRepo:        userRepo,
+		userCounterRepo: userCounterRepo,
+	}
 }
 
 // GetUserByUsername retrieves a user by username
@@ -40,17 +44,30 @@ func (s *UserService) CreateUser(ctx context.Context, req *dto.CreateUserRequest
 	}
 
 	user := &model.User{
-		Username:  req.Username,
-		Password:  string(hashedPassword),
-		FullName:  sql.NullString{String: req.FullName, Valid: req.FullName != ""},
-		Email:     sql.NullString{String: req.Email, Valid: req.Email != ""},
-		Phone:     sql.NullString{String: req.Phone, Valid: req.Phone != ""},
-		Role:      req.Role,
-		CounterID: sql.NullInt64{Int64: int64(*req.CounterID), Valid: req.CounterID != nil},
-		IsActive:  true,
+		Username: req.Username,
+		Password: string(hashedPassword),
+		FullName: sql.NullString{String: req.FullName, Valid: req.FullName != ""},
+		Email:    sql.NullString{String: req.Email, Valid: req.Email != ""},
+		Phone:    sql.NullString{String: req.Phone, Valid: req.Phone != ""},
+		Role:     req.Role,
+		IsActive: true,
 	}
 
-	return s.userRepo.Create(ctx, user)
+	createdUser, err := s.userRepo.Create(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create user-counter association if counter_id is provided
+	if req.CounterID != nil {
+		_, err = s.userCounterRepo.Create(ctx, createdUser.ID, *req.CounterID)
+		if err != nil {
+			// Log error but don't fail user creation
+			// Could roll back user creation here if strict consistency is needed
+		}
+	}
+
+	return createdUser, nil
 }
 
 // UpdateUser updates user information
@@ -64,13 +81,30 @@ func (s *UserService) UpdateUser(ctx context.Context, id int, req *dto.UpdateUse
 	user.Email = sql.NullString{String: req.Email, Valid: req.Email != ""}
 	user.Phone = sql.NullString{String: req.Phone, Valid: req.Phone != ""}
 	user.Role = req.Role
-	user.CounterID = sql.NullInt64{Int64: int64(*req.CounterID), Valid: req.CounterID != nil}
 
-	return s.userRepo.Update(ctx, user)
+	updatedUser, err := s.userRepo.Update(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update user-counter association
+	if req.CounterID != nil {
+		// Delete existing association
+		_ = s.userCounterRepo.DeleteByUserID(ctx, id)
+		// Create new association
+		_, _ = s.userCounterRepo.Create(ctx, id, *req.CounterID)
+	} else {
+		// Remove association if counter_id is not provided
+		_ = s.userCounterRepo.DeleteByUserID(ctx, id)
+	}
+
+	return updatedUser, nil
 }
 
 // DeleteUser deletes a user
 func (s *UserService) DeleteUser(ctx context.Context, id int) error {
+	// Delete user-counter association first
+	_ = s.userCounterRepo.DeleteByUserID(ctx, id)
 	return s.userRepo.Delete(ctx, id)
 }
 
@@ -152,4 +186,9 @@ func (s *UserService) ChangePassword(ctx context.Context, userID int, req *dto.C
 	}
 
 	return s.UpdateUserPassword(ctx, userID, req.NewPassword)
+}
+
+// GetUserCounterID retrieves the counter ID assigned to a user
+func (s *UserService) GetUserCounterID(ctx context.Context, userID int) (sql.NullInt64, error) {
+	return s.userCounterRepo.GetCounterIDByUserID(ctx, userID)
 }

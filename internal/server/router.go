@@ -97,6 +97,7 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 			staff.GET("/dashboard", staffHandler.Dashboard)
 			staff.GET("/tickets", staffHandler.TicketsPage)
 			staff.POST("/call-next", staffHandler.CallNext)
+			staff.POST("/call-again", staffHandler.CallAgain)
 			staff.POST("/complete", staffHandler.CompleteTicket)
 			staff.POST("/no-show", staffHandler.MarkNoShow)
 			staff.POST("/pause", staffHandler.PauseCounter)
@@ -140,6 +141,8 @@ func NewRouter(handlers *Handlers) *gin.Engine {
 			admin.PUT("/api/counters/:id", adminHandler.UpdateCounter)
 			admin.PUT("/api/counters/:id/status", adminHandler.UpdateCounterStatus)
 			admin.DELETE("/api/counters/:id", adminHandler.DeleteCounter)
+			admin.GET("/api/counters/:id/categories", adminHandler.GetCounterCategories)
+			admin.PUT("/api/counters/:id/categories", adminHandler.AssignCounterCategories)
 
 			// Tickets
 			admin.GET("/tickets", adminHandler.ListTickets)

@@ -6,16 +6,16 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 
-	"tenangantri/internal/model"
+	"tenangantri/internal/dto"
 	"tenangantri/internal/query"
 )
 
 type StatsRepository interface {
-	GetDashboardStats(ctx context.Context) (*model.DashboardStats, error)
-	GetQueueLengthByCategory(ctx context.Context) ([]model.CategoryQueueStats, error)
-	GetQueueLengthByCategories(ctx context.Context, categoryIDs []int) ([]model.CategoryQueueStats, error)
-	GetHourlyDistribution(ctx context.Context) ([]model.HourlyStats, error)
-	GetCurrentlyServingTickets(ctx context.Context) ([]model.DisplayTicket, error)
+	GetDashboardStats(ctx context.Context) (*dto.DashboardStats, error)
+	GetQueueLengthByCategory(ctx context.Context) ([]dto.CategoryQueueStats, error)
+	GetQueueLengthByCategories(ctx context.Context, categoryIDs []int) ([]dto.CategoryQueueStats, error)
+	GetHourlyDistribution(ctx context.Context) ([]dto.HourlyStats, error)
+	GetCurrentlyServingTickets(ctx context.Context) ([]dto.DisplayTicket, error)
 }
 
 type statsRepository struct {
@@ -30,8 +30,8 @@ func NewStatsRepository(pool DB) StatsRepository {
 	}
 }
 
-func (r *statsRepository) GetDashboardStats(ctx context.Context) (*model.DashboardStats, error) {
-	stats := &model.DashboardStats{
+func (r *statsRepository) GetDashboardStats(ctx context.Context) (*dto.DashboardStats, error) {
+	stats := &dto.DashboardStats{
 		TicketsByStatus: make(map[string]int),
 	}
 
@@ -93,35 +93,35 @@ func (r *statsRepository) GetDashboardStats(ctx context.Context) (*model.Dashboa
 
 	stats.QueueLengthByCategory, err = r.GetQueueLengthByCategory(ctx)
 	if err != nil {
-		stats.QueueLengthByCategory = []model.CategoryQueueStats{}
+		stats.QueueLengthByCategory = []dto.CategoryQueueStats{}
 	}
 
 	stats.HourlyDistribution, err = r.GetHourlyDistribution(ctx)
 	if err != nil {
-		stats.HourlyDistribution = []model.HourlyStats{}
+		stats.HourlyDistribution = []dto.HourlyStats{}
 	}
 
 	return stats, nil
 }
 
-func (r *statsRepository) GetQueueLengthByCategory(ctx context.Context) ([]model.CategoryQueueStats, error) {
+func (r *statsRepository) GetQueueLengthByCategory(ctx context.Context) ([]dto.CategoryQueueStats, error) {
 	sql := r.statsQry.GetQueueLengthByCategory(ctx)
 	rows, err := r.pool.Query(ctx, sql)
 	if err != nil {
-		return []model.CategoryQueueStats{}, err
+		return []dto.CategoryQueueStats{}, err
 	}
 	defer rows.Close()
 
-	var results []model.CategoryQueueStats
+	var results []dto.CategoryQueueStats
 	for rows.Next() {
-		var stats model.CategoryQueueStats
+		var stats dto.CategoryQueueStats
 		var lastTicketNumber, counterNumber pgtype.Text
 		err := rows.Scan(
 			&stats.CategoryID, &stats.CategoryName, &stats.Prefix, &stats.ColorCode, &stats.WaitingCount,
 			&lastTicketNumber, &counterNumber,
 		)
 		if err != nil {
-			return []model.CategoryQueueStats{}, err
+			return []dto.CategoryQueueStats{}, err
 		}
 		if lastTicketNumber.Valid {
 			stats.LastTicketNumber = lastTicketNumber.String
@@ -135,9 +135,9 @@ func (r *statsRepository) GetQueueLengthByCategory(ctx context.Context) ([]model
 	return results, nil
 }
 
-func (r *statsRepository) GetQueueLengthByCategories(ctx context.Context, categoryIDs []int) ([]model.CategoryQueueStats, error) {
+func (r *statsRepository) GetQueueLengthByCategories(ctx context.Context, categoryIDs []int) ([]dto.CategoryQueueStats, error) {
 	if len(categoryIDs) == 0 {
-		return []model.CategoryQueueStats{}, nil
+		return []dto.CategoryQueueStats{}, nil
 	}
 
 	sql := r.statsQry.GetQueueLengthByCategories(ctx, categoryIDs)
@@ -151,9 +151,9 @@ func (r *statsRepository) GetQueueLengthByCategories(ctx context.Context, catego
 	}
 	defer rows.Close()
 
-	var results []model.CategoryQueueStats
+	var results []dto.CategoryQueueStats
 	for rows.Next() {
-		var stats model.CategoryQueueStats
+		var stats dto.CategoryQueueStats
 		var lastTicketNumber, counterNumber pgtype.Text
 		err := rows.Scan(
 			&stats.CategoryID, &stats.CategoryName, &stats.Prefix, &stats.ColorCode, &stats.WaitingCount,
@@ -174,7 +174,7 @@ func (r *statsRepository) GetQueueLengthByCategories(ctx context.Context, catego
 	return results, nil
 }
 
-func (r *statsRepository) GetHourlyDistribution(ctx context.Context) ([]model.HourlyStats, error) {
+func (r *statsRepository) GetHourlyDistribution(ctx context.Context) ([]dto.HourlyStats, error) {
 	sql := r.statsQry.GetHourlyDistribution(ctx)
 	rows, err := r.pool.Query(ctx, sql)
 	if err != nil {
@@ -182,12 +182,12 @@ func (r *statsRepository) GetHourlyDistribution(ctx context.Context) ([]model.Ho
 	}
 	defer rows.Close()
 
-	ptrResult, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByPos[model.HourlyStats])
+	ptrResult, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByPos[dto.HourlyStats])
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]model.HourlyStats, len(ptrResult))
+	result := make([]dto.HourlyStats, len(ptrResult))
 	for i, ptr := range ptrResult {
 		result[i] = *ptr
 	}
@@ -195,7 +195,7 @@ func (r *statsRepository) GetHourlyDistribution(ctx context.Context) ([]model.Ho
 	return result, nil
 }
 
-func (r *statsRepository) GetCurrentlyServingTickets(ctx context.Context) ([]model.DisplayTicket, error) {
+func (r *statsRepository) GetCurrentlyServingTickets(ctx context.Context) ([]dto.DisplayTicket, error) {
 	sql := r.statsQry.GetCurrentlyServingTickets(ctx)
 	rows, err := r.pool.Query(ctx, sql)
 	if err != nil {
@@ -203,12 +203,12 @@ func (r *statsRepository) GetCurrentlyServingTickets(ctx context.Context) ([]mod
 	}
 	defer rows.Close()
 
-	ptrResult, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByPos[model.DisplayTicket])
+	ptrResult, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByPos[dto.DisplayTicket])
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]model.DisplayTicket, len(ptrResult))
+	result := make([]dto.DisplayTicket, len(ptrResult))
 	for i, ptr := range ptrResult {
 		result[i] = *ptr
 	}

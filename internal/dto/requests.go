@@ -3,6 +3,8 @@ package dto
 import (
 	"encoding/json"
 	"strconv"
+
+	"tenangantri/internal/model"
 )
 
 // LoginRequest represents login credentials
@@ -13,7 +15,8 @@ type LoginRequest struct {
 
 // LoginResponse represents login response
 type LoginResponse struct {
-	Token string `json:"token"`
+	Token string      `json:"token"`
+	User  *model.User `json:"user"`
 }
 
 // CreateTicketRequest represents ticket creation request
